@@ -2,9 +2,11 @@
 import io, json, re, collections, sys
 import pymupdf
 
-PDF = '../docs/samples/G2-3_Spelling_Bee_List_1.pdf'
+LISTS = [
+    ('g23',    '2026 Spring G2–G3', '../docs/samples/G2-3_Spelling_Bee_List_1.pdf'),
+    ('kinder', '2026 Spring Kinder',      '../docs/samples/Kinder_Spelling_Bee_List.pdf'),
+]
 OUT = '../index.html'
-
 def parse(path):
     doc = pymupdf.open(path)
     spans = []
@@ -14,11 +16,20 @@ def parse(path):
                 for s in line['spans']:
                     if s['text'].strip():
                         spans.append(dict(pg=pno, y=round(s['bbox'][1], 1),
+                                          yc=(s['bbox'][1] + s['bbox'][3]) / 2,
                                           x0=s['bbox'][0], x1=s['bbox'][2],
                                           t=s['text'], bold='Bold' in s['font']))
-    rows = collections.defaultdict(list)
-    for s in spans:
-        rows[(s['pg'], s['y'])].append(s)
+    # 같은 줄이라도 조각마다 y가 1pt 안팎으로 어긋난다(번호가 단어보다 살짝 내려앉는 PDF가 있다).
+    # 정확히 같은 y로 묶으면 번호가 떨어져 나가므로 허용 오차를 두고 묶는다.
+    TOL = 6.0
+    rows = {}
+    for s in sorted(spans, key=lambda s: (s['pg'], s['yc'], s['x0'])):
+        key = next((k for k in rows
+                    if k[0] == s['pg'] and abs(k[1] - s['yc']) <= TOL), None)
+        if key is None:
+            key = (s['pg'], s['yc'])
+            rows[key] = []
+        rows[key].append(s)
     for k in rows:
         rows[k].sort(key=lambda s: s['x0'])
 
@@ -48,10 +59,18 @@ def parse(path):
                 section = line
     return entries
 
-words = parse(PDF)
-assert len(words) == 200, len(words)
-assert all(w[2].count('{') == 1 for w in words)
-data = 'const WORDS=' + json.dumps(words, ensure_ascii=False, separators=(',', ':')) + ';'
+out = {}
+for key, label, path in LISTS:
+    words = parse(path)
+    assert words, f'{key}: 단어를 하나도 뽑지 못했다'
+    assert [w[0] for w in words] == list(range(1, len(words) + 1)), f'{key}: 번호가 끊긴다'
+    assert all(re.fullmatch(r"[A-Za-z'\-]+", w[1]) for w in words), f'{key}: 단어 셀이 깨졌다'
+    assert all(w[2].count('{') == 1 for w in words), f'{key}: 예문 강조 표시가 맞지 않는다'
+    out[key] = {'name': label, 'words': words}
+    print(f'  {key:8} {len(words):>3}개  {collections.Counter(w[3] for w in words)}')
+
+data = 'const LISTS=' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';'
 tpl = io.open('index.template.html', encoding='utf-8').read()
+assert '/*__WORDS__*/' in tpl
 io.open(OUT, 'w', encoding='utf-8').write(tpl.replace('/*__WORDS__*/', data))
-print(f'{len(words)} words -> {OUT}')
+print(f'-> {OUT}')

@@ -235,7 +235,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <div class="card pcard" onclick="pickProfile('yujin')" role="button" tabindex="0"
            onkeydown="if(event.key==='Enter')pickProfile('yujin')">
         <span class="ava" id="ava-yujin"></span>
-        <span><h2>유진</h2><p>3학년 · 전체 200단어</p>
+        <span><h2>유진</h2><p id="sub-yujin"></p>
           <span class="photo-edit">
             <button onclick="pickPhoto('yujin',event)">사진 바꾸기</button>
             <button onclick="clearPhoto('yujin',event)">지우기</button>
@@ -245,7 +245,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <div class="card pcard" onclick="pickProfile('yuhyeok')" role="button" tabindex="0"
            onkeydown="if(event.key==='Enter')pickProfile('yuhyeok')">
         <span class="ava" id="ava-yuhyeok"></span>
-        <span><h2>유혁</h2><p>1학년 · Basic 134단어</p>
+        <span><h2>유혁</h2><p id="sub-yuhyeok"></p>
           <span class="photo-edit">
             <button onclick="pickPhoto('yuhyeok',event)">사진 바꾸기</button>
             <button onclick="clearPhoto('yuhyeok',event)">지우기</button>
@@ -266,6 +266,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <span class="chip"><b class="tnum" id="xp">0</b> XP</span>
     <span class="chip stage"><span class="dot"></span><b class="tnum" id="coin">0</b> 코인</span>
     <span class="spacer"></span>
+    <span class="chip" id="listchip"></span>
     <span class="chip">대회까지 <b class="tnum" id="dday">D-30</b></span>
     <button class="btn ghost" onclick="openParent()">부모</button>
   </header>
@@ -521,7 +522,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     </div>
 
     <div class="card">
-      <p class="eyebrow">단어 목록</p>
+      <p class="eyebrow">단어 목록 — <span id="listname"></span></p>
       <table class="sec">
         <tr><th>묶음</th><th>단어 수</th><th>마스터</th><th>통과</th><th>연습중</th></tr>
         <tbody id="sectbl"></tbody>
@@ -541,8 +542,11 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 /*__WORDS__*/
 
 /* ---------- data model ---------- */
-const PROFILES={yujin:{name:'유진',grade:'3학년',sections:['B','C']},
-                yuhyeok:{name:'유혁',grade:'1학년',sections:['B']}};
+const PROFILES={
+  yujin:  {name:'유진', grade:'3학년', list:'g23',    sections:['B','C']},
+  yuhyeok:{name:'유혁', grade:'1학년', list:'kinder', sections:['B','C']}
+};
+const listOf = id => LISTS[PROFILES[id].list];
 const CAP={xp:60,coin:12};
 const CONTEST=new Date('2026-09-21T00:00:00');
 let pid=null, S=null, sec='all', testLen=5;
@@ -550,13 +554,13 @@ let pid=null, S=null, sec='all', testLen=5;
 const key=id=>'sb_'+id;
 function load(id){
   let d=null; try{d=JSON.parse(localStorage.getItem(key(id))||'null')}catch(e){}
-  return d||{xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{}};
+  return d||{xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{},list:null};
 }
 function save(){ try{localStorage.setItem(key(pid),JSON.stringify(S))}catch(e){} }
 function today(){return new Date().toISOString().slice(0,10)}
 function ws(n){ return S.w[n]||(S.w[n]={p:0,ok:0,voice:0,pass:0,st:'new'}) }
 
-function myWords(){ return WORDS.filter(w=>PROFILES[pid].sections.includes(w[3])) }
+function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.includes(w[3])) }
 function poolWords(){ const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec) }
 
 /* ---------- rewards ---------- */
@@ -650,7 +654,14 @@ function go(id){
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
   clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1900)}
 
-function pickProfile(id){pid=id;S=load(id);sec='all';go('s-home')}
+function pickProfile(id){
+  pid=id; S=load(id); sec='all';
+  // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
+  // XP와 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
+  const want=PROFILES[id].list;
+  if(S.list!==want){ S.w={}; S.list=want; save(); }
+  go('s-home');
+}
 
 /* ---------- character ----------
    스펠링'비'에 맞춘 꿀벌 성장. 이모지는 기기 글꼴이 그리므로 라이선스가 필요 없고,
@@ -674,6 +685,7 @@ function renderHome(){
   document.getElementById('who').textContent=P.name;
   document.getElementById('xp').textContent=S.xp;
   document.getElementById('coin').textContent=S.coin;
+  document.getElementById('listchip').textContent=listOf(pid).name;
   const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
   document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),xp:0,coin:0};
@@ -745,6 +757,11 @@ function renderFaces(){
   Object.keys(PROFILES).forEach(id=>{
     const el=document.getElementById('ava-'+id);
     if(el)el.innerHTML=faceHTML(id,72);
+    const sub=document.getElementById('sub-'+id);
+    if(sub){
+      const L=listOf(id), n=L.words.filter(w=>PROFILES[id].sections.includes(w[3])).length;
+      sub.textContent=`${PROFILES[id].grade} · ${L.name} ${n}단어`;
+    }
   });
 }
 renderFaces();
@@ -1026,6 +1043,7 @@ function setVoice(uri){
 function testVoice(){ sayEn('hesitate') }
 function renderParent(){
   renderVoices();
+  document.getElementById('listname').textContent=listOf(pid).name;
   const mine=myWords();
   const rows=[['B','Basic'],['C','Challenging']].filter(r=>PROFILES[pid].sections.includes(r[0]));
   document.getElementById('sectbl').innerHTML=rows.map(([k,label])=>{
