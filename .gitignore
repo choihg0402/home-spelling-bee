@@ -1,0 +1,9 @@
+# 학교에서 배부된 원본 PDF는 공개 저장소에 올리지 않는다
+docs/samples/*.pdf
+docs/samples/*.json
+
+# 기획서는 아이 정보가 들어 있어 로컬에만 둔다
+docs/기획서-v2.md
+
+__pycache__/
+*.pyc

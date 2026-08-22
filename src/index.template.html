@@ -1,0 +1,1047 @@
+<title>우리집 스펠링비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Fredoka:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#EEF1F5; --paper:#FFFFFF; --sunk:#E4E9F0;
+  --ink:#1B2130; --ink-2:#4A5568; --ink-3:#78849B;
+  --line:#D4DAE4;
+  --practice:#2F6F5E; --practice-soft:#DCEDE7;
+  --stage:#B07615; --stage-soft:#FAEDD4;
+  --good:#2E7D4F; --good-soft:#DCF0E3;
+  --retry:#3A6FB0; --retry-soft:#DEEAF7;
+  --tile:#FDFBF6; --tile-edge:#C7B79C; --tile-ink:#2A2318;
+  --shadow:0 1px 2px rgba(27,33,48,.07), 0 10px 28px rgba(27,33,48,.07);
+  --r-s:8px; --r-m:14px; --r-l:22px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131824; --paper:#1E2431; --sunk:#181E2A;
+    --ink:#E9EEF6; --ink-2:#AEBACB; --ink-3:#7B8798;
+    --line:#2F3747;
+    --practice:#6CC3A8; --practice-soft:#1D3830;
+    --stage:#E5B45C; --stage-soft:#3A2E17;
+    --good:#5FBE87; --good-soft:#1B3627;
+    --retry:#79ADE4; --retry-soft:#1B2C41;
+    --tile:#F0E9DC; --tile-edge:#8E7F65; --tile-ink:#241E14;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131824; --paper:#1E2431; --sunk:#181E2A;
+  --ink:#E9EEF6; --ink-2:#AEBACB; --ink-3:#7B8798;
+  --line:#2F3747;
+  --practice:#6CC3A8; --practice-soft:#1D3830;
+  --stage:#E5B45C; --stage-soft:#3A2E17;
+  --good:#5FBE87; --good-soft:#1B3627;
+  --retry:#79ADE4; --retry-soft:#1B2C41;
+  --tile:#F0E9DC; --tile-edge:#8E7F65; --tile-ink:#241E14;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+  font-size:17px; line-height:1.6;
+  -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--retry);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:"Jua",system-ui,sans-serif;font-weight:400;text-wrap:balance;margin:0;letter-spacing:.01em}
+.en{font-family:"Fredoka",system-ui,sans-serif}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.app{min-height:100dvh;display:flex;flex-direction:column;
+  padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+  gap:14px;max-width:1180px;margin:0 auto;width:100%}
+.screen{display:none;flex:1;min-height:0}
+.screen.on{display:flex;flex-direction:column;gap:14px}
+
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.topbar .spacer{flex:1}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--paper);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px;font-size:15px;box-shadow:var(--shadow)}
+.chip b{font-family:"Jua",sans-serif;font-weight:400}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--practice)}
+.chip.stage .dot{background:var(--stage)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);
+  padding:12px 18px;font-size:16px;box-shadow:var(--shadow);transition:transform .08s ease}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--practice);border-color:transparent;color:#fff}
+.btn.stage{background:var(--stage);border-color:transparent;color:#fff}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.big{padding:17px 26px;font-size:19px;font-family:"Jua",sans-serif}
+.btn[disabled]{opacity:.4;pointer-events:none}
+:root[data-theme="dark"] .btn.primary,:root[data-theme="dark"] .btn.stage{color:#10151F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary,
+  :root:not([data-theme="light"]) .btn.stage{color:#10151F}}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-l);
+  padding:22px;box-shadow:var(--shadow)}
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- profile ---------- */
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:8px}
+.pcard{text-align:left;display:flex;gap:16px;align-items:center;width:100%}
+.pcard .ava{width:72px;height:72px;flex:none}
+.face{border-radius:50%;object-fit:cover;display:grid;place-items:center;flex:none}
+img.face{border:2px solid var(--line)}
+.face.ph{background:var(--practice-soft);color:var(--practice);font-family:"Jua",sans-serif;
+  border:2px solid var(--line);line-height:1}
+.chip .face{width:26px;height:26px}
+.photo-edit{display:flex;gap:10px;margin-top:6px}
+.photo-edit button{font-size:13px;color:var(--ink-3);text-decoration:underline;padding:2px 0}
+.photo-edit button:hover{color:var(--practice)}
+.pet-emoji{line-height:1;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.18));
+  animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-7px)}}
+.pcard h2{font-size:26px}
+.pcard p{margin:2px 0 0;color:var(--ink-2);font-size:15px}
+
+/* ---------- home ---------- */
+.home-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;flex:1;min-height:0}
+@media (max-width:820px){.home-grid{grid-template-columns:1fr}}
+.zones{display:flex;flex-direction:column;gap:14px}
+.zone{position:relative;overflow:hidden;text-align:left;flex:1;display:flex;flex-direction:column;
+  justify-content:center;gap:6px;min-height:150px}
+.zone h2{font-size:32px}
+.zone p{margin:0;color:var(--ink-2);max-width:46ch}
+.zone .tag{position:absolute;top:18px;right:20px;font-size:13px;padding:5px 12px;border-radius:999px}
+.zone.practice{border-left:7px solid var(--practice)}
+.zone.practice .tag{background:var(--practice-soft);color:var(--practice)}
+.zone.test{border-left:7px solid var(--stage)}
+.zone.test .tag{background:var(--stage-soft);color:var(--stage)}
+.side{display:flex;flex-direction:column;gap:14px}
+.pet{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.stat-row{display:flex;gap:10px;margin-top:6px}
+.stat{flex:1;background:var(--sunk);border-radius:var(--r-m);padding:12px 8px;text-align:center}
+.stat b{display:block;font-family:"Jua",sans-serif;font-size:22px}
+.stat span{font-size:13px;color:var(--ink-3)}
+.bar{height:12px;background:var(--sunk);border-radius:999px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar i.m{background:var(--good)}
+.bar i.p{background:var(--stage)}
+.bar i.l{background:var(--practice);opacity:.45}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:10px}
+.legend s{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* ---------- play ---------- */
+.play{flex:1;display:flex;flex-direction:column;gap:16px;min-height:0}
+.prompt{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.speak-btn{width:112px;height:112px;border-radius:50%;background:var(--practice);color:#fff;
+  display:grid;place-items:center;box-shadow:var(--shadow);transition:transform .1s}
+.speak-btn:active{transform:scale(.94)}
+.speak-btn svg{width:52px;height:52px}
+.stage-mode .speak-btn{background:var(--stage)}
+.hint-line{min-height:34px;color:var(--ink-2);font-size:18px;text-align:center}
+.hint-line .blank{font-family:"Fredoka",sans-serif;letter-spacing:.1em;color:var(--stage);border-bottom:3px solid var(--stage);padding:0 .35em}
+.hints{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.hints .btn{padding:9px 15px;font-size:15px}
+
+.slots{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;min-height:72px}
+.tray{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.tile{width:60px;height:68px;border-radius:var(--r-s);background:var(--tile);color:var(--tile-ink);
+  font-family:"Fredoka",sans-serif;font-weight:500;font-size:32px;display:grid;place-items:center;
+  border:1px solid var(--tile-edge);box-shadow:0 4px 0 var(--tile-edge),0 6px 12px rgba(0,0,0,.13);
+  transition:transform .08s ease,box-shadow .08s ease;user-select:none;text-transform:uppercase}
+.tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tile-edge),0 2px 6px rgba(0,0,0,.13)}
+.tile.empty{background:transparent;border:2px dashed var(--line);box-shadow:none;color:transparent}
+.tile.used{opacity:.22;pointer-events:none}
+.tile.ok{box-shadow:0 4px 0 var(--good),0 6px 12px rgba(0,0,0,.13);border-color:var(--good)}
+.tile.no{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (max-width:700px){.tile{width:46px;height:54px;font-size:25px}}
+
+.write-in{width:min(560px,90vw);font-family:"Fredoka",sans-serif;font-size:40px;text-align:center;
+  padding:14px 18px;border:2px solid var(--line);border-radius:var(--r-m);background:var(--paper);
+  color:var(--ink);letter-spacing:.08em}
+.write-in:focus{outline:none;border-color:var(--practice)}
+
+.feedback{text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.feedback .msg{font-family:"Jua",sans-serif;font-size:24px}
+.feedback .msg.good{color:var(--good)}
+.feedback .msg.retry{color:var(--retry)}
+.feedback .ans{font-size:17px;color:var(--ink-2)}
+.feedback .ans.en{font-family:"Fredoka",sans-serif;font-size:22px;letter-spacing:.06em}
+.feedback .ans.reveal{font-size:40px;color:var(--stage);letter-spacing:.14em;font-weight:600;
+  animation:fade 3s linear forwards}
+@keyframes fade{0%,60%{opacity:1}100%{opacity:0}}
+
+.footer-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+
+/* ---------- test ---------- */
+.letters{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-height:64px}
+.lchip{min-width:50px;height:60px;padding:0 6px;border-radius:var(--r-s);background:var(--stage-soft);
+  color:var(--stage);border:1px solid var(--stage);font-family:"Fredoka",sans-serif;font-size:28px;
+  display:grid;place-items:center;text-transform:uppercase}
+.lchip.sel{background:var(--stage);color:#fff}
+.pad{display:grid;grid-template-columns:repeat(13,1fr);gap:5px;max-width:640px;margin:0 auto;width:100%}
+.pad button{aspect-ratio:1;border-radius:6px;background:var(--paper);border:1px solid var(--line);
+  font-family:"Fredoka",sans-serif;font-size:15px;display:grid;place-items:center}
+@media (max-width:640px){.pad{grid-template-columns:repeat(7,1fr);max-width:360px}}
+.mic-state{text-align:center;color:var(--ink-2);min-height:26px;font-size:15px}
+.rec{animation:pulse 1.3s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.qcount{font-family:"Jua",sans-serif;color:var(--ink-3)}
+
+/* ---------- result & parent ---------- */
+.res-list{display:flex;flex-direction:column;gap:8px;max-height:44dvh;overflow:auto;margin-top:12px}
+.res{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r-m);background:var(--sunk)}
+.res .w{font-family:"Fredoka",sans-serif;font-size:20px;flex:1}
+.res .mark{font-family:"Jua",sans-serif}
+.res .mark.o{color:var(--good)}
+.res .mark.x{color:var(--retry)}
+.res .via{font-size:12px;color:var(--ink-3);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.wordgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:7px;
+  max-height:52dvh;overflow:auto;margin-top:12px;padding-right:4px}
+.wcell{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:var(--r-s);background:var(--sunk);font-size:14px}
+.wcell .n{color:var(--ink-3);font-size:12px;min-width:26px}
+.wcell .w{font-family:"Fredoka",sans-serif;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis}
+.wcell .s{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+.wcell .s.l{background:var(--practice);opacity:.5}
+.wcell .s.p{background:var(--stage)}
+.wcell .s.m{background:var(--good)}
+.note{background:var(--retry-soft);border-left:4px solid var(--retry);border-radius:0 var(--r-m) var(--r-m) 0;
+  padding:14px 18px;font-size:15px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+table.sec{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
+table.sec th,table.sec td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.seg{display:inline-flex;background:var(--sunk);border-radius:999px;padding:4px;gap:4px}
+.seg button{padding:8px 16px;border-radius:999px;font-size:15px}
+.seg button.on{background:var(--paper);box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:12px 22px;border-radius:999px;font-size:15px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+  transition:opacity .25s;z-index:50}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+
+<!-- ============ PROFILE ============ -->
+<section id="s-profile" class="screen on">
+  <div style="margin:auto;width:100%;max-width:640px">
+    <p class="eyebrow">2026 Spring · G2–G3 Spelling Bee List</p>
+    <h1 style="font-size:40px;margin:6px 0 2px">우리집 스펠링비</h1>
+    <p style="color:var(--ink-2);margin:0">누구야? 이름을 눌러줘.</p>
+    <div class="profiles">
+      <div class="card pcard" onclick="pickProfile('yujin')" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter')pickProfile('yujin')">
+        <span class="ava" id="ava-yujin"></span>
+        <span><h2>유진</h2><p>3학년 · 전체 200단어</p>
+          <span class="photo-edit">
+            <button onclick="pickPhoto('yujin',event)">사진 바꾸기</button>
+            <button onclick="clearPhoto('yujin',event)">지우기</button>
+          </span>
+        </span>
+      </div>
+      <div class="card pcard" onclick="pickProfile('yuhyeok')" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter')pickProfile('yuhyeok')">
+        <span class="ava" id="ava-yuhyeok"></span>
+        <span><h2>유혁</h2><p>1학년 · Basic 134단어</p>
+          <span class="photo-edit">
+            <button onclick="pickPhoto('yuhyeok',event)">사진 바꾸기</button>
+            <button onclick="clearPhoto('yuhyeok',event)">지우기</button>
+          </span>
+        </span>
+      </div>
+    </div>
+    <p style="color:var(--ink-3);font-size:14px;margin-top:22px">
+      기록은 이 기기에만 저장됩니다. 기획서 §5.2 — MVP는 로컬 저장.
+    </p>
+  </div>
+</section>
+
+<!-- ============ HOME ============ -->
+<section id="s-home" class="screen">
+  <header class="topbar">
+    <button class="chip" onclick="go('s-profile')"><span id="whoface"></span><b id="who">유진</b></button>
+    <span class="chip"><b class="tnum" id="xp">0</b> XP</span>
+    <span class="chip stage"><span class="dot"></span><b class="tnum" id="coin">0</b> 코인</span>
+    <span class="spacer"></span>
+    <span class="chip">대회까지 <b class="tnum" id="dday">D-30</b></span>
+    <button class="btn ghost" onclick="openParent()">부모</button>
+  </header>
+
+  <div class="home-grid">
+    <div class="zones">
+      <button class="card zone practice" onclick="go('s-pick')">
+        <span class="tag">연습</span>
+        <h2>연습장</h2>
+        <p>퍼즐과 쓰기로 마음껏 연습해요. 틀려도 아무 일도 일어나지 않아요.</p>
+        <p style="font-size:14px;color:var(--ink-3)">오늘 받은 보상 <b class="tnum" id="capxp">0</b>/60 XP</p>
+      </button>
+      <button class="card zone test" onclick="go('s-tsetup')">
+        <span class="tag">실전</span>
+        <h2>시험장</h2>
+        <p>진짜 대회처럼 소리 내어 스펠링을 말해요. 보상이 가장 커요.</p>
+        <p style="font-size:14px;color:var(--ink-3)">마스터는 <b>말하기로만</b> 올라가요</p>
+      </button>
+    </div>
+
+    <div class="side">
+      <div class="card pet">
+        <span id="pet"></span>
+        <h3 id="pet-name" style="font-size:20px">알</h3>
+        <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next">30 XP 더 모으면 부화해요</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">단어 진행</p>
+        <div class="bar" style="margin-top:12px">
+          <i class="m" id="b-m"></i><i class="p" id="b-p"></i><i class="l" id="b-l"></i>
+        </div>
+        <div class="legend">
+          <s><i style="background:var(--good)"></i>마스터 <b class="tnum" id="n-m">0</b></s>
+          <s><i style="background:var(--stage)"></i>통과 <b class="tnum" id="n-p">0</b></s>
+          <s><i style="background:var(--practice);opacity:.45"></i>연습중 <b class="tnum" id="n-l">0</b></s>
+        </div>
+        <div class="stat-row">
+          <span class="stat"><b class="tnum" id="n-total">200</b><span>내 단어</span></span>
+          <span class="stat"><b class="tnum" id="n-streak">0</b><span>연속 학습일</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRACTICE PICK ============ -->
+<section id="s-pick" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-home')">← 홈</button>
+    <span class="spacer"></span>
+    <span class="chip">연습장</span>
+  </header>
+  <div style="margin:auto;width:100%;max-width:760px">
+    <h1 style="font-size:32px">뭐 하고 놀까?</h1>
+    <div class="profiles" style="margin-top:16px">
+      <button class="card pcard" onclick="startPractice('puzzle')">
+        <span class="ava">
+          <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+            <rect x="6" y="20" width="24" height="26" rx="4" fill="var(--tile)" stroke="var(--tile-edge)" stroke-width="2"/>
+            <rect x="34" y="20" width="24" height="26" rx="4" fill="var(--practice)" opacity=".85"/>
+            <text x="18" y="40" text-anchor="middle" font-family="Fredoka" font-size="18" fill="var(--tile-ink)">A</text>
+            <text x="46" y="40" text-anchor="middle" font-family="Fredoka" font-size="18" fill="#fff">B</text>
+          </svg>
+        </span>
+        <span><h2>퍼즐</h2><p>글자 타일을 순서대로 놓기</p></span>
+      </button>
+      <button class="card pcard" onclick="startPractice('write')">
+        <span class="ava">
+          <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+            <path d="M12 46h40" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M18 40 44 14l6 6-26 26z" fill="var(--practice)" opacity=".85"/>
+            <path d="M18 40l-2 8 8-2z" fill="var(--tile)" stroke="var(--tile-edge)" stroke-width="1.5"/>
+          </svg>
+        </span>
+        <span><h2>쓰기</h2><p>듣고 직접 입력하기</p></span>
+      </button>
+    </div>
+    <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="eyebrow">단어 묶음</span>
+      <span class="seg" id="secseg"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span style="font-size:14px;color:var(--ink-3)" id="pickcount"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLAY (puzzle / write) ============ -->
+<section id="s-play" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="quitPlay()">← 그만하기</button>
+    <span class="spacer"></span>
+    <span class="chip"><b id="play-mode">퍼즐</b></span>
+    <span class="chip"><b class="tnum" id="play-count">0</b>개 완료</span>
+  </header>
+
+  <div class="play">
+    <div class="prompt">
+      <button class="speak-btn" onclick="sayWord()" aria-label="단어 다시 듣기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+        </svg>
+      </button>
+      <p style="margin:0;color:var(--ink-3);font-size:15px">눌러서 다시 듣기</p>
+      <div class="hint-line" id="hintline"></div>
+    </div>
+
+    <div id="puzzle-ui" style="display:none">
+      <div class="slots" id="slots"></div>
+      <div class="tray" id="tray" style="margin-top:18px"></div>
+    </div>
+
+    <div id="write-ui" style="display:none;text-align:center">
+      <input class="write-in en" id="wordinput" autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false" inputmode="text" placeholder="여기에 써줘">
+    </div>
+
+    <div class="feedback" id="fb"></div>
+
+    <div class="hints">
+      <button class="btn" onclick="saySlow()">천천히 듣기</button>
+      <button class="btn" onclick="hintSentence()">예문 듣기</button>
+      <button class="btn" onclick="hintShow()">예문 보기</button>
+      <button class="btn" onclick="hintLen()">글자 수</button>
+      <button class="btn" onclick="hintFirst()">첫 글자</button>
+    </div>
+    <div class="footer-bar">
+      <button class="btn big" id="checkbtn" onclick="checkPractice()">확인</button>
+      <button class="btn big ghost" onclick="nextPractice(true)">다음 단어 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEST SETUP ============ -->
+<section id="s-tsetup" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-home')">← 홈</button>
+    <span class="spacer"></span>
+    <span class="chip stage"><span class="dot"></span>시험장</span>
+  </header>
+  <div style="margin:auto;width:100%;max-width:680px">
+    <h1 style="font-size:32px">스펠링비 테스트</h1>
+    <p style="color:var(--ink-2)">단어를 듣고 알파벳을 <b>한 글자씩 소리 내어</b> 말해줘.
+      화면에 뜬 글자가 틀리면 눌러서 고칠 수 있어. 다 맞으면 제출!</p>
+    <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="eyebrow">몇 개 볼까</span>
+      <span class="seg" id="lenseg"></span>
+    </div>
+    <div class="note" id="micnote" style="margin-top:14px"></div>
+    <div class="footer-bar" style="justify-content:flex-start;margin-top:20px">
+      <button class="btn big stage" onclick="startTest()">시작하기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEST ============ -->
+<section id="s-test" class="screen stage-mode">
+  <header class="topbar">
+    <button class="btn ghost" onclick="quitTest()">← 그만하기</button>
+    <span class="spacer"></span>
+    <span class="qcount"><span class="tnum" id="q-now">1</span> / <span class="tnum" id="q-all">5</span></span>
+  </header>
+
+  <div class="play">
+    <div class="prompt">
+      <button class="speak-btn" onclick="sayWord()" aria-label="단어 다시 듣기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+        </svg>
+      </button>
+      <div class="hints">
+        <button class="btn" onclick="sayWord()">다시 말해주세요</button>
+        <button class="btn" onclick="saySlow()">천천히 말해주세요</button>
+        <button class="btn" onclick="hintSentence()">예문으로 말해주세요</button>
+        <button class="btn" id="defbtn" onclick="sayDef()">뜻이 뭐예요?</button>
+      </div>
+    </div>
+
+    <div class="letters" id="letters"></div>
+    <p class="mic-state" id="micstate">마이크를 누르고 알파벳을 말해줘</p>
+
+    <div style="text-align:center">
+      <button class="btn" id="micbtn" onclick="toggleMic()">🎤 말하기 시작</button>
+      <button class="btn" onclick="delLetter()">글자 지우기</button>
+      <button class="btn ghost" onclick="toggleTyping()" id="typebtn">타이핑으로 바꾸기</button>
+    </div>
+
+    <div id="typing-ui" style="display:none;text-align:center">
+      <input class="write-in en" id="testinput" autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false" placeholder="타이핑으로 입력">
+      <p style="font-size:14px;color:var(--ink-3);margin:8px 0 0">
+        타이핑으로 맞히면 보상이 절반이고, 마스터에는 올라가지 않아요.
+      </p>
+    </div>
+
+    <div class="pad" id="pad"></div>
+
+    <div class="footer-bar">
+      <button class="btn big stage" onclick="submitTest()">제출하기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section id="s-result" class="screen">
+  <div style="margin:auto;width:100%;max-width:720px">
+    <p class="eyebrow">테스트 결과</p>
+    <h1 style="font-size:36px" id="res-title">잘했어!</h1>
+    <p style="color:var(--ink-2)" id="res-sub"></p>
+    <div class="card" style="margin-top:14px">
+      <div class="stat-row" style="margin:0">
+        <span class="stat"><b class="tnum" id="res-ok">0</b><span>맞은 단어</span></span>
+        <span class="stat"><b class="tnum" id="res-xp">0</b><span>얻은 XP</span></span>
+        <span class="stat"><b class="tnum" id="res-coin">0</b><span>얻은 코인</span></span>
+      </div>
+      <div class="res-list" id="res-list"></div>
+    </div>
+    <div class="footer-bar" style="justify-content:flex-start">
+      <button class="btn big stage" onclick="go('s-home')">홈으로</button>
+      <button class="btn big ghost" onclick="go('s-tsetup')">한 번 더</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PARENT ============ -->
+<section id="s-parent" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-home')">← 홈</button>
+    <span class="spacer"></span>
+    <span class="chip">부모 화면</span>
+  </header>
+  <div style="width:100%;max-width:960px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:28px">진행 상황</h1>
+    <div class="note" style="margin:12px 0">
+      <b>이 화면은 껍데기입니다.</b> 잠금, 두 아이 통합 보기, 자주 틀리는 단어, 7일 기록은
+      기획서 §7의 3차 범위예요. 지금은 이 기기의 이 아이 기록만 보입니다.
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <p class="eyebrow">영어 발음 목소리</p>
+      <p style="color:var(--ink-2);font-size:15px;margin:8px 0 12px">
+        기기에 설치된 영어 목소리 중에서 고를 수 있어요. 위쪽일수록 자연스러운 목소리입니다.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="voicesel" onchange="setVoice(this.value)"
+          style="flex:1;min-width:240px;padding:11px 13px;border-radius:var(--r-m);border:1px solid var(--line);
+                 background:var(--paper);color:var(--ink);font:inherit;font-size:15px"></select>
+        <button class="btn" onclick="testVoice()">들어보기</button>
+      </div>
+      <div class="note" style="margin-top:14px">
+        <b>아이패드에서 발음이 밋밋하게 들린다면</b> 설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → English 에서
+        <b>Enhanced</b> 나 <b>Premium</b> 목소리를 내려받아 보세요. 기본 목소리보다 훨씬 자연스럽고,
+        받고 나면 위 목록 맨 위에 나타납니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">단어 목록</p>
+      <table class="sec">
+        <tr><th>묶음</th><th>단어 수</th><th>마스터</th><th>통과</th><th>연습중</th></tr>
+        <tbody id="sectbl"></tbody>
+      </table>
+      <div class="wordgrid" id="wordgrid"></div>
+    </div>
+    <div class="footer-bar" style="justify-content:flex-start;margin:16px 0">
+      <button class="btn" onclick="resetProfile()">이 아이 기록 지우기</button>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/*__WORDS__*/
+
+/* ---------- data model ---------- */
+const PROFILES={yujin:{name:'유진',grade:'3학년',sections:['B','C']},
+                yuhyeok:{name:'유혁',grade:'1학년',sections:['B']}};
+const CAP={xp:60,coin:12};
+const CONTEST=new Date('2026-09-21T00:00:00');
+let pid=null, S=null, sec='all', testLen=5;
+
+const key=id=>'sb_'+id;
+function load(id){
+  let d=null; try{d=JSON.parse(localStorage.getItem(key(id))||'null')}catch(e){}
+  return d||{xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{}};
+}
+function save(){ try{localStorage.setItem(key(pid),JSON.stringify(S))}catch(e){} }
+function today(){return new Date().toISOString().slice(0,10)}
+function ws(n){ return S.w[n]||(S.w[n]={p:0,ok:0,voice:0,pass:0,st:'new'}) }
+
+function myWords(){ return WORDS.filter(w=>PROFILES[pid].sections.includes(w[3])) }
+function poolWords(){ const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec) }
+
+/* ---------- rewards ---------- */
+function grantPractice(){
+  const t=today(); if(S.day.d!==t)S.day={d:t,xp:0,coin:0};
+  let xp=Math.min(5,CAP.xp-S.day.xp), coin=Math.min(1,CAP.coin-S.day.coin);
+  xp=Math.max(0,xp); coin=Math.max(0,coin);
+  S.day.xp+=xp; S.day.coin+=coin; S.xp+=xp; S.coin+=coin;
+  bumpStreak();
+  return {xp,coin,capped:xp===0};
+}
+function bumpStreak(){
+  const t=today(); if(S.last===t)return;
+  const y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  S.streak=(S.last===y)?S.streak+1:1; S.last=t;
+}
+
+/* ---------- speech ----------
+   발음 품질을 좌우하는 것: (1) 어떤 목소리를 고르는가 (2) 속도 (3) iOS 잠금 해제 */
+let voice=null, voices=[], unlocked=false;
+const VKEY='sb_voice';
+
+/* 목소리 점수. 기기마다 설치된 음성이 다르므로 이름으로 등급을 매긴다. */
+function scoreVoice(v){
+  const n=v.name||'', l=(v.lang||'').replace('_','-');
+  if(!/^en(-|$)/i.test(l))return -1e6;
+  let s=0;
+  if(/premium|enhanced|neural|natural/i.test(n))s+=60;   // 고품질 다운로드 음성
+  if(/siri/i.test(n))s+=45;                               // iOS Siri 음성
+  if(/^Google (US|UK) English/i.test(n))s+=40;            // 크롬 네트워크 음성
+  if(/Microsoft (Aria|Jenny|Guy|Ana|Michelle|Emma)/i.test(n))s+=35;
+  if(/\b(Ava|Allison|Samantha|Nicky|Joelle|Evan|Zoe)\b/i.test(n))s+=25;
+  if(/compact|eloquence|novelty|Fred|Albert|Bad News|Bells|Bubbles|Jester|Organ|Trinoids|Whisper|Zarvox|Wobble|Superstar/i.test(n))s-=200;
+  if(/^en-US$/i.test(l))s+=12; else if(/^en-(GB|AU|CA)$/i.test(l))s+=6;
+  return s;
+}
+function loadVoices(){
+  if(!('speechSynthesis' in window))return;
+  voices=speechSynthesis.getVoices().filter(v=>/^en(-|_|$)/i.test(v.lang))
+         .sort((a,b)=>scoreVoice(b)-scoreVoice(a));
+  let saved=null; try{saved=localStorage.getItem(VKEY)}catch(e){}
+  voice=voices.find(v=>v.voiceURI===saved)||voices[0]||null;
+  const sel=document.getElementById('voicesel'); if(sel)renderVoices();
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged=loadVoices;
+}
+
+/* iOS는 사용자가 화면을 처음 누른 뒤에야 소리를 낼 수 있다.
+   그 전에 speak()를 부르면 첫 단어가 잘리거나 아예 안 난다. */
+function unlockAudio(){
+  if(unlocked||!('speechSynthesis' in window))return;
+  try{
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0; speechSynthesis.speak(u); unlocked=true;
+    if(!voices.length)loadVoices();
+  }catch(e){}
+}
+document.addEventListener('pointerdown',unlockAudio,{once:true});
+document.addEventListener('touchstart',unlockAudio,{once:true});
+
+function speak(txt,rate){
+  if(!('speechSynthesis' in window)){toast('이 기기는 소리 읽기를 지원하지 않아요');return}
+  unlockAudio();
+  speechSynthesis.cancel();
+  const go=()=>{
+    const u=new SpeechSynthesisUtterance(txt);
+    u.lang=(voice&&voice.lang)||'en-US';
+    u.rate=rate||1; u.pitch=1;
+    if(voice)u.voice=voice;
+    speechSynthesis.speak(u);
+  };
+  // cancel() 직후 speak()를 부르면 사파리에서 앞부분이 잘린다.
+  setTimeout(go,90);
+}
+/* 단어 하나만 읽으면 억양이 밋밋해진다. 마침표를 붙이면 문장 끝 억양이 살아난다. */
+const sayEn=(w,slow)=>speak(w.replace(/\.?$/,'.'),slow?0.6:0.92);
+const plain=s=>s.replace(/[{}]/g,'');
+const masked=s=>s.replace(/\{(.+?)\}/g,m=>'<span class="blank">'+'_'.repeat(Math.max(3,m.length-2))+'</span>');
+
+/* ---------- screens ---------- */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  if(id==='s-home')renderHome();
+  if(id==='s-pick')renderPick();
+  if(id==='s-tsetup')renderSetup();
+  if(id==='s-parent')renderParent();
+  window.scrollTo(0,0);
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
+  clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1900)}
+
+function pickProfile(id){pid=id;S=load(id);sec='all';go('s-home')}
+
+/* ---------- character ----------
+   스펠링'비'에 맞춘 꿀벌 성장. 이모지는 기기 글꼴이 그리므로 라이선스가 필요 없고,
+   아이패드에서는 애플 이모지로 또렷하게 나온다. */
+const STAGES=[
+  {xp:0,   emoji:'🥚',  name:'알',       tip:'단어를 맞히면 알이 흔들려요'},
+  {xp:30,  emoji:'🐛',  name:'애벌레',   tip:'꼬물꼬물 자라는 중'},
+  {xp:60,  emoji:'🐝',  name:'꿀벌',     tip:'드디어 날개가 생겼어요'},
+  {xp:150, emoji:'🌻',  name:'꽃밭 꿀벌', tip:'자기 꽃밭이 생겼어요'},
+  {xp:300, emoji:'👑',  name:'여왕벌',   tip:'다 자랐어요!'}
+];
+function stageOf(xp){ let i=0; STAGES.forEach((s,k)=>{if(xp>=s.xp)i=k}); return i }
+function petHTML(xp,size){
+  const i=stageOf(xp), s=STAGES[i];
+  return `<span class="pet-emoji" style="font-size:${size}px" role="img" aria-label="${s.name}">${s.emoji}</span>`;
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const P=PROFILES[pid];
+  document.getElementById('who').textContent=P.name;
+  document.getElementById('xp').textContent=S.xp;
+  document.getElementById('coin').textContent=S.coin;
+  const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
+  document.getElementById('dday').textContent='D-'+d;
+  if(S.day.d!==today())S.day={d:today(),xp:0,coin:0};
+  document.getElementById('capxp').textContent=S.day.xp;
+
+  const i=stageOf(S.xp), st=STAGES[i], nx=STAGES[i+1];
+  document.getElementById('pet').innerHTML=petHTML(S.xp,104);
+  document.getElementById('pet-name').textContent=st.name;
+  document.getElementById('pet-next').textContent=nx?`${nx.xp-S.xp} XP 더 모으면 자라요`:st.tip;
+  const chip=document.getElementById('whoface');
+  if(chip)chip.innerHTML=faceHTML(pid,26);
+
+  const mine=myWords(); let m=0,pa=0,l=0;
+  mine.forEach(w=>{const s=S.w[w[0]];if(!s)return;
+    if(s.st==='master')m++;else if(s.st==='pass')pa++;else if(s.p>0)l++});
+  const tot=mine.length;
+  document.getElementById('b-m').style.width=(m/tot*100)+'%';
+  document.getElementById('b-p').style.width=(pa/tot*100)+'%';
+  document.getElementById('b-l').style.width=(l/tot*100)+'%';
+  document.getElementById('n-m').textContent=m;
+  document.getElementById('n-p').textContent=pa;
+  document.getElementById('n-l').textContent=l;
+  document.getElementById('n-total').textContent=tot;
+  document.getElementById('n-streak').textContent=S.streak;
+  save();
+}
+/* ---------- profile photo ----------
+   사진은 이 기기의 localStorage 안에만 있고 어디로도 전송되지 않는다.
+   저장 전에 256px 정사각형으로 줄여 용량을 아낀다. */
+const PKEY=id=>'sb_photo_'+id;
+function getPhoto(id){ try{return localStorage.getItem(PKEY(id))}catch(e){return null} }
+function faceHTML(id,size){
+  const src=getPhoto(id);
+  if(src)return `<img class="face" src="${src}" width="${size}" height="${size}" alt="">`;
+  return `<span class="face ph" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px">${PROFILES[id].name}</span>`;
+}
+function pickPhoto(id,ev){
+  if(ev)ev.stopPropagation();
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0]; if(!f)return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const N=256, c=document.createElement('canvas'); c.width=c.height=N;
+        const g=c.getContext('2d');
+        const side=Math.min(img.width,img.height);
+        g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,N,N);
+        try{ localStorage.setItem(PKEY(id),c.toDataURL('image/jpeg',.82)); }
+        catch(e){ toast('사진이 너무 커서 저장하지 못했어요'); return }
+        renderFaces(); if(pid)renderHome();
+        toast(PROFILES[id].name+' 사진을 바꿨어요');
+      };
+      img.onerror=()=>toast('이 사진은 열 수 없어요');
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(f);
+  };
+  inp.click();
+}
+function clearPhoto(id,ev){
+  if(ev)ev.stopPropagation();
+  try{localStorage.removeItem(PKEY(id))}catch(e){}
+  renderFaces(); toast('사진을 지웠어요');
+}
+function renderFaces(){
+  Object.keys(PROFILES).forEach(id=>{
+    const el=document.getElementById('ava-'+id);
+    if(el)el.innerHTML=faceHTML(id,72);
+  });
+}
+renderFaces();
+
+/* ---------- practice ---------- */
+let cur=null, mode='puzzle', done=0, placed=[], tries=0;
+function renderPick(){
+  const segs=[['all','전체'],['B','Basic'],['C','Challenging']]
+    .filter(s=>s[0]==='all'||PROFILES[pid].sections.includes(s[0]));
+  document.getElementById('secseg').innerHTML=segs.map(s=>
+    `<button class="${sec===s[0]?'on':''}" onclick="sec='${s[0]}';renderPick()">${s[1]}</button>`).join('');
+  document.getElementById('pickcount').textContent=poolWords().length+'개 단어';
+}
+function startPractice(m){mode=m;done=0;go('s-play');
+  document.getElementById('play-mode').textContent=m==='puzzle'?'퍼즐':'쓰기';
+  document.getElementById('puzzle-ui').style.display=m==='puzzle'?'':'none';
+  document.getElementById('write-ui').style.display=m==='write'?'':'none';
+  nextPractice()}
+function quitPlay(){clearInterval(revealThenHide._t);speechSynthesis.cancel();go('s-home')}
+
+function weightedPick(){
+  const pool=poolWords();
+  const scored=pool.map(w=>{const s=S.w[w[0]];
+    let pr=s?(s.st==='master'?1:s.st==='pass'?3:8):10; return {w,pr}});
+  const tot=scored.reduce((a,b)=>a+b.pr,0); let r=Math.random()*tot;
+  for(const s of scored){r-=s.pr;if(r<=0)return s.w}
+  return pool[0];
+}
+function nextPractice(skip){
+  clearInterval(revealThenHide._t);
+  tries=0;
+  cur=weightedPick();
+  document.getElementById('fb').innerHTML='';
+  document.getElementById('hintline').innerHTML='';
+  document.getElementById('checkbtn').disabled=false;
+  if(mode==='puzzle')buildPuzzle(); else{
+    const i=document.getElementById('wordinput'); i.value=''; i.focus();
+  }
+  setTimeout(()=>sayWord(),250);
+}
+function sayWord(slow){ if(cur)sayEn(cur[1],slow===true) }
+function saySlow(){ sayWord(true) }
+function hintSentence(){ if(cur)speak(plain(cur[2]),.95) }
+function hintShow(){ if(cur)document.getElementById('hintline').innerHTML=masked(cur[2]) }
+function hintLen(){ if(cur)document.getElementById('hintline').textContent=`${cur[1].length}글자`}
+function hintFirst(){ if(cur)document.getElementById('hintline').innerHTML=
+  `첫 글자는 <span class="blank">${cur[1][0].toUpperCase()}</span>`}
+function sayDef(){ toast('이 목록에는 뜻이 없어요 (기획서 §4.4)') }
+
+const AZ='abcdefghijklmnopqrstuvwxyz';
+function buildPuzzle(){
+  const letters=cur[1].toLowerCase().split('');
+  const extra=Math.min(3,Math.max(1,Math.floor(letters.length/3)));
+  const bag=letters.slice();
+  for(let i=0;i<extra;i++)bag.push(AZ[Math.floor(Math.random()*26)]);
+  for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}
+  placed=Array(letters.length).fill(null);
+  document.getElementById('tray').innerHTML=bag.map((c,i)=>
+    `<button class="tile" data-i="${i}" onclick="place(${i},'${c}')">${c}</button>`).join('');
+  drawSlots();
+}
+function drawSlots(){
+  document.getElementById('slots').innerHTML=placed.map((p,i)=>
+    p?`<button class="tile" onclick="unplace(${i})">${p.c}</button>`
+     :`<span class="tile empty">·</span>`).join('');
+}
+function place(i,c){
+  const k=placed.findIndex(x=>!x); if(k<0)return;
+  placed[k]={c,i};
+  document.querySelector(`#tray .tile[data-i="${i}"]`).classList.add('used');
+  drawSlots();
+}
+function unplace(k){
+  const p=placed[k]; if(!p)return;
+  document.querySelector(`#tray .tile[data-i="${p.i}"]`).classList.remove('used');
+  placed[k]=null; drawSlots();
+}
+function checkPractice(){
+  if(!cur)return;
+  const ans=(mode==='puzzle')?placed.map(p=>p?p.c:'').join(''):
+    document.getElementById('wordinput').value.trim().toLowerCase();
+  if(!ans||(mode==='puzzle'&&placed.some(p=>!p))){toast('아직 다 안 채웠어');return}
+  const fb=document.getElementById('fb');
+  const s=ws(cur[0]); s.p++;
+  if(ans===cur[1].toLowerCase()){
+    s.ok++; if(s.st==='new')s.st='learning';
+    const g=grantPractice();
+    fb.innerHTML=`<div class="msg good">맞았어! 🎉</div>`+
+      (g.capped?`<div class="ans">오늘 연습 보상은 다 받았어 — 시험장에 가면 더 받을 수 있어</div>`
+               :`<div class="ans">+${g.xp} XP · +${g.coin} 코인</div>`);
+    done++; document.getElementById('play-count').textContent=done;
+    document.querySelectorAll('#slots .tile').forEach(t=>t.classList.add('ok'));
+    document.getElementById('checkbtn').disabled=true;
+    save(); setTimeout(nextPractice,1400);
+  }else{
+    if(s.st==='new')s.st='learning';
+    tries++;
+    document.querySelectorAll('#slots .tile').forEach(t=>{t.classList.add('no');setTimeout(()=>t.classList.remove('no'),400)});
+    if(tries===1){
+      // 첫 실수는 대개 순서 실수다. 정답을 보여주지 않고 맞은 자리만 남긴다.
+      fb.innerHTML=`<div class="msg retry">거의 다 왔어!</div>
+        <div class="ans">자리가 맞은 글자는 그대로 두었어</div>`;
+      keepCorrect();
+    }else{
+      // 두 번 틀리면 알려준다. 단, 보고 베끼지 못하게 지운 뒤 다시 만들게 한다.
+      s.peek=(s.peek||0)+1;
+      revealThenHide();
+    }
+    save();
+  }
+}
+/* 자리까지 맞은 글자만 남기고 나머지는 트레이로 돌려보낸다 */
+function keepCorrect(){
+  if(mode!=='puzzle'){document.getElementById('wordinput').value='';return}
+  const t=cur[1].toLowerCase();
+  placed.forEach((p,k)=>{ if(p&&p.c!==t[k]){
+    const tile=document.querySelector(`#tray .tile[data-i="${p.i}"]`);
+    if(tile)tile.classList.remove('used');
+    placed[k]=null;
+  }});
+  drawSlots();
+  document.querySelectorAll('#slots .tile').forEach(el=>el.classList.add('ok'));
+}
+/* 정답을 3초 보여준 뒤 지우고, 기억해서 다시 만들게 한다 */
+function revealThenHide(){
+  const fb=document.getElementById('fb');
+  let left=3;
+  const paint=()=>{fb.innerHTML=
+    `<div class="msg retry">잘 봐둬! <span class="tnum">${left}</span></div>
+     <div class="ans en reveal">${cur[1]}</div>`;};
+  paint();
+  clearInterval(revealThenHide._t);
+  revealThenHide._t=setInterval(()=>{
+    left--;
+    if(left>0){paint();return}
+    clearInterval(revealThenHide._t);
+    if(mode==='puzzle'){
+      placed.forEach(p=>{if(p){const tl=document.querySelector(`#tray .tile[data-i="${p.i}"]`);if(tl)tl.classList.remove('used')}});
+      placed=placed.map(()=>null); drawSlots();
+    }else{ const i=document.getElementById('wordinput'); i.value=''; i.focus() }
+    fb.innerHTML=`<div class="msg retry">이제 기억해서 해보자!</div>
+      <div class="ans">모르겠으면 “천천히 듣기”를 눌러봐</div>`;
+  },1000);
+}
+document.getElementById('wordinput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPractice()});
+
+/* ---------- test ---------- */
+let tq=[],ti=0,tres=[],letters=[],selIdx=-1,typing=false,rec=null,listening=false;
+const SPOKEN={a:'a',ay:'a',eh:'a',bee:'b',be:'b',b:'b',see:'c',sea:'c',cee:'c',c:'c',dee:'d',d:'d',
+ e:'e',ee:'e',eff:'f',ef:'f',f:'f',gee:'g',jee:'g',g:'g',aitch:'h',h:'h',haitch:'h',eye:'i',i:'i',ai:'i',
+ jay:'j',j:'j',kay:'k',k:'k',el:'l',ell:'l',l:'l',em:'m',m:'m',en:'n',n:'n',oh:'o',o:'o',owe:'o',
+ pee:'p',p:'p',cue:'q',queue:'q',q:'q',ar:'r',are:'r',r:'r',ess:'s',es:'s',s:'s',tee:'t',t:'t',tea:'t',
+ you:'u',yu:'u',u:'u',vee:'v',v:'v',"double u":'w',"double you":'w',w:'w',ex:'x',x:'x',
+ why:'y',y:'y',wye:'y',zee:'z',zed:'z',z:'z'};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+function renderSetup(){
+  document.getElementById('lenseg').innerHTML=[3,5,10].map(n=>
+    `<button class="${testLen===n?'on':''}" onclick="testLen=${n};renderSetup()">${n}개</button>`).join('');
+  const n=document.getElementById('micnote');
+  n.innerHTML=SR
+    ? '<b>마이크를 쓸 수 있어요.</b> 처음 시작할 때 마이크 권한을 한 번 물어봅니다. 인식이 잘 안 되면 언제든 타이핑으로 바꿀 수 있어요.'
+    : '<b>이 브라우저는 음성 인식을 지원하지 않아요.</b> 타이핑으로 테스트할 수 있고, 보상은 절반으로 들어갑니다. 아이패드 Safari에서 다시 시도해 보세요.';
+}
+function startTest(){
+  const pool=myWords().slice();
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  pool.sort((a,b)=>{const sa=S.w[a[0]],sb=S.w[b[0]];
+    const pa=sa?(sa.st==='master'?2:sa.p>0?0:1):1, pb=sb?(sb.st==='master'?2:sb.p>0?0:1):1;
+    return pa-pb});
+  tq=pool.slice(0,testLen); ti=0; tres=[]; typing=false;
+  document.getElementById('q-all').textContent=tq.length;
+  document.getElementById('pad').innerHTML=AZ.split('').map(c=>
+    `<button onclick="addLetter('${c}')">${c}</button>`).join('');
+  go('s-test'); loadQ();
+}
+function loadQ(){
+  cur=tq[ti]; letters=[]; selIdx=-1;
+  document.getElementById('q-now').textContent=ti+1;
+  document.getElementById('testinput').value='';
+  document.getElementById('defbtn').disabled=true;
+  drawLetters(); setTimeout(()=>sayWord(),300);
+}
+function drawLetters(){
+  const el=document.getElementById('letters');
+  el.innerHTML=letters.length?letters.map((c,i)=>
+    `<button class="lchip ${selIdx===i?'sel':''}" onclick="selLetter(${i})">${c}</button>`).join('')
+    :'<span style="color:var(--ink-3)">아직 아무것도 없어</span>';
+}
+function selLetter(i){selIdx=selIdx===i?-1:i;drawLetters()}
+function addLetter(c){ if(selIdx>=0){letters[selIdx]=c;selIdx=-1}else letters.push(c); drawLetters() }
+function delLetter(){ if(selIdx>=0){letters.splice(selIdx,1);selIdx=-1}else letters.pop(); drawLetters() }
+function toggleTyping(){
+  typing=!typing;
+  document.getElementById('typing-ui').style.display=typing?'':'none';
+  document.getElementById('pad').style.display=typing?'none':'';
+  document.getElementById('typebtn').textContent=typing?'말하기로 돌아가기':'타이핑으로 바꾸기';
+  if(typing){stopMic();document.getElementById('testinput').focus()}
+}
+function toggleMic(){ listening?stopMic():startMic() }
+function startMic(){
+  if(!SR){toast('이 브라우저는 음성 인식을 지원하지 않아요');toggleTyping();return}
+  try{
+    rec=new SR(); rec.lang='en-US'; rec.continuous=true; rec.interimResults=false;
+    rec.onresult=e=>{
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript.toLowerCase().trim();
+        t.split(/[\s,.\-]+/).filter(Boolean).forEach(tok=>{
+          const m=SPOKEN[tok]; if(m)letters.push(m);
+          else if(/^[a-z]$/.test(tok))letters.push(tok);
+          else if(tok.length>1&&/^[a-z]+$/.test(tok))tok.split('').forEach(c=>letters.push(c));
+        });
+      }
+      drawLetters();
+    };
+    rec.onerror=e=>{document.getElementById('micstate').textContent=
+      e.error==='not-allowed'?'마이크를 쓸 수 없어요. 타이핑으로 바꿔줘.':'잘 안 들렸어. 다시 말해줄래?'};
+    rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};
+    rec.start(); listening=true;
+    document.getElementById('micbtn').textContent='🔴 듣는 중 — 멈추기';
+    document.getElementById('micbtn').classList.add('rec');
+    document.getElementById('micstate').textContent='듣고 있어. 한 글자씩 또박또박!';
+  }catch(e){toast('마이크를 시작할 수 없어요');toggleTyping()}
+}
+function stopMic(){
+  listening=false; if(rec){try{rec.stop()}catch(e){}}
+  document.getElementById('micbtn').textContent='🎤 말하기 시작';
+  document.getElementById('micbtn').classList.remove('rec');
+  document.getElementById('micstate').textContent='마이크를 누르고 알파벳을 말해줘';
+}
+function submitTest(){
+  const ans=typing?document.getElementById('testinput').value.trim().toLowerCase():letters.join('');
+  if(!ans){toast('아직 아무것도 없어');return}
+  const ok=ans===cur[1].toLowerCase();
+  const s=ws(cur[0]);
+  if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass' }
+  tres.push({w:cur[1],ok,typed:typing,ans});
+  stopMic(); ti++;
+  if(ti<tq.length){loadQ()} else finishTest();
+}
+function quitTest(){stopMic();speechSynthesis.cancel();go('s-home')}
+function finishTest(){
+  let xp=0,coin=0; const okn=tres.filter(r=>r.ok).length;
+  tres.forEach(r=>{if(r.ok){xp+=r.typed?15:30;coin+=r.typed?2:5}});
+  if(okn===tres.length){xp+=50;coin+=10}
+  const allVoice=tres.every(r=>r.ok&&!r.typed);
+  if(allVoice&&tres.length>0)xp+=20;
+  S.xp+=xp;S.coin+=coin;bumpStreak();save();
+  document.getElementById('res-ok').textContent=`${okn}/${tres.length}`;
+  document.getElementById('res-xp').textContent=xp;
+  document.getElementById('res-coin').textContent=coin;
+  document.getElementById('res-title').textContent=okn===tres.length?'다 맞았어!':'잘했어!';
+  document.getElementById('res-sub').textContent=allVoice
+    ? '전부 말하기로 통과했어요 — 마이크 배지 +20 XP'
+    : (okn<tres.length?'틀린 단어는 연습장에서 다시 만나요.':'');
+  document.getElementById('res-list').innerHTML=tres.map(r=>
+    `<div class="res"><span class="mark ${r.ok?'o':'x'}">${r.ok?'○':'△'}</span>
+      <span class="w">${r.w}</span>
+      ${r.ok?'':`<span class="via en" style="color:var(--ink-3)">${r.ans||'—'}</span>`}
+      <span class="via">${r.typed?'타이핑':'말하기'}</span></div>`).join('');
+  go('s-result');
+}
+
+/* ---------- parent ---------- */
+function openParent(){go('s-parent')}
+function renderVoices(){
+  const sel=document.getElementById('voicesel'); if(!sel)return;
+  if(!voices.length){sel.innerHTML='<option>사용할 수 있는 영어 목소리가 없어요</option>';return}
+  sel.innerHTML=voices.map(v=>{
+    const good=/premium|enhanced|neural|natural|siri/i.test(v.name)?' ★':'';
+    return `<option value="${v.voiceURI}"${voice&&v.voiceURI===voice.voiceURI?' selected':''}>${v.name} (${v.lang})${good}</option>`;
+  }).join('');
+}
+function setVoice(uri){
+  voice=voices.find(v=>v.voiceURI===uri)||voice;
+  try{localStorage.setItem(VKEY,uri)}catch(e){}
+  testVoice();
+}
+function testVoice(){ sayEn('hesitate') }
+function renderParent(){
+  renderVoices();
+  const mine=myWords();
+  const rows=[['B','Basic'],['C','Challenging']].filter(r=>PROFILES[pid].sections.includes(r[0]));
+  document.getElementById('sectbl').innerHTML=rows.map(([k,label])=>{
+    const g=mine.filter(w=>w[3]===k);
+    const m=g.filter(w=>(S.w[w[0]]||{}).st==='master').length;
+    const p=g.filter(w=>(S.w[w[0]]||{}).st==='pass').length;
+    const l=g.filter(w=>{const s=S.w[w[0]];return s&&s.st==='learning'}).length;
+    return `<tr><td>${label}</td><td class="tnum">${g.length}</td><td class="tnum">${m}</td>
+            <td class="tnum">${p}</td><td class="tnum">${l}</td></tr>`}).join('');
+  document.getElementById('wordgrid').innerHTML=mine.map(w=>{
+    const s=S.w[w[0]]||{}; const cls=s.st==='master'?'m':s.st==='pass'?'p':s.st==='learning'?'l':'';
+    return `<div class="wcell"><span class="n tnum">${w[0]}</span><span class="w">${w[1]}</span>
+            <span class="s ${cls}"></span></div>`}).join('');
+}
+function resetProfile(){
+  if(!confirm('이 아이의 기록을 모두 지울까요?'))return;
+  S=load('__new__'); save(); toast('기록을 지웠어요'); go('s-home');
+}
+</script>
