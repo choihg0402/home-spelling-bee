@@ -13,6 +13,7 @@
   --good:#2E7D4F; --good-soft:#DCF0E3;
   --retry:#3A6FB0; --retry-soft:#DEEAF7;
   --tile:#FDFBF6; --tile-edge:#C7B79C; --tile-ink:#2A2318;
+  --sky:#DCEBF7; --grass:#D8EBD2;
   --shadow:0 1px 2px rgba(27,33,48,.07), 0 10px 28px rgba(27,33,48,.07);
   --r-s:8px; --r-m:14px; --r-l:22px;
 }
@@ -26,6 +27,7 @@
     --good:#5FBE87; --good-soft:#1B3627;
     --retry:#79ADE4; --retry-soft:#1B2C41;
     --tile:#F0E9DC; --tile-edge:#8E7F65; --tile-ink:#241E14;
+    --sky:#1B2A3A; --grass:#1C3026;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
   }
 }
@@ -38,6 +40,7 @@
   --good:#5FBE87; --good-soft:#1B3627;
   --retry:#79ADE4; --retry-soft:#1B2C41;
   --tile:#F0E9DC; --tile-edge:#8E7F65; --tile-ink:#241E14;
+  --sky:#1B2A3A; --grass:#1C3026;
   --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
 }
 
@@ -190,6 +193,57 @@ img.face{border:2px solid var(--line)}
 @keyframes pulse{50%{opacity:.45}}
 .qcount{font-family:"Jua",sans-serif;color:var(--ink-3)}
 
+/* ---------- garden & shop ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:6px}
+.big-num{font-family:"Jua",sans-serif;font-size:38px;line-height:1.15;margin-top:6px;
+  font-variant-numeric:tabular-nums}
+.big-num small{font-size:17px;color:var(--ink-3);margin-left:4px}
+.sub{font-size:13px;color:var(--ink-3);margin:6px 0 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media (max-width:760px){.two-col{grid-template-columns:1fr}}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px;align-items:end}
+.wcol{display:flex;flex-direction:column;align-items:center;gap:5px}
+.wbars{display:flex;align-items:flex-end;gap:3px;height:96px}
+.wbars i{width:9px;border-radius:3px 3px 0 0;min-height:2px;display:block}
+.wbars i.p{background:var(--practice)}
+.wbars i.t{background:var(--stage)}
+.wbars i.o{background:var(--good)}
+.wcol .d{font-size:12px;color:var(--ink-3)}
+.wcol .d.today{color:var(--practice);font-family:"Jua",sans-serif}
+.miss-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:230px;overflow:auto}
+.missrow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-s);background:var(--sunk)}
+.missrow .w{font-family:"Fredoka",sans-serif;font-size:16px;flex:1}
+.missrow .n{font-size:13px;color:var(--retry);font-family:"Jua",sans-serif}
+.garden{margin-top:14px;padding:18px;background:linear-gradient(180deg,var(--sky) 0%,var(--grass) 100%);
+  border:1px solid var(--line);min-height:230px;display:grid;
+  grid-template-columns:repeat(8,1fr);gap:6px;align-content:start}
+@media (max-width:700px){.garden{grid-template-columns:repeat(5,1fr)}}
+.garden .slot{aspect-ratio:1;display:grid;place-items:center;font-size:30px;border-radius:10px;
+  transition:transform .1s}
+.garden .slot.filled:active{transform:scale(.9)}
+.garden .slot.empty{border:2px dashed rgba(125,125,125,.28)}
+.garden .pet-here{grid-column:span 2;font-size:44px;display:grid;place-items:center}
+.tray-items,.shop{display:grid;gap:10px;margin-top:10px}
+.tray-items{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.shop{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.item{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);
+  padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  box-shadow:var(--shadow);transition:transform .08s}
+.item:active{transform:translateY(2px)}
+.item .e{font-size:32px;line-height:1.1}
+.item .n{font-size:13px;color:var(--ink-2)}
+.item .c{font-size:13px;color:var(--stage);font-family:"Jua",sans-serif}
+.item .own{font-size:12px;color:var(--ink-3)}
+.item[disabled]{opacity:.45}
+.empty-note{color:var(--ink-3);font-size:15px;padding:14px 0}
+.dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:10px}
+.dexcell{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 6px;
+  text-align:center}
+.dexcell .e{font-size:34px;line-height:1.15}
+.dexcell .n{font-size:13px;color:var(--ink-2)}
+.dexcell.locked .e{filter:grayscale(1);opacity:.3}
+.dexcell.locked .n{color:var(--ink-3)}
+
 /* ---------- result & parent ---------- */
 .res-list{display:flex;flex-direction:column;gap:8px;max-height:44dvh;overflow:auto;margin-top:12px}
 .res{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r-m);background:var(--sunk)}
@@ -292,6 +346,12 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <span id="pet"></span>
         <h3 id="pet-name" style="font-size:20px">알</h3>
         <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next">30 XP 더 모으면 부화해요</p>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" onclick="go('s-garden')">🌱 내 정원 <b class="tnum" id="gardencount">0</b></button>
+          <button class="btn" onclick="go('s-shop')">🛒 상점</button>
+        </div>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--ink-3)">
+          도감 <b class="tnum" id="dexcount">0</b> / <span class="tnum" id="dexall">5</span></p>
       </div>
       <div class="card">
         <p class="eyebrow">단어 진행</p>
@@ -490,22 +550,107 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   </div>
 </section>
 
-<!-- ============ PARENT ============ -->
-<section id="s-parent" class="screen">
+<!-- ============ GARDEN ============ -->
+<section id="s-garden" class="screen">
   <header class="topbar">
     <button class="btn ghost" onclick="go('s-home')">← 홈</button>
     <span class="spacer"></span>
-    <span class="chip">부모 화면</span>
+    <span class="chip stage"><span class="dot"></span><b class="tnum" id="g-coin">0</b> 코인</span>
+    <button class="btn" onclick="go('s-shop')">🛒 상점</button>
   </header>
-  <div style="width:100%;max-width:960px;margin:0 auto;overflow:auto">
-    <h1 style="font-size:28px">진행 상황</h1>
-    <div class="note" style="margin:12px 0">
-      <b>이 화면은 껍데기입니다.</b> 잠금, 두 아이 통합 보기, 자주 틀리는 단어, 7일 기록은
-      기획서 §7의 3차 범위예요. 지금은 이 기기의 이 아이 기록만 보입니다.
+
+  <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:30px">내 정원</h1>
+    <p style="color:var(--ink-2);margin:4px 0 0" id="g-help">
+      아래 보관함에서 아이템을 누르면 정원에 놓여요. 정원에 있는 걸 누르면 다시 가져와요.
+    </p>
+
+    <div class="card garden" id="garden"></div>
+
+    <p class="eyebrow" style="margin-top:18px">보관함</p>
+    <div class="tray-items" id="g-tray"></div>
+
+    <p class="eyebrow" style="margin-top:22px">도감 — 다 키운 친구들</p>
+    <div class="dex" id="dex"></div>
+  </div>
+</section>
+
+<!-- ============ SHOP ============ -->
+<section id="s-shop" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-garden')">← 정원</button>
+    <span class="spacer"></span>
+    <span class="chip stage"><span class="dot"></span><b class="tnum" id="s-coin">0</b> 코인</span>
+  </header>
+  <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:30px">상점</h1>
+    <p style="color:var(--ink-2);margin:4px 0 18px">
+      코인은 시험장에서 가장 많이 받을 수 있어요.
+    </p>
+    <div class="shop" id="shop"></div>
+  </div>
+</section>
+
+<!-- ============ PARENT ============ -->
+<section id="s-parent" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="exitParent()">← 홈</button>
+    <span class="spacer"></span>
+    <span class="seg" id="kidseg"></span>
+  </header>
+
+  <div style="width:100%;max-width:1000px;margin:0 auto;overflow:auto">
+
+    <div class="pgrid">
+      <div class="card">
+        <p class="eyebrow">대회까지</p>
+        <div class="big-num"><span class="tnum" id="p-dday">0</span><small>일</small></div>
+        <p class="sub" id="p-pace"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">마스터</p>
+        <div class="big-num"><span class="tnum" id="p-master">0</span><small id="p-total">/0</small></div>
+        <div class="bar" style="margin-top:10px"><i class="m" id="p-bm"></i><i class="p" id="p-bp"></i><i class="l" id="p-bl"></i></div>
+        <p class="sub" id="p-dist"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">연습 : 시험</p>
+        <div class="big-num"><span class="tnum" id="p-ratio">0 : 0</span></div>
+        <p class="sub" id="p-ratio-note"></p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">말하기 : 타이핑</p>
+        <div class="big-num"><span class="tnum" id="p-voice">—</span></div>
+        <p class="sub" id="p-voice-note"></p>
+      </div>
     </div>
-    <div class="card" style="margin-bottom:14px">
+
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">최근 7일</p>
+      <div class="week" id="p-week"></div>
+      <div class="legend" style="margin-top:12px">
+        <s><i style="background:var(--practice)"></i>연습한 단어</s>
+        <s><i style="background:var(--stage)"></i>테스트 본 단어</s>
+        <s><i style="background:var(--good)"></i>테스트 정답</s>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <p class="eyebrow">자주 틀리는 단어</p>
+        <p class="sub">집중 지도가 필요한 단어입니다.</p>
+        <div class="miss-list" id="p-miss"></div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">정답을 보고 맞힌 단어</p>
+        <p class="sub">퍼즐·쓰기에서 정답을 본 뒤 맞힌 단어입니다. 아직 외운 게 아닐 수 있어요.</p>
+        <div class="miss-list" id="p-peek"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
       <p class="eyebrow">영어 발음 목소리</p>
-      <p style="color:var(--ink-2);font-size:15px;margin:8px 0 12px">
+      <p class="sub" style="margin:8px 0 12px">
         기기에 설치된 영어 목소리 중에서 고를 수 있어요. 위쪽일수록 자연스러운 목소리입니다.
       </p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -515,20 +660,25 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <button class="btn" onclick="testVoice()">들어보기</button>
       </div>
       <div class="note" style="margin-top:14px">
-        <b>아이패드에서 발음이 밋밋하게 들린다면</b> 설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → English 에서
-        <b>Enhanced</b> 나 <b>Premium</b> 목소리를 내려받아 보세요. 기본 목소리보다 훨씬 자연스럽고,
-        받고 나면 위 목록 맨 위에 나타납니다.
+        <b>발음이 밋밋하게 들린다면</b> 아이패드 설정 → 손쉬운 사용 → 콘텐츠 말하기 → 음성 → English 에서
+        <b>Enhanced</b> 나 <b>Premium</b> 목소리를 내려받아 보세요. 받고 나면 목록 맨 위에 ★ 로 나타납니다.
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" style="margin-top:14px">
       <p class="eyebrow">단어 목록 — <span id="listname"></span></p>
       <table class="sec">
-        <tr><th>묶음</th><th>단어 수</th><th>마스터</th><th>통과</th><th>연습중</th></tr>
+        <tr><th>묶음</th><th>단어 수</th><th>마스터</th><th>통과</th><th>연습중</th><th>미시작</th></tr>
         <tbody id="sectbl"></tbody>
       </table>
       <div class="wordgrid" id="wordgrid"></div>
     </div>
+
+    <div class="note" style="margin-top:14px">
+      <b>이 기기에 있는 기록만 보입니다.</b> 두 아이가 각자 기기를 쓰므로, 한 화면에서 함께 보려면
+      동기화가 필요합니다 (기획서 §5.2 — 이후 단계).
+    </div>
+
     <div class="footer-bar" style="justify-content:flex-start;margin:16px 0">
       <button class="btn" onclick="resetProfile()">이 아이 기록 지우기</button>
     </div>
@@ -552,13 +702,21 @@ const CONTEST=new Date('2026-09-21T00:00:00');
 let pid=null, S=null, sec='all', testLen=5;
 
 const key=id=>'sb_'+id;
+function blank(){return {xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{},list:null,
+  petXp:0,petIdx:0,dex:[],items:{},garden:[],hist:{},pin:null}}
 function load(id){
   let d=null; try{d=JSON.parse(localStorage.getItem(key(id))||'null')}catch(e){}
-  return d||{xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{},list:null};
+  if(!d)return blank();
+  // 예전 저장본에는 정원·도감 항목이 없다. 지금까지 모은 XP는 첫 친구에게 그대로 얹어준다.
+  if(d.petXp===undefined)d.petXp=Math.min(d.xp||0,growCost(0));
+  return Object.assign(blank(),d);
+}
+function todayHist(){
+  const t=today(); return S.hist[t]||(S.hist[t]={p:0,tw:0,tok:0,voice:0,typed:0});
 }
 function save(){ try{localStorage.setItem(key(pid),JSON.stringify(S))}catch(e){} }
 function today(){return new Date().toISOString().slice(0,10)}
-function ws(n){ return S.w[n]||(S.w[n]={p:0,ok:0,voice:0,pass:0,st:'new'}) }
+function ws(n){ return S.w[n]||(S.w[n]={p:0,ok:0,voice:0,pass:0,miss:0,peek:0,st:'new'}) }
 
 function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.includes(w[3])) }
 function poolWords(){ const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec) }
@@ -568,9 +726,11 @@ function grantPractice(){
   const t=today(); if(S.day.d!==t)S.day={d:t,xp:0,coin:0};
   let xp=Math.min(5,CAP.xp-S.day.xp), coin=Math.min(1,CAP.coin-S.day.coin);
   xp=Math.max(0,xp); coin=Math.max(0,coin);
-  S.day.xp+=xp; S.day.coin+=coin; S.xp+=xp; S.coin+=coin;
+  S.day.xp+=xp; S.day.coin+=coin; S.coin+=coin;
+  const grown=addXP(xp);
+  todayHist().p++;
   bumpStreak();
-  return {xp,coin,capped:xp===0};
+  return {xp,coin,capped:xp===0,grown};
 }
 function bumpStreak(){
   const t=today(); if(S.last===t)return;
@@ -649,6 +809,8 @@ function go(id){
   if(id==='s-pick')renderPick();
   if(id==='s-tsetup')renderSetup();
   if(id==='s-parent')renderParent();
+  if(id==='s-garden')renderGarden();
+  if(id==='s-shop')renderShop();
   window.scrollTo(0,0);
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
@@ -666,17 +828,73 @@ function pickProfile(id){
 /* ---------- character ----------
    스펠링'비'에 맞춘 꿀벌 성장. 이모지는 기기 글꼴이 그리므로 라이선스가 필요 없고,
    아이패드에서는 애플 이모지로 또렷하게 나온다. */
-const STAGES=[
-  {xp:0,   emoji:'🥚',  name:'알',       tip:'단어를 맞히면 알이 흔들려요'},
-  {xp:30,  emoji:'🐛',  name:'애벌레',   tip:'꼬물꼬물 자라는 중'},
-  {xp:60,  emoji:'🐝',  name:'꿀벌',     tip:'드디어 날개가 생겼어요'},
-  {xp:150, emoji:'🌻',  name:'꽃밭 꿀벌', tip:'자기 꽃밭이 생겼어요'},
-  {xp:300, emoji:'👑',  name:'여왕벌',   tip:'다 자랐어요!'}
+const SPECIES=[
+  {key:'bee',  name:'꿀벌',     home:'🐝',
+   st:['🥚','🐛','🐝','🍯','👑'], sn:['알','애벌레','꿀벌','꿀단지 꿀벌','여왕벌']},
+  {key:'fly',  name:'나비',     home:'🦋',
+   st:['🥚','🐛','🦋','🌸','🌈'], sn:['알','애벌레','나비','꽃나비','무지개 나비']},
+  {key:'lady', name:'무당벌레',  home:'🐞',
+   st:['🥚','🐛','🐞','🍀','✨'], sn:['알','애벌레','무당벌레','네잎 무당벌레','반짝 무당벌레']},
+  {key:'owl',  name:'부엉이',   home:'🦉',
+   st:['🥚','🐣','🦉','🌙','⭐'], sn:['알','아기새','부엉이','달빛 부엉이','별 부엉이']},
+  {key:'cri',  name:'귀뚜라미',  home:'🦗',
+   st:['🥚','🐛','🦗','🍃','🌟'], sn:['알','애벌레','귀뚜라미','풀잎 귀뚜라미','빛나는 귀뚜라미']}
 ];
-function stageOf(xp){ let i=0; STAGES.forEach((s,k)=>{if(xp>=s.xp)i=k}); return i }
-function petHTML(xp,size){
-  const i=stageOf(xp), s=STAGES[i];
-  return `<span class="pet-emoji" style="font-size:${size}px" role="img" aria-label="${s.name}">${s.emoji}</span>`;
+/* 친구를 키우는 비용은 뒤로 갈수록 올라간다.
+   같은 값으로 두면 하루 한 마리씩 졸업해서 며칠 만에 볼 게 없어진다.
+   300 / 450 / 600 / 750 / 900 = 다 모으는 데 3000 XP. */
+const growCost = i => 300 + i*150;
+/* 마지막 단계(여왕벌 등)는 비용의 75%에서 나타난다.
+   100%에 두면 졸업과 동시에 지나가 아이가 볼 틈이 없다. */
+const RATIO=[0, .10, .27, .50, .75];
+
+const SHOP=[
+  {id:'tulip', e:'🌷', n:'튤립',        c:5},
+  {id:'sun',   e:'🌻', n:'해바라기',     c:8},
+  {id:'clover',e:'🍀', n:'네잎클로버',   c:10},
+  {id:'mush',  e:'🍄', n:'버섯',        c:12},
+  {id:'cactus',e:'🌵', n:'선인장',      c:14},
+  {id:'tree',  e:'🌳', n:'나무',        c:15},
+  {id:'star',  e:'⭐', n:'별',          c:25},
+  {id:'rain',  e:'🌈', n:'무지개',      c:30},
+  {id:'cat',   e:'🐱', n:'고양이 친구',  c:35},
+  {id:'bunny', e:'🐰', n:'토끼 친구',    c:35},
+  {id:'fount', e:'⛲', n:'분수',        c:40},
+  {id:'house', e:'🏡', n:'작은 집',      c:45},
+  {id:'cake',  e:'🎂', n:'케이크',       c:50},
+  {id:'crown', e:'👑', n:'왕관',        c:60}
+];
+const shopItem=id=>SHOP.find(x=>x.id===id);
+const curSpec =()=>SPECIES[Math.min(S.petIdx,SPECIES.length-1)];
+function stageOf(px,idx){
+  const c=growCost(idx===undefined?(S?S.petIdx:0):idx);
+  let i=0; RATIO.forEach((r,k)=>{if(px>=r*c)i=k}); return i;
+}
+const nextStepXP=()=>{
+  const c=growCost(S.petIdx), i=stageOf(S.petXp);
+  return i<RATIO.length-1 ? Math.ceil(RATIO[i+1]*c)-S.petXp : c-S.petXp;
+};
+
+function petHTML(px,size){
+  const sp=curSpec(), i=stageOf(px);
+  return `<span class="pet-emoji" style="font-size:${size}px" role="img" aria-label="${sp.sn[i]}">${sp.st[i]}</span>`;
+}
+/* XP는 두 곳에 쌓인다: 전체 누적(S.xp)과 지금 키우는 친구(S.petXp).
+   친구가 다 자라면 도감과 정원에 남고, 새 알을 받는다. */
+function addXP(n){
+  S.xp+=n; S.petXp+=n;
+  let grown=null;
+  while(S.petIdx<SPECIES.length-1 && S.petXp>=growCost(S.petIdx)){
+    const sp=SPECIES[S.petIdx];
+    if(!S.dex.includes(sp.key))S.dex.push(sp.key);
+    S.petXp-=growCost(S.petIdx); S.petIdx++; grown=sp;
+  }
+  // 마지막 친구까지 다 키우면 도감을 채우고 더는 졸업하지 않는다.
+  const last=SPECIES[SPECIES.length-1];
+  if(S.petIdx===SPECIES.length-1 && S.petXp>=growCost(S.petIdx) && !S.dex.includes(last.key)){
+    S.dex.push(last.key); grown=last; S.petXp=growCost(S.petIdx);
+  }
+  return grown;
 }
 
 /* ---------- home ---------- */
@@ -691,10 +909,16 @@ function renderHome(){
   if(S.day.d!==today())S.day={d:today(),xp:0,coin:0};
   document.getElementById('capxp').textContent=S.day.xp;
 
-  const i=stageOf(S.xp), st=STAGES[i], nx=STAGES[i+1];
-  document.getElementById('pet').innerHTML=petHTML(S.xp,104);
-  document.getElementById('pet-name').textContent=st.name;
-  document.getElementById('pet-next').textContent=nx?`${nx.xp-S.xp} XP 더 모으면 자라요`:st.tip;
+  const sp=curSpec(), i=stageOf(S.petXp), done=S.dex.length>=SPECIES.length;
+  document.getElementById('pet').innerHTML=petHTML(S.petXp,104);
+  document.getElementById('pet-name').textContent=sp.sn[i];
+  document.getElementById('pet-next').textContent = done
+    ? '친구를 모두 모았어요! 이제 정원을 꾸며보자'
+    : (i===RATIO.length-1
+        ? `${nextStepXP()} XP 더 모으면 정원으로 가요`
+        : `${nextStepXP()} XP 더 모으면 자라요`);
+  document.getElementById('dexcount').textContent=S.dex.length;
+  document.getElementById('gardencount').textContent=S.garden.length;
   const chip=document.getElementById('whoface');
   if(chip)chip.innerHTML=faceHTML(pid,26);
 
@@ -852,12 +1076,14 @@ function checkPractice(){
     fb.innerHTML=`<div class="msg good">맞았어! 🎉</div>`+
       (g.capped?`<div class="ans">오늘 연습 보상은 다 받았어 — 시험장에 가면 더 받을 수 있어</div>`
                :`<div class="ans">+${g.xp} XP · +${g.coin} 코인</div>`);
+    if(g.grown)setTimeout(()=>toast(`${g.grown.name}가 다 자라서 정원으로 갔어요! 🎉`),700);
     done++; document.getElementById('play-count').textContent=done;
     document.querySelectorAll('#slots .tile').forEach(t=>t.classList.add('ok'));
     document.getElementById('checkbtn').disabled=true;
     save(); setTimeout(nextPractice,1400);
   }else{
     if(s.st==='new')s.st='learning';
+    s.miss=(s.miss||0)+1;
     tries++;
     document.querySelectorAll('#slots .tile').forEach(t=>{t.classList.add('no');setTimeout(()=>t.classList.remove('no'),400)});
     if(tries===1){
@@ -997,6 +1223,7 @@ function submitTest(){
   if(!ans){toast('아직 아무것도 없어');return}
   const ok=ans===cur[1].toLowerCase();
   const s=ws(cur[0]);
+  if(!ok)s.miss=(s.miss||0)+1;
   if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass' }
   tres.push({w:cur[1],ok,typed:typing,ans});
   stopMic(); ti++;
@@ -1009,7 +1236,11 @@ function finishTest(){
   if(okn===tres.length){xp+=50;coin+=10}
   const allVoice=tres.every(r=>r.ok&&!r.typed);
   if(allVoice&&tres.length>0)xp+=20;
-  S.xp+=xp;S.coin+=coin;bumpStreak();save();
+  S.coin+=coin; const grown=addXP(xp); bumpStreak();
+  const h=todayHist();
+  tres.forEach(r=>{h.tw++; if(r.ok){h.tok++; r.typed?h.typed++:h.voice++}});
+  save();
+  if(grown)setTimeout(()=>toast(`${grown.name}가 다 자라서 정원으로 갔어요! 🎉`),900);
   document.getElementById('res-ok').textContent=`${okn}/${tres.length}`;
   document.getElementById('res-xp').textContent=xp;
   document.getElementById('res-coin').textContent=coin;
@@ -1025,8 +1256,70 @@ function finishTest(){
   go('s-result');
 }
 
+/* ---------- garden & shop ---------- */
+const SLOTS=24;
+function renderGarden(){
+  document.getElementById('g-coin').textContent=S.coin;
+  const g=document.getElementById('garden');
+  let html=`<span class="pet-here" title="지금 키우는 친구">${curSpec().st[stageOf(S.petXp)]}</span>`;
+  // 다 키운 친구들이 정원에 같이 산다
+  html+=S.dex.map(k=>{const sp=SPECIES.find(x=>x.key===k);
+    return `<span class="slot filled" title="${sp.name}">${sp.home}</span>`}).join('');
+  html+=S.garden.map((id,i)=>{const it=shopItem(id);
+    return it?`<button class="slot filled" onclick="unplace2(${i})" title="${it.n} — 눌러서 가져오기">${it.e}</button>`:''}).join('');
+  const used=2+S.dex.length+S.garden.length;
+  for(let i=used;i<SLOTS;i++)html+='<span class="slot empty"></span>';
+  g.innerHTML=html;
+
+  const owned=Object.entries(S.items).filter(([,n])=>n>0);
+  const tray=document.getElementById('g-tray');
+  tray.innerHTML = owned.length
+    ? owned.map(([id,n])=>{const it=shopItem(id); if(!it)return '';
+        return `<button class="item" onclick="place2('${id}')">
+          <span class="e">${it.e}</span><span class="n">${it.n}</span><span class="own">×${n}</span></button>`}).join('')
+    : '<p class="empty-note">아직 아이템이 없어요. 상점에서 코인으로 사보자!</p>';
+
+  document.getElementById('dexall').textContent=SPECIES.length;
+  document.getElementById('dex').innerHTML=SPECIES.map(sp=>{
+    const got=S.dex.includes(sp.key);
+    return `<div class="dexcell${got?'':' locked'}"><div class="e">${got?sp.home:'❔'}</div>
+            <div class="n">${got?sp.name:'아직'}</div></div>`}).join('');
+}
+function place2(id){
+  if(!S.items[id]){toast('그 아이템이 없어');return}
+  if(2+S.dex.length+S.garden.length>=SLOTS){toast('정원이 꽉 찼어');return}
+  S.items[id]--; if(!S.items[id])delete S.items[id];
+  S.garden.push(id); save(); renderGarden();
+}
+function unplace2(i){
+  const id=S.garden[i]; if(!id)return;
+  S.garden.splice(i,1); S.items[id]=(S.items[id]||0)+1; save(); renderGarden();
+}
+function renderShop(){
+  document.getElementById('s-coin').textContent=S.coin;
+  document.getElementById('shop').innerHTML=SHOP.map(it=>{
+    const own=S.items[it.id]||0, can=S.coin>=it.c;
+    return `<button class="item" ${can?'':'disabled'} onclick="buy('${it.id}')">
+      <span class="e">${it.e}</span><span class="n">${it.n}</span>
+      <span class="c">${it.c} 코인</span>
+      <span class="own">${own?'가진 것 '+own+'개':'&nbsp;'}</span></button>`}).join('');
+}
+function buy(id){
+  const it=shopItem(id); if(!it)return;
+  if(S.coin<it.c){toast('코인이 모자라');return}
+  S.coin-=it.c; S.items[id]=(S.items[id]||0)+1; save();
+  renderShop(); toast(`${it.n} 샀어! 정원에 놓아보자`);
+}
+
 /* ---------- parent ---------- */
-function openParent(){go('s-parent')}
+/* 부모가 대시보드에서 다른 아이를 들여다봐도, 나갈 때는 원래 아이로 돌려놓는다.
+   그러지 않으면 아이가 남의 프로필로 놀게 된다. */
+let parentReturn=null;
+function openParent(){ parentReturn=pid; go('s-parent') }
+function exitParent(){
+  if(parentReturn && parentReturn!==pid){ pid=parentReturn; S=load(pid); }
+  parentReturn=null; go('s-home');
+}
 function renderVoices(){
   const sel=document.getElementById('voicesel'); if(!sel)return;
   if(!voices.length){sel.innerHTML='<option>사용할 수 있는 영어 목소리가 없어요</option>';return}
@@ -1043,20 +1336,103 @@ function setVoice(uri){
 function testVoice(){ sayEn('hesitate') }
 function renderParent(){
   renderVoices();
+  renderKidTabs();
+  const P=PROFILES[pid], mine=myWords(), tot=mine.length;
+
+  // ---- 대회까지 남은 일수와 필요한 진도 ----
+  const days=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
+  document.getElementById('p-dday').textContent=days;
+
+  const st=k=>mine.filter(w=>(S.w[w[0]]||{}).st===k).length;
+  const master=st('master'), pass=st('pass'), learn=st('learning');
+  const untouched=tot-master-pass-learn;
+  document.getElementById('p-master').textContent=master;
+  document.getElementById('p-total').textContent='/'+tot;
+  document.getElementById('p-bm').style.width=(master/tot*100)+'%';
+  document.getElementById('p-bp').style.width=(pass/tot*100)+'%';
+  document.getElementById('p-bl').style.width=(learn/tot*100)+'%';
+  document.getElementById('p-dist').textContent=
+    `통과 ${pass} · 연습중 ${learn} · 미시작 ${untouched}`;
+
+  const left=tot-master;
+  document.getElementById('p-pace').textContent = days<=0
+    ? '대회 날짜가 지났거나 오늘입니다'
+    : (left<=0 ? '모두 마스터했어요' : `남은 ${left}단어 → 하루 ${Math.ceil(left/days)}개씩`);
+
+  // ---- 연습과 시험의 균형 ----
+  const practiced=mine.reduce((a,w)=>a+((S.w[w[0]]||{}).p||0),0);
+  const tested=mine.reduce((a,w)=>a+((S.w[w[0]]||{}).pass||0)+((S.w[w[0]]||{}).miss||0)*0,0);
+  const attempts=Object.values(S.hist).reduce((a,h)=>a+h.tw,0);
+  document.getElementById('p-ratio').textContent=`${practiced} : ${attempts}`;
+  document.getElementById('p-ratio-note').textContent =
+    attempts===0 ? '아직 시험장에 가지 않았어요. 마스터는 말하기로만 올라가요.'
+    : practiced>attempts*6 ? '연습에 비해 시험이 적어요. 실전 연습을 권해요.'
+    : '연습과 시험의 균형이 좋아요.';
+
+  // ---- 말하기 대 타이핑 ----
+  const v=Object.values(S.hist).reduce((a,h)=>a+h.voice,0);
+  const t=Object.values(S.hist).reduce((a,h)=>a+h.typed,0);
+  document.getElementById('p-voice').textContent=(v+t)?`${v} : ${t}`:'—';
+  document.getElementById('p-voice-note').textContent = (v+t)===0
+    ? '아직 통과한 단어가 없어요'
+    : (t>v ? '타이핑이 더 많아요. 소음이 있는 곳은 아닌지 봐주세요.'
+           : '말하기로 잘 통과하고 있어요.');
+
+  // ---- 최근 7일 ----
+  const days7=[...Array(7)].map((_,i)=>{
+    const d=new Date(Date.now()-(6-i)*864e5).toISOString().slice(0,10);
+    return {d, h:S.hist[d]||{p:0,tw:0,tok:0}};
+  });
+  const peak=Math.max(4,...days7.map(x=>Math.max(x.h.p,x.h.tw)));
+  const H=90;
+  document.getElementById('p-week').innerHTML=days7.map((x,i)=>{
+    const lbl=['일','월','화','수','목','금','토'][new Date(x.d+'T00:00:00').getDay()];
+    const bar=(v,c)=>`<i class="${c}" style="height:${Math.round(v/peak*H)||2}px" title="${v}"></i>`;
+    return `<div class="wcol"><div class="wbars">
+      ${bar(x.h.p,'p')}${bar(x.h.tw,'t')}${bar(x.h.tok,'o')}
+      </div><span class="d${i===6?' today':''}">${lbl}</span></div>`}).join('');
+
+  // ---- 자주 틀리는 단어 / 정답을 보고 맞힌 단어 ----
+  const fill=(el,rows,unit,emptyMsg)=>{
+    document.getElementById(el).innerHTML = rows.length
+      ? rows.map(([w,n])=>`<div class="missrow"><span class="w">${w}</span>
+          <span class="n">${n}${unit}</span></div>`).join('')
+      : `<p class="empty-note">${emptyMsg}</p>`;
+  };
+  const miss=mine.map(w=>[w[1],(S.w[w[0]]||{}).miss||0]).filter(r=>r[1]>0)
+                 .sort((a,b)=>b[1]-a[1]).slice(0,10);
+  fill('p-miss',miss,'번','아직 틀린 단어가 없어요.');
+  const peek=mine.map(w=>[w[1],(S.w[w[0]]||{}).peek||0]).filter(r=>r[1]>0)
+                 .sort((a,b)=>b[1]-a[1]).slice(0,10);
+  fill('p-peek',peek,'번','정답을 보지 않고 풀고 있어요.');
+
+  // ---- 단어 목록 ----
   document.getElementById('listname').textContent=listOf(pid).name;
-  const mine=myWords();
-  const rows=[['B','Basic'],['C','Challenging']].filter(r=>PROFILES[pid].sections.includes(r[0]));
+  const rows=[['B','Basic'],['C','Challenging']].filter(r=>P.sections.includes(r[0]));
   document.getElementById('sectbl').innerHTML=rows.map(([k,label])=>{
     const g=mine.filter(w=>w[3]===k);
-    const m=g.filter(w=>(S.w[w[0]]||{}).st==='master').length;
-    const p=g.filter(w=>(S.w[w[0]]||{}).st==='pass').length;
-    const l=g.filter(w=>{const s=S.w[w[0]];return s&&s.st==='learning'}).length;
-    return `<tr><td>${label}</td><td class="tnum">${g.length}</td><td class="tnum">${m}</td>
-            <td class="tnum">${p}</td><td class="tnum">${l}</td></tr>`}).join('');
+    const c=key=>g.filter(w=>(S.w[w[0]]||{}).st===key).length;
+    return `<tr><td>${label}</td><td class="tnum">${g.length}</td><td class="tnum">${c('master')}</td>
+            <td class="tnum">${c('pass')}</td><td class="tnum">${c('learning')}</td>
+            <td class="tnum">${g.length-c('master')-c('pass')-c('learning')}</td></tr>`}).join('');
   document.getElementById('wordgrid').innerHTML=mine.map(w=>{
-    const s=S.w[w[0]]||{}; const cls=s.st==='master'?'m':s.st==='pass'?'p':s.st==='learning'?'l':'';
+    const ws=S.w[w[0]]||{}; const cls=ws.st==='master'?'m':ws.st==='pass'?'p':ws.st==='learning'?'l':'';
     return `<div class="wcell"><span class="n tnum">${w[0]}</span><span class="w">${w[1]}</span>
             <span class="s ${cls}"></span></div>`}).join('');
+}
+/* 이 기기에 기록이 있는 아이들을 탭으로 전환한다 */
+function renderKidTabs(){
+  document.getElementById('kidseg').innerHTML=Object.keys(PROFILES).map(id=>{
+    const has=!!localStorage.getItem(key(id));
+    return `<button class="${id===pid?'on':''}" onclick="switchKid('${id}')"${has?'':' style="opacity:.45"'}>${PROFILES[id].name}</button>`;
+  }).join('');
+}
+function switchKid(id){
+  if(id===pid)return;
+  pid=id; S=load(id);
+  const want=PROFILES[id].list;
+  if(S.list!==want){S.w={};S.list=want;save()}
+  renderParent();
 }
 function resetProfile(){
   if(!confirm('이 아이의 기록을 모두 지울까요?'))return;
