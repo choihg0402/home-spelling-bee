@@ -194,6 +194,24 @@ img.face{border:2px solid var(--line)}
 .qcount{font-family:"Jua",sans-serif;color:var(--ink-3)}
 
 /* ---------- garden & shop ---------- */
+.quiz-entry{display:flex;align-items:center;gap:16px;width:100%;text-align:left;margin-top:16px;
+  border-left:7px solid var(--stage)}
+.quiz-entry .qe-icon{font-size:38px;line-height:1}
+.quiz-entry .qe-text{flex:1;display:flex;flex-direction:column}
+.quiz-entry .qe-text b{font-family:"Jua",sans-serif;font-weight:400;font-size:21px}
+.quiz-entry .qe-text span{font-size:14px;color:var(--ink-2)}
+.quiz-entry .qe-go{font-size:22px;color:var(--ink-3)}
+.q-def-card{text-align:center;max-width:760px;margin:0 auto;width:100%}
+.q-def{font-size:23px;line-height:1.6;margin:10px 0 0;text-wrap:balance}
+.q-def ,.sd{word-break:break-word}
+.study{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:16px}
+.scard{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:16px 18px;
+  box-shadow:var(--shadow);cursor:pointer}
+.scard .sw{font-size:26px;color:var(--practice);font-weight:600;letter-spacing:.02em}
+.scard .sd{font-size:15px;color:var(--ink-2);margin-top:6px}
+.scard .sd .hl{color:var(--practice);font-weight:600}
+.scard .stap{font-size:12px;color:var(--ink-3);margin-top:8px;min-height:0}
+.scard.hide .sw{visibility:hidden}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:6px}
 .big-num{font-family:"Jua",sans-serif;font-size:38px;line-height:1.15;margin-top:6px;
   font-variant-numeric:tabular-nums}
@@ -307,6 +325,15 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         </span>
       </div>
     </div>
+    <button class="card quiz-entry" onclick="openQuiz()">
+      <span class="qe-icon">🧩</span>
+      <span class="qe-text">
+        <b>유진 · 단어 퀴즈</b>
+        <span>뜻을 보고 스펠링 맞추기 · 소리 없이</span>
+      </span>
+      <span class="qe-go">→</span>
+    </button>
+
     <p style="color:var(--ink-3);font-size:14px;margin-top:22px">
       기록은 이 기기에만 저장됩니다. 기획서 §5.2 — MVP는 로컬 저장.
     </p>
@@ -591,6 +618,96 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   </div>
 </section>
 
+<!-- ============ WORD QUIZ HOME ============ -->
+<section id="s-quizhome" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-profile')">← 처음으로</button>
+    <span class="spacer"></span>
+    <span class="chip">단어 퀴즈</span>
+  </header>
+  <div style="margin:auto;width:100%;max-width:720px">
+    <p class="eyebrow">유진</p>
+    <h1 style="font-size:34px;margin:6px 0 2px">단어 퀴즈</h1>
+    <p style="color:var(--ink-2);margin:0" id="q-hint"></p>
+
+    <div class="card" style="margin-top:18px">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="big-num"><span class="tnum" id="q-solved">0</span><small>/ <span class="tnum" id="q-all">12</span> 맞힘</small></span>
+      </div>
+      <div class="bar" style="margin-top:12px"><i class="m" id="q-bar"></i></div>
+    </div>
+
+    <div class="profiles" style="margin-top:16px">
+      <button class="card pcard" onclick="go('s-study')">
+        <span class="ava" style="font-size:44px;display:grid;place-items:center">📖</span>
+        <span><h2>학습하기</h2><p>뜻과 스펠링을 함께 보며 외워요</p></span>
+      </button>
+      <button class="card pcard" onclick="startQuiz()">
+        <span class="ava" style="font-size:44px;display:grid;place-items:center">🧩</span>
+        <span><h2>퍼즐 풀기</h2><p>뜻만 보고 스펠링을 맞춰요</p></span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STUDY ============ -->
+<section id="s-study" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-quizhome')">← 뒤로</button>
+    <span class="spacer"></span>
+    <button class="btn" id="study-toggle" onclick="toggleStudy()">단어 가리기</button>
+  </header>
+  <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:30px">학습하기</h1>
+    <p style="color:var(--ink-2);margin:4px 0 0">
+      뜻 안에서 그 단어가 어떻게 쓰이는지 함께 보세요. 카드를 누르면 단어를 가렸다 보였다 할 수 있어요.
+    </p>
+    <div class="study" id="study"></div>
+  </div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section id="s-quiz" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="quitQuiz()">← 그만하기</button>
+    <span class="spacer"></span>
+    <span class="qcount"><span class="tnum" id="q-now">1</span> / <span class="tnum" id="q-total">12</span></span>
+  </header>
+
+  <div class="play">
+    <div class="card q-def-card">
+      <p class="eyebrow">이 뜻에 맞는 단어는?</p>
+      <p class="q-def" id="q-def"></p>
+    </div>
+
+    <div>
+      <div class="slots" id="q-slots"></div>
+      <div class="tray" id="q-tray" style="margin-top:18px"></div>
+    </div>
+
+    <div class="feedback" id="q-fb"></div>
+
+    <div class="footer-bar">
+      <button class="btn big" id="q-check" onclick="qCheck()">확인</button>
+      <button class="btn big ghost" onclick="qNext()">건너뛰기 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUIZ DONE ============ -->
+<section id="s-quizdone" class="screen">
+  <div style="margin:auto;width:100%;max-width:560px;text-align:center">
+    <div style="font-size:64px">🎉</div>
+    <h1 style="font-size:34px;margin-top:8px">다 풀었어!</h1>
+    <p style="color:var(--ink-2)">한 번에 맞힌 단어</p>
+    <div class="big-num" style="font-size:48px" id="q-final">0 / 12</div>
+    <div class="footer-bar" style="justify-content:center;margin-top:20px">
+      <button class="btn big primary" onclick="startQuiz()">한 번 더</button>
+      <button class="btn big ghost" onclick="go('s-quizhome')">돌아가기</button>
+    </div>
+  </div>
+</section>
+
 <!-- ============ PARENT ============ -->
 <section id="s-parent" class="screen">
   <header class="topbar">
@@ -810,6 +927,8 @@ function go(id){
   if(id==='s-tsetup')renderSetup();
   if(id==='s-parent')renderParent();
   if(id==='s-garden')renderGarden();
+  if(id==='s-quizhome')renderQuizHome();
+  if(id==='s-study')renderStudy();
   if(id==='s-shop')renderShop();
   window.scrollTo(0,0);
 }
@@ -1255,6 +1374,149 @@ function finishTest(){
       <span class="via">${r.typed?'타이핑':'말하기'}</span></div>`).join('');
   go('s-result');
 }
+
+/* ---------- 유진 단어 퀴즈 ----------
+   소리 없이 뜻만 보고 스펠링을 맞추는 모드.
+   원문의 오타(cruched → crushed)와 대소문자·마침표를 바로잡아 넣었다. */
+const QUIZ_WORDS=[
+ ['individuality','Your individuality is what makes you different from everyone else.'],
+ ['unique','Something or someone that is unique is one of a kind.'],
+ ['feature','A feature is an important or interesting part of a person or thing.'],
+ ['personality','Your personality is your nature or all the ways you think, feel, and act.'],
+ ['clash','Colors or patterns that clash look strange or ugly together.'],
+ ['winking','You are winking when you quickly blink one eye at someone because you share a joke or secret.'],
+ ['suggest','If you suggest something, you give ideas or plans for someone to think about.'],
+ ['scrunches','If something scrunches up, it is squeezed or crushed into a different shape.'],
+ ['mushy','Something that is mushy is soft and squishy.'],
+ ['usual','The usual way to do something is the way that it is done most often.'],
+ ['bilingual','People who are bilingual can speak two languages.'],
+ ['mismatched','Things that are mismatched do not fit or belong together.']
+];
+/* 문제를 낼 때는 뜻 문장에서 그 단어만 빈칸으로 바꾼다.
+   나머지는 원문 그대로라 설명하는 뜻이 달라지지 않는다. */
+const QRE=w=>new RegExp('\\b'+w+'\\b','ig');
+const blankOut=(w,d)=>d.replace(QRE(w),'______');
+const markWord=(w,d)=>d.replace(QRE(w),m=>'<b class="hl">'+m+'</b>');
+
+let qState={solved:{},best:0}, qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
+function qLoad(){
+  try{qState=JSON.parse(localStorage.getItem('sb_quiz'))||{}}catch(e){qState={}}
+  if(!qState.solved)qState.solved={}; if(!qState.best)qState.best=0;
+}
+function qSave(){ try{localStorage.setItem('sb_quiz',JSON.stringify(qState))}catch(e){} }
+function openQuiz(){ qLoad(); go('s-quizhome') }
+
+function renderQuizHome(){
+  const solved=QUIZ_WORDS.filter(([w])=>qState.solved[w]).length;
+  document.getElementById('q-solved').textContent=solved;
+  document.getElementById('q-all').textContent=QUIZ_WORDS.length;
+  document.getElementById('q-bar').style.width=(solved/QUIZ_WORDS.length*100)+'%';
+  document.getElementById('q-hint').textContent = solved===QUIZ_WORDS.length
+    ? '12개를 모두 맞혔어요! 한 번 더 돌아볼까요?'
+    : '뜻을 읽고 알파벳 타일로 단어를 만들어요. 소리는 나오지 않아요.';
+}
+
+/* ---------- 학습 화면 ---------- */
+function renderStudy(){
+  document.getElementById('study-toggle').textContent = studyHide ? '단어 보이기' : '단어 가리기';
+  document.getElementById('study').innerHTML=QUIZ_WORDS.map(([w,d])=>
+    '<div class="scard'+(studyHide?' hide':'')+'" onclick="this.classList.toggle(\'hide\')">'+
+      '<div class="sw en">'+w+'</div>'+
+      '<div class="sd">'+(studyHide?blankOut(w,d):markWord(w,d))+'</div>'+
+      '<div class="stap">'+(studyHide?'눌러서 단어 보기':'')+'</div>'+
+    '</div>').join('');
+}
+function toggleStudy(){ studyHide=!studyHide; renderStudy() }
+
+/* ---------- 퍼즐 퀴즈 ---------- */
+function startQuiz(){
+  qList=QUIZ_WORDS.map((_,i)=>i);
+  for(let i=qList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[qList[i],qList[j]]=[qList[j],qList[i]]}
+  qi=0; qDone=0; go('s-quiz'); qLoadWord();
+}
+const qWord=()=>QUIZ_WORDS[qList[qi]];
+function qLoadWord(){
+  qTries=0;
+  const [w,d]=qWord();
+  document.getElementById('q-now').textContent=qi+1;
+  document.getElementById('q-total').textContent=qList.length;
+  document.getElementById('q-def').innerHTML=blankOut(w,d);
+  document.getElementById('q-fb').innerHTML='';
+  document.getElementById('q-check').disabled=false;
+  qBuild();
+}
+function qBuild(){
+  const letters=qWord()[0].toLowerCase().split('');
+  const bag=letters.slice();
+  const extra=Math.min(3,Math.max(1,Math.floor(letters.length/4)));
+  for(let i=0;i<extra;i++)bag.push(AZ[Math.floor(Math.random()*26)]);
+  for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}
+  qPlaced=Array(letters.length).fill(null);
+  document.getElementById('q-tray').innerHTML=bag.map((c,i)=>
+    '<button class="tile" data-i="'+i+'" onclick="qPlace('+i+',\''+c+'\')">'+c+'</button>').join('');
+  qDraw();
+}
+function qDraw(){
+  document.getElementById('q-slots').innerHTML=qPlaced.map((p,i)=>
+    p?'<button class="tile" onclick="qUnplace('+i+')">'+p.c+'</button>'
+     :'<span class="tile empty">·</span>').join('');
+}
+function qPlace(i,c){
+  const k=qPlaced.findIndex(x=>!x); if(k<0)return;
+  qPlaced[k]={c,i};
+  const t=document.querySelector('#q-tray .tile[data-i="'+i+'"]'); if(t)t.classList.add('used');
+  qDraw();
+}
+function qUnplace(k){
+  const p=qPlaced[k]; if(!p)return;
+  const t=document.querySelector('#q-tray .tile[data-i="'+p.i+'"]'); if(t)t.classList.remove('used');
+  qPlaced[k]=null; qDraw();
+}
+function qCheck(){
+  if(qPlaced.some(p=>!p)){toast('아직 다 안 채웠어');return}
+  const ans=qPlaced.map(p=>p.c).join(''), w=qWord()[0].toLowerCase();
+  const fb=document.getElementById('q-fb');
+  if(ans===w){
+    qState.solved[qWord()[0]]=(qState.solved[qWord()[0]]||0)+1; qSave(); qDone++;
+    fb.innerHTML='<div class="msg good">맞았어! 🎉</div>';
+    document.querySelectorAll('#q-slots .tile').forEach(t=>t.classList.add('ok'));
+    document.getElementById('q-check').disabled=true;
+    setTimeout(qNext,1100);
+    return;
+  }
+  qTries++;
+  document.querySelectorAll('#q-slots .tile').forEach(t=>{t.classList.add('no');setTimeout(()=>t.classList.remove('no'),400)});
+  if(qTries===1){
+    // 첫 실수에는 정답을 보여주지 않는다 (연습장과 같은 원칙)
+    fb.innerHTML='<div class="msg retry">거의 다 왔어!</div><div class="ans">자리가 맞은 글자는 그대로 두었어</div>';
+    qPlaced.forEach((p,k)=>{ if(p&&p.c!==w[k]){
+      const t=document.querySelector('#q-tray .tile[data-i="'+p.i+'"]'); if(t)t.classList.remove('used');
+      qPlaced[k]=null; }});
+    qDraw();
+    document.querySelectorAll('#q-slots .tile').forEach(el=>el.classList.add('ok'));
+  }else{
+    // 두 번째부터는 3초만 보여주고 지운 뒤 기억으로 다시 만들게 한다
+    let left=3;
+    const paint=()=>{fb.innerHTML='<div class="msg retry">잘 봐둬! <span class="tnum">'+left+'</span></div>'+
+      '<div class="ans en reveal">'+qWord()[0]+'</div>'};
+    paint(); clearInterval(qCheck._t);
+    qCheck._t=setInterval(()=>{
+      left--; if(left>0){paint();return}
+      clearInterval(qCheck._t);
+      qPlaced.forEach(p=>{if(p){const t=document.querySelector('#q-tray .tile[data-i="'+p.i+'"]'); if(t)t.classList.remove('used')}});
+      qPlaced=qPlaced.map(()=>null); qDraw();
+      fb.innerHTML='<div class="msg retry">이제 기억해서 해보자!</div>';
+    },1000);
+  }
+}
+function qNext(){
+  clearInterval(qCheck._t);
+  if(qi<qList.length-1){qi++;qLoadWord();return}
+  qState.best=Math.max(qState.best,qDone); qSave();
+  document.getElementById('q-final').textContent=qDone+' / '+qList.length;
+  go('s-quizdone');
+}
+function quitQuiz(){ clearInterval(qCheck._t); go('s-quizhome') }
 
 /* ---------- garden & shop ---------- */
 const SLOTS=24;
