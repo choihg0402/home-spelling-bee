@@ -1,8 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EEF1F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131824" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="스펠링비">
+<meta name="description" content="아이들이 스펠링비 대회 단어를 연습하는 앱">
 <title>우리집 스펠링비</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9D%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Fredoka:wght@400;500;600&display=swap">
-
+</head>
+<body>
 <style>
 :root{
   --bg:#EEF1F5; --paper:#FFFFFF; --sunk:#E4E9F0;
@@ -201,6 +215,13 @@ img.face{border:2px solid var(--line)}
 .quiz-entry .qe-text b{font-family:"Jua",sans-serif;font-weight:400;font-size:21px}
 .quiz-entry .qe-text span{font-size:14px;color:var(--ink-2)}
 .quiz-entry .qe-go{font-size:22px;color:var(--ink-3)}
+.qe-area{width:100%;min-height:44vh;margin-top:14px;padding:14px;border-radius:var(--r-m);
+  border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;line-height:1.7;resize:vertical}
+.qe-area:focus{outline:none;border-color:var(--practice)}
+.qe-msg{margin-top:12px;font-size:14px;color:var(--ink-2);min-height:24px;line-height:1.7}
+.qe-msg .warn{color:var(--stage)}
+.qe-msg .ok-note{color:var(--ink-3)}
 .q-def-card{text-align:center;max-width:760px;margin:0 auto;width:100%}
 .q-def{font-size:23px;line-height:1.6;margin:10px 0 0;text-wrap:balance}
 .q-def ,.sd{word-break:break-word}
@@ -292,6 +313,35 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   padding:12px 22px;border-radius:999px;font-size:15px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
   transition:opacity .25s;z-index:50}
 .toast.on{opacity:1}
+/* ---------- 폰 (세로) ----------
+   아이패드 기준으로 짠 여백을 그대로 두면 확인 버튼이 화면 밖으로 밀린다.
+   주소창까지 감안하면 쓸 수 있는 높이가 650px 남짓이다. */
+@media (max-width:480px){
+  body{font-size:16px}
+  .app{gap:10px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .card{padding:16px}
+  .play{gap:10px}
+  .tile{width:40px;height:48px;font-size:21px;border-radius:6px}
+  .slots,.tray{gap:6px}
+  .slots{min-height:52px}
+  .btn{padding:10px 14px;font-size:15px}
+  .btn.big{padding:14px 20px;font-size:17px}
+  .footer-bar{gap:8px}
+  .q-def{font-size:18px;line-height:1.5}
+  .q-def-card{padding:14px 16px}
+  .feedback{min-height:44px}
+  .feedback .msg{font-size:20px}
+  .feedback .ans.reveal{font-size:32px}
+  .quiz-entry{gap:12px;padding:14px}
+  .quiz-entry .qe-icon{font-size:30px}
+  .quiz-entry .qe-text b{font-size:18px}
+  .study{grid-template-columns:1fr;gap:10px}
+  .scard{padding:14px}
+  .scard .sw{font-size:22px}
+  h1{font-size:26px!important}
+  .speak-btn{width:88px;height:88px}
+  .speak-btn svg{width:40px;height:40px}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -646,6 +696,37 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <span class="ava" style="font-size:44px;display:grid;place-items:center">🧩</span>
         <span><h2>퍼즐 풀기</h2><p>뜻만 보고 스펠링을 맞춰요</p></span>
       </button>
+    </div>
+
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn ghost" onclick="openEditor()" style="color:var(--ink-3)">✏️ 단어 바꾸기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUIZ WORD EDITOR ============ -->
+<section id="s-qedit" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-quizhome')">← 뒤로</button>
+    <span class="spacer"></span>
+    <button class="btn" onclick="previewQuizList()">확인해보기</button>
+    <button class="btn primary" onclick="saveQuizList()">저장</button>
+  </header>
+  <div style="width:100%;max-width:820px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:28px">단어 바꾸기</h1>
+    <p style="color:var(--ink-2);margin:6px 0 0">
+      한 줄에 하나씩 <b>단어 : 뜻</b> 으로 적어주세요. 앞의 번호는 있어도 되고 없어도 됩니다.
+    </p>
+    <div class="note" style="margin-top:12px">
+      뜻 문장 안에 그 단어가 들어 있으면, 문제를 낼 때 <b>그 단어만 빈칸으로</b> 바뀝니다.
+      나머지 문장은 그대로라 뜻이 달라지지 않아요.
+    </div>
+    <textarea id="qe-text" class="qe-area" spellcheck="false" autocapitalize="off"
+      placeholder="1. unique : Something or someone that is unique is one of a kind."></textarea>
+    <div id="qe-msg" class="qe-msg"></div>
+    <div class="footer-bar" style="justify-content:flex-start;margin:14px 0 20px">
+      <button class="btn big primary" onclick="saveQuizList()">저장하기</button>
+      <button class="btn big ghost" onclick="resetQuizList()">처음 목록으로</button>
     </div>
   </div>
 </section>
@@ -1378,7 +1459,7 @@ function finishTest(){
 /* ---------- 유진 단어 퀴즈 ----------
    소리 없이 뜻만 보고 스펠링을 맞추는 모드.
    원문의 오타(cruched → crushed)와 대소문자·마침표를 바로잡아 넣었다. */
-const QUIZ_WORDS=[
+const QUIZ_DEFAULT=[
  ['individuality','Your individuality is what makes you different from everyone else.'],
  ['unique','Something or someone that is unique is one of a kind.'],
  ['feature','A feature is an important or interesting part of a person or thing.'],
@@ -1392,6 +1473,7 @@ const QUIZ_WORDS=[
  ['bilingual','People who are bilingual can speak two languages.'],
  ['mismatched','Things that are mismatched do not fit or belong together.']
 ];
+let QUIZ_WORDS=QUIZ_DEFAULT.slice();
 /* 문제를 낼 때는 뜻 문장에서 그 단어만 빈칸으로 바꾼다.
    나머지는 원문 그대로라 설명하는 뜻이 달라지지 않는다. */
 const QRE=w=>new RegExp('\\b'+w+'\\b','ig');
@@ -1402,6 +1484,51 @@ let qState={solved:{},best:0}, qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, st
 function qLoad(){
   try{qState=JSON.parse(localStorage.getItem('sb_quiz'))||{}}catch(e){qState={}}
   if(!qState.solved)qState.solved={}; if(!qState.best)qState.best=0;
+  let custom=null;
+  try{custom=JSON.parse(localStorage.getItem('sb_quiz_words'))}catch(e){}
+  QUIZ_WORDS = (Array.isArray(custom)&&custom.length) ? custom : QUIZ_DEFAULT.slice();
+}
+/* 붙여넣은 목록을 읽는다. "1. word : 뜻" 도 "word : 뜻" 도 받는다. */
+function parseQuizList(text){
+  const out=[], bad=[], noBlank=[];
+  text.split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim(); if(!line)return;
+    const m=line.replace(/^\s*\d+[.)]\s*/,'').match(/^([A-Za-z'\-]+)\s*[:\-–]\s*(.+)$/);
+    if(!m){bad.push(line);return}
+    const w=m[1].trim(), d=m[2].trim();
+    if(!d){bad.push(line);return}
+    if(!QRE(w).test(d))noBlank.push(w);
+    out.push([w,d]);
+  });
+  return {out,bad,noBlank};
+}
+function openEditor(){
+  go('s-qedit');
+  document.getElementById('qe-text').value=QUIZ_WORDS.map(([w,d],i)=>`${i+1}. ${w} : ${d}`).join('\n');
+  document.getElementById('qe-msg').innerHTML='';
+}
+function previewQuizList(){
+  const {out,bad,noBlank}=parseQuizList(document.getElementById('qe-text').value);
+  const msg=document.getElementById('qe-msg');
+  let html=`<b>${out.length}개</b>를 읽었어요.`;
+  if(bad.length)html+=`<br><span class="warn">읽지 못한 줄 ${bad.length}개</span>: ${bad.slice(0,3).map(b=>'“'+b.slice(0,40)+'”').join(', ')}`;
+  if(noBlank.length)html+=`<br><span class="warn">뜻 안에 단어가 없어 빈칸이 안 생기는 항목</span>: ${noBlank.join(', ')}`;
+  if(out.length&&!bad.length&&!noBlank.length)html+=' 문제없어요.';
+  if(out.length)html+=`<br><span class="ok-note">예시 문제 — ${blankOut(out[0][0],out[0][1])}</span>`;
+  msg.innerHTML=html;
+  return out;
+}
+function saveQuizList(){
+  const out=previewQuizList();
+  if(!out.length){toast('저장할 단어가 없어요');return}
+  try{localStorage.setItem('sb_quiz_words',JSON.stringify(out))}catch(e){toast('저장하지 못했어요');return}
+  qState.solved={}; qSave(); qLoad();
+  toast(`단어 ${out.length}개로 바꿨어요`); go('s-quizhome');
+}
+function resetQuizList(){
+  if(!confirm('처음 12단어로 되돌릴까요? 맞힌 기록도 지워집니다.'))return;
+  try{localStorage.removeItem('sb_quiz_words')}catch(e){}
+  qState.solved={}; qSave(); qLoad(); toast('처음 목록으로 되돌렸어요'); go('s-quizhome');
 }
 function qSave(){ try{localStorage.setItem('sb_quiz',JSON.stringify(qState))}catch(e){} }
 function openQuiz(){ qLoad(); go('s-quizhome') }
@@ -1701,3 +1828,6 @@ function resetProfile(){
   S=load('__new__'); save(); toast('기록을 지웠어요'); go('s-home');
 }
 </script>
+
+</body>
+</html>

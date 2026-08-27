@@ -72,5 +72,33 @@ for key, label, path in LISTS:
 data = 'const LISTS=' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';'
 tpl = io.open('index.template.html', encoding='utf-8').read()
 assert '/*__WORDS__*/' in tpl
-io.open(OUT, 'w', encoding='utf-8').write(tpl.replace('/*__WORDS__*/', data))
-print(f'-> {OUT}')
+
+# 온전한 HTML 문서로 감싼다.
+# viewport 메타가 없으면 휴대폰이 980px 가상 화면으로 그린 뒤 축소해버려
+# 글자와 버튼이 전부 작아지고 미디어 쿼리도 걸리지 않는다.
+SHELL = """<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EEF1F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131824" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="스펠링비">
+<meta name="description" content="아이들이 스펠링비 대회 단어를 연습하는 앱">
+<title>우리집 스펠링비</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9D%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Fredoka:wght@400;500;600&display=swap">
+</head>
+<body>
+{BODY}
+</body>
+</html>
+"""
+doc = SHELL.replace('{BODY}', tpl.replace('/*__WORDS__*/', data))
+io.open(OUT, 'w', encoding='utf-8').write(doc)
+print(f'-> {OUT}  ({len(doc):,} bytes)')
