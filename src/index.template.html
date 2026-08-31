@@ -2607,8 +2607,34 @@ function autoSync(){
   if(!syncOn() || !navigator.onLine) return;
   syncNow(true);
 }
-addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') autoSync() });
+/* 앱을 열 때뿐 아니라 덮을 때도 올린다.
+   아이가 놀고 앱을 덮으면 다음에 열 때까지 서버에 안 올라가던 문제가 있었다.
+   덮는 순간은 아이패드에서도 확실히 잡힌다. */
+addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible') autoSync();
+  else pushSoon();
+});
+addEventListener('pagehide', pushSoon);
 addEventListener('online', ()=>autoSync());
+
+/* 덮을 때는 받아오지 않고 올리기만 한다. 시간이 없기 때문이다. */
+async function pushSoon(){
+  if(!syncOn() || !navigator.onLine || syncBusy) return;
+  try{
+    if(!await refreshIfNeeded()) return;
+    for(const id of Object.keys(PROFILES)){
+      const raw=localStorage.getItem(key(id)); if(!raw) continue;
+      const local=JSON.parse(raw);
+      await sbFetch('/rest/v1/sb_sync?on_conflict=family_id,profile_id,device_id', {
+        method:'POST',
+        headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify({profile_id:id, device_id:local.dev,
+                             payload:local, updated_at:new Date().toISOString()})
+      });
+    }
+    try{ localStorage.setItem('sb_sync_at', new Date().toISOString()) }catch(e){}
+  }catch(e){ /* 덮는 중이라 조용히 넘어간다. 다음에 열 때 다시 맞춘다 */ }
+}
 
 /* --- 화면 --- */
 async function renderSync(){
