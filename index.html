@@ -270,6 +270,9 @@ img.face{border:2px solid var(--line)}
 .wk-bar{width:80px;height:8px;border-radius:999px;background:var(--line);overflow:hidden;flex:none}
 .wk-bar i{display:block;height:100%;background:var(--good)}
 .wk-c{font-size:13px;color:var(--ink-3);min-width:44px;text-align:right}
+.gate-bee{font-size:64px;line-height:1;animation:bob 3.4s ease-in-out infinite}
+.gate-msg{margin-top:14px;font-size:14px;color:var(--stage);min-height:22px;line-height:1.6}
+.gate-msg .err{color:var(--brick,#A8382C)}
 .pin-dots{display:flex;gap:14px;justify-content:center;margin:24px 0 20px;min-height:18px}
 .pin-dots i{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);display:block}
 .pin-dots i.on{background:var(--practice);border-color:var(--practice)}
@@ -562,8 +565,32 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
 <div class="app">
 
+<!-- ============ GATE ============ -->
+<section id="s-gate" class="screen on">
+  <div style="margin:auto;width:100%;max-width:380px;text-align:center">
+    <div class="gate-bee">🐝</div>
+    <h1 style="font-size:30px;margin-top:12px">우리집 스펠링비</h1>
+    <p style="color:var(--ink-2);margin:8px 0 0">
+      이 기기를 처음 여는군요. 가족 비밀번호를 한 번만 넣어주세요.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:22px">
+      <input id="gate-pw" type="password" autocomplete="current-password"
+             placeholder="가족 비밀번호"
+             onkeydown="if(event.key==='Enter')gateIn()"
+             style="padding:14px 16px;border-radius:var(--r-m);border:1px solid var(--line);
+                    background:var(--paper);color:var(--ink);font:inherit;font-size:17px;
+                    text-align:center;min-height:var(--tap)">
+      <button class="btn big primary" onclick="gateIn()">들어가기</button>
+    </div>
+    <p class="gate-msg" id="gate-msg"></p>
+    <p style="color:var(--ink-3);font-size:13px;margin-top:22px">
+      한 번 들어오면 이 기기는 계속 열립니다. 아이는 다시 볼 일이 없어요.
+    </p>
+  </div>
+</section>
+
 <!-- ============ PROFILE ============ -->
-<section id="s-profile" class="screen on">
+<section id="s-profile" class="screen">
   <div style="margin:auto;width:100%;max-width:640px">
     <p class="eyebrow">2026 Spring · G2–G3 Spelling Bee List</p>
     <h1 style="font-size:40px;margin:6px 0 2px">우리집 스펠링비</h1>
@@ -1477,7 +1504,7 @@ const masked=s=>s.replace(/\{(.+?)\}/g,m=>'<span class="blank">'+'_'.repeat(Math
 function go(id){
   // 프로필을 고르기 전에 다른 화면으로 가면 그릴 것이 없다.
   // 정상 흐름에서는 생기지 않지만, 생기면 조용히 처음 화면으로 돌린다.
-  if(!pid && id!=='s-profile' && id!=='s-quizhome' && id!=='s-study'
+  if(!pid && id!=='s-gate' && id!=='s-profile' && id!=='s-quizhome' && id!=='s-study'
      && id!=='s-quiz' && id!=='s-quizdone' && id!=='s-qedit') id='s-profile';
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
   paintNet();
@@ -1495,6 +1522,36 @@ function go(id){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
   clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),1900)}
+
+/* ---------- 입구 ----------
+   주소만 알면 누구나 열리던 것을 막는다.
+   이미 연결한 기기는 증표가 남아 있으므로 묻지 않는다 - 인터넷이 없어도 열린다. */
+function bootGate(){
+  const cfg = (typeof SB!=='undefined' && SB.url && SB.key);
+  if(!cfg || syncToken()){ go('s-profile'); return }   // 서버를 안 쓰거나 이미 연결된 기기
+  go('s-gate');
+  setTimeout(()=>{ const el=document.getElementById('gate-pw'); if(el)el.focus() }, 150);
+}
+async function gateIn(){
+  const el=document.getElementById('gate-pw'), msg=document.getElementById('gate-msg');
+  const pw=el.value;
+  if(!pw){ msg.innerHTML='<span class="err">비밀번호를 넣어주세요.</span>'; return }
+  if(!navigator.onLine){
+    msg.innerHTML='<span class="err">인터넷이 없어요. 처음 여는 기기는 한 번은 연결이 필요합니다.</span>';
+    return;
+  }
+  msg.textContent='확인하는 중…';
+  try{
+    await signInWithPassword(pw);
+    el.value='';
+    msg.textContent='';
+    go('s-profile');
+    syncNow(true);
+  }catch(e){
+    msg.innerHTML='<span class="err">'+e.message+'</span>';
+    el.value=''; el.focus();
+  }
+}
 
 function pickProfile(id){
   pid=id; S=load(id); sec='all';
@@ -1723,6 +1780,7 @@ function renderFaces(){
 renderFaces();
 showA2HS();
 paintNet();
+bootGate();
 
 /* ---------- practice ---------- */
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
@@ -2490,6 +2548,7 @@ async function whoAmI(){
   catch(e){ return null }
 }
 function signOut(){
+  if(!confirm('이 기기의 연결을 끊을까요? 다음에 열 때 가족 비밀번호를 다시 넣어야 합니다.'))return;
   setSyncToken(null); syncUser=null;
   toast('연결을 끊었어요'); renderSync();
 }
