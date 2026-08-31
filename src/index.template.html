@@ -237,6 +237,8 @@ img.face{border:2px solid var(--line)}
   background:var(--paper);color:var(--ink);font:inherit;font-size:15px;min-height:var(--tap)}
 .wk-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wk{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-s);background:var(--sunk)}
+.wk.full{background:var(--good-soft)}
+.wk-pet{font-size:20px;line-height:1;width:24px;text-align:center;flex:none}
 .wk-n{flex:1;font-size:14px}
 .wk-bar{width:80px;height:8px;border-radius:999px;background:var(--line);overflow:hidden;flex:none}
 .wk-bar i{display:block;height:100%;background:var(--good)}
@@ -261,7 +263,8 @@ img.face{border:2px solid var(--line)}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px;align-items:end}
 .wcol{display:flex;flex-direction:column;align-items:center;gap:5px}
 .wbars{display:flex;align-items:flex-end;gap:3px;height:96px}
-.wbars i{width:9px;border-radius:3px 3px 0 0;min-height:2px;display:block}
+.wbars i{width:7px;border-radius:3px 3px 0 0;min-height:2px;display:block}
+.wbars i.q{background:var(--retry)}
 .wbars i.p{background:var(--practice)}
 .wbars i.t{background:var(--stage)}
 .wbars i.o{background:var(--good)}
@@ -1014,6 +1017,11 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
     <div class="pgrid">
       <div class="card">
+        <p class="eyebrow">이번 주 퀴즈</p>
+        <div class="big-num"><span class="tnum" id="p-qnow">0</span><small id="p-qall">/0</small></div>
+        <p class="sub" id="p-qnote"></p>
+      </div>
+      <div class="card">
         <p class="eyebrow">대회까지</p>
         <div class="big-num"><span class="tnum" id="p-dday">0</span><small>일</small></div>
         <p class="sub" id="p-pace"></p>
@@ -1040,6 +1048,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <p class="eyebrow">최근 7일</p>
       <div class="week" id="p-week"></div>
       <div class="legend" style="margin-top:12px">
+        <s><i style="background:var(--retry)"></i>퀴즈</s>
         <s><i style="background:var(--practice)"></i>연습한 단어</s>
         <s><i style="background:var(--stage)"></i>테스트 본 단어</s>
         <s><i style="background:var(--good)"></i>테스트 정답</s>
@@ -1051,6 +1060,11 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <p class="eyebrow">자주 틀리는 단어</p>
         <p class="sub">집중 지도가 필요한 단어입니다.</p>
         <div class="miss-list" id="p-miss"></div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">퀴즈에서 어려워한 단어</p>
+        <p class="sub">주간 단어 중 여러 번 틀린 것입니다.</p>
+        <div class="miss-list" id="p-qmiss"></div>
       </div>
       <div class="card">
         <p class="eyebrow">정답을 보고 맞힌 단어</p>
@@ -1439,7 +1453,7 @@ function stageOfRatio(r){ let i=0; STAGE_AT.forEach((v,k)=>{ if(r>=v)i=k }); ret
 function weekRatio(k){
   const words=weekWords(k); if(!words.length)return 0;
   const p=(S.qw&&S.qw[k])||{};
-  return words.filter(r=>p[r[0]]).length / words.length;
+  return words.filter(r=>(p[r[0]]||{}).n>0).length / words.length;
 }
 function weekDone(k){ return weekWords(k).length>0 && weekRatio(k)>=1 }
 /* 이번 주에 고른 친구 */
@@ -1503,7 +1517,7 @@ function renderHome(){
 
   qLoad();
   const wk=curWeek, words=weekWords(wk), prog=weekProg(wk);
-  const solved=words.filter(r=>prog[r[0]]).length;
+  const solved=words.filter(r=>(prog[r[0]]||{}).n>0).length;
   const ratio=weekRatio(wk), petKey=petOf(wk), a=animal(petKey);
   document.getElementById('pet').innerHTML=petHTML(petKey, ratio, 104);
   document.getElementById('pet-name').textContent =
@@ -1520,7 +1534,7 @@ function renderHome(){
   document.getElementById('dexcount').textContent=dexList().length;
   qLoad();
   const qws=QW(), qp=weekProg(curWeek);
-  const qdone=qws.filter(r=>qp[r[0]]).length;
+  const qdone=qws.filter(r=>(qp[r[0]]||{}).n>0).length;
   document.getElementById('home-q').textContent = qws.length
     ? weekLabel(curWeek)+' · '+qdone+'/'+qws.length+' 맞힘'
     : '이번 주 단어가 아직 없어요';
@@ -2055,7 +2069,7 @@ function openQuiz(){ qLoad(); go('s-quizhome') }
 function renderQuizHome(){
   qLoad();
   const words=QW(), prog=weekProg(curWeek);
-  const solved=words.filter(r=>prog[r[0]]).length;
+  const solved=words.filter(r=>(prog[r[0]]||{}).n>0).length;
   document.getElementById('q-who').textContent=PROFILES[pid].name;
   document.getElementById('q-solved').textContent=solved;
   document.getElementById('q-all').textContent=words.length;
@@ -2138,9 +2152,11 @@ function qCheck(){
   const fb=document.getElementById('q-fb');
   if(ans===w){
     const p=weekProg(curWeek), k=qWord()[0];
-    const first=!p[k];
-    p[k]=p[k]||{n:0}; p[k].n++; if(!p[k].at)p[k].at=Date.now();
-    if(first){ addCoin(2); }                    // 처음 맞힌 단어만 코인을 준다
+    const e=p[k]||(p[k]={n:0,miss:0});
+    const first=e.n===0;                        // 오답이 먼저 있었어도 첫 정답이면 준다
+    e.n++; if(!e.at)e.at=Date.now();
+    if(first){ addCoin(2); }
+    todayHist().q=(todayHist().q||0)+1;
     const justDone = first && weekDone(curWeek);
     if(justDone){
       addCoin(15);                              // 그 주를 다 채우면 보너스
@@ -2155,6 +2171,10 @@ function qCheck(){
     return;
   }
   qTries++;
+  // 틀린 것도 남긴다. 부모 화면에서 어떤 단어를 어려워하는지 보려면 필요하다.
+  const pw=weekProg(curWeek), kw=qWord()[0];
+  const ew=pw[kw]||(pw[kw]={n:0,miss:0});
+  ew.miss=(ew.miss||0)+1; save();
   document.querySelectorAll('#q-slots .tile').forEach(t=>{t.classList.add('no');setTimeout(()=>t.classList.remove('no'),400)});
   if(qTries===1){
     // 첫 실수에는 정답을 보여주지 않는다 (연습장과 같은 원칙)
@@ -2359,7 +2379,8 @@ function mergeProfile(local, inc){
     const cur=Object.assign({}, out.qw[k]||{});
     Object.entries(words).forEach(([w,v])=>{
       const c=cur[w];
-      cur[w]={n:maxNum(c&&c.n, v&&v.n), at:Math.min(c&&c.at||Infinity, v&&v.at||Infinity)};
+      cur[w]={n:maxNum(c&&c.n, v&&v.n), miss:maxNum(c&&c.miss, v&&v.miss),
+              at:Math.min(c&&c.at||Infinity, v&&v.at||Infinity)};
       if(!isFinite(cur[w].at)) delete cur[w].at;
     });
     out.qw[k]=cur;
@@ -2528,6 +2549,18 @@ function renderParent(){
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
 
   // ---- 대회까지 남은 일수와 필요한 진도 ----
+  // 이번 주 퀴즈
+  qLoad();
+  const wk=curWeek, qwords=weekWords(wk), qprog=weekProg(wk);
+  const qdone=qwords.filter(r=>(qprog[r[0]]||{}).n>0).length;
+  const qa=animal(petOf(wk));
+  document.getElementById('p-qnow').textContent=qdone;
+  document.getElementById('p-qall').textContent='/'+qwords.length;
+  document.getElementById('p-qnote').textContent =
+    !qwords.length ? '아직 단어를 넣지 않았어요'
+    : weekDone(wk) ? (qa ? qa.n+' 다 키웠어요 · '+weekLabel(wk) : '다 맞혔어요 · '+weekLabel(wk))
+    : (qa ? qa.n+' 키우는 중 · '+weekLabel(wk) : '친구를 아직 안 골랐어요');
+
   const days=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
   document.getElementById('p-dday').textContent=days;
 
@@ -2569,15 +2602,15 @@ function renderParent(){
   // ---- 최근 7일 ----
   const days7=[...Array(7)].map((_,i)=>{
     const d=new Date(Date.now()-(6-i)*864e5).toISOString().slice(0,10);
-    return {d, h:S.hist[d]||{p:0,tw:0,tok:0}};
+    return {d, h:S.hist[d]||{p:0,tw:0,tok:0,q:0}};
   });
-  const peak=Math.max(4,...days7.map(x=>Math.max(x.h.p,x.h.tw)));
+  const peak=Math.max(4,...days7.map(x=>Math.max(x.h.p,x.h.tw,x.h.q||0)));
   const H=90;
   document.getElementById('p-week').innerHTML=days7.map((x,i)=>{
     const lbl=['일','월','화','수','목','금','토'][new Date(x.d+'T00:00:00').getDay()];
     const bar=(v,c)=>`<i class="${c}" style="height:${Math.round(v/peak*H)||2}px" title="${v}"></i>`;
     return `<div class="wcol"><div class="wbars">
-      ${bar(x.h.p,'p')}${bar(x.h.tw,'t')}${bar(x.h.tok,'o')}
+      ${bar(x.h.q||0,'q')}${bar(x.h.p,'p')}${bar(x.h.tw,'t')}${bar(x.h.tok,'o')}
       </div><span class="d${i===6?' today':''}">${lbl}</span></div>`}).join('');
 
   // ---- 자주 틀리는 단어 / 정답을 보고 맞힌 단어 ----
@@ -2593,6 +2626,15 @@ function renderParent(){
   const peek=mine.map(w=>[w[1],(S.w[w[0]]||{}).peek||0]).filter(r=>r[1]>0)
                  .sort((a,b)=>b[1]-a[1]).slice(0,10);
   fill('p-peek',peek,'번','정답을 보지 않고 풀고 있어요.');
+
+  // 주간 퀴즈에서 여러 번 틀린 단어 (모든 주차를 합쳐서)
+  const qm={};
+  Object.entries(S.qw||{}).forEach(([k,words])=>{
+    Object.entries(words).forEach(([w,v])=>{ if(v && v.miss) qm[w]=(qm[w]||0)+v.miss });
+  });
+  const qmiss=Object.entries(qm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  fill('p-qmiss',qmiss,'번', Object.keys(S.qw||{}).length
+        ? '틀린 단어가 없어요.' : '아직 퀴즈를 풀지 않았어요.');
 
   // ---- 단어 목록 ----
   document.getElementById('listname').textContent=listOf(pid).name;
@@ -2614,9 +2656,11 @@ function renderWeekList(){
   if(!all.length){ box.innerHTML='<p class="empty-note">아직 넣은 단어가 없어요.</p>'; return }
   box.innerHTML=all.map(k=>{
     const words=weekWords(k), prog=S.qw&&S.qw[k]||{};
-    const done=words.filter(r=>prog[r[0]]).length;
+    const done=words.filter(r=>(prog[r[0]]||{}).n>0).length;
     const pct=words.length?Math.round(done/words.length*100):0;
-    return '<div class="wk">'+
+    const a=animal(petOf(k)), full=weekDone(k);
+    return '<div class="wk'+(full?' full':'')+'">'+
+      '<span class="wk-pet" title="'+(a?a.n:'친구 없음')+'">'+(a?(full?a.e:'🥚'):'·')+'</span>'+
       '<span class="wk-n">'+weekLabel(k)+'</span>'+
       '<span class="wk-bar"><i style="width:'+pct+'%"></i></span>'+
       '<span class="wk-c tnum">'+done+'/'+words.length+'</span>'+
