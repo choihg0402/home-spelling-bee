@@ -318,6 +318,18 @@ img.face{border:2px solid var(--line)}
 .item .own{font-size:12px;color:var(--ink-3)}
 .item[disabled]{opacity:.45}
 .empty-note{color:var(--ink-3);font-size:15px;padding:14px 0}
+.pets{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:16px}
+.petcell{background:var(--paper);border:2px solid var(--line);border-radius:var(--r-m);
+  padding:14px 6px;text-align:center;box-shadow:var(--shadow);transition:transform .08s}
+.petcell:active{transform:translateY(2px)}
+.petcell.on{border-color:var(--practice);background:var(--practice-soft)}
+.petcell .e{font-size:36px;line-height:1.15}
+.petcell .n{font-size:13px;color:var(--ink-2);margin-top:2px}
+.petcell .got{font-size:11px;color:var(--good)}
+.pet-emoji.full{animation:pop .6s ease-out}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@media (max-width:520px){.pets{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  .petcell{padding:10px 4px}.petcell .e{font-size:30px}}
 .dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:10px}
 .dexcell{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 6px;
   text-align:center}
@@ -585,7 +597,6 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 <section id="s-home" class="screen">
   <header class="topbar">
     <button class="chip" onclick="go('s-profile')"><span id="whoface"></span><b id="who">유진</b></button>
-    <span class="chip"><b class="tnum" id="xp">0</b> XP</span>
     <span class="chip stage"><span class="dot"></span><b class="tnum" id="coin">0</b> 코인</span>
     <span class="spacer"></span>
     <span class="chip offline-chip" id="netchip" hidden>✈️ 인터넷 없음</span>
@@ -606,13 +617,13 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <span class="tag">연습</span>
         <h2>연습장</h2>
         <p>퍼즐과 쓰기로 마음껏 연습해요. 틀려도 아무 일도 일어나지 않아요.</p>
-        <p style="font-size:14px;color:var(--ink-3)">오늘 받은 보상 <b class="tnum" id="capxp">0</b>/60 XP</p>
+        <p style="font-size:14px;color:var(--ink-3)">오늘 받은 코인 <b class="tnum" id="capxp">0</b>/12</p>
       </button>
       <button class="card zone test" onclick="go('s-tsetup')">
         <span class="tag">실전</span>
         <h2>시험장</h2>
         <p>진짜 대회처럼 소리 내어 스펠링을 말해요. 보상이 가장 커요.</p>
-        <p style="font-size:14px;color:var(--ink-3)">마스터는 <b>말하기로만</b> 올라가요</p>
+        <p style="font-size:14px;color:var(--ink-3)">코인을 가장 많이 받을 수 있어요</p>
       </button>
     </div>
 
@@ -620,8 +631,9 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <div class="card pet">
         <span id="pet"></span>
         <h3 id="pet-name" style="font-size:20px">알</h3>
-        <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next">30 XP 더 모으면 부화해요</p>
+        <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next"></p>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" id="pet-pick" onclick="go('s-pickpet')">친구 고르기</button>
           <button class="btn" onclick="go('s-garden')">🌱 내 정원 <b class="tnum" id="gardencount">0</b></button>
           <button class="btn" onclick="go('s-shop')">🛒 상점</button>
         </div>
@@ -819,7 +831,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <div class="card" style="margin-top:14px">
       <div class="stat-row" style="margin:0">
         <span class="stat"><b class="tnum" id="res-ok">0</b><span>맞은 단어</span></span>
-        <span class="stat"><b class="tnum" id="res-xp">0</b><span>얻은 XP</span></span>
+        <span class="stat"><b class="tnum" id="res-voice">0</b><span>말하기로</span></span>
         <span class="stat"><b class="tnum" id="res-coin">0</b><span>얻은 코인</span></span>
       </div>
       <div class="res-list" id="res-list"></div>
@@ -828,6 +840,20 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <button class="btn big stage" onclick="go('s-home')">홈으로</button>
       <button class="btn big ghost" onclick="go('s-tsetup')">한 번 더</button>
     </div>
+  </div>
+</section>
+
+<!-- ============ PICK PET ============ -->
+<section id="s-pickpet" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-home')">← 홈</button>
+    <span class="spacer"></span>
+    <span class="seg" id="pp-group"></span>
+  </header>
+  <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <h1 style="font-size:30px">이번 주에 키울 친구</h1>
+    <p style="color:var(--ink-2);margin:6px 0 0" id="pp-sub"></p>
+    <div class="pets" id="pp-list"></div>
   </div>
 </section>
 
@@ -866,7 +892,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
     <h1 style="font-size:30px">상점</h1>
     <p style="color:var(--ink-2);margin:4px 0 18px">
-      코인은 시험장에서 가장 많이 받을 수 있어요.
+      코인은 시험장에서 가장 많이 받을 수 있어요. 동물은 사는 게 아니라 <b>키워서</b> 만나요.
     </p>
     <div class="shop" id="shop"></div>
   </div>
@@ -1183,7 +1209,7 @@ const PROFILES={
   yuhyeok:{name:'유혁', grade:'1학년', list:'kinder', sections:['B','C']}
 };
 const listOf = id => LISTS[PROFILES[id].list];
-const CAP={xp:60,coin:12};
+const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
 const CONTEST=new Date('2026-09-21T00:00:00');
 let pid=null, S=null, sec='all', testLen=5;
 
@@ -1196,13 +1222,20 @@ const key=id=>'sb_'+id;
    합칠 때는 더하지 않고 그 기기 칸을 통째로 바꿔치므로, 같은 파일을 몇 번 가져와도
    이중으로 세지 않는다. 잔액과 성장 단계는 그때그때 계산한다. */
 function newDev(){ return 'd' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4) }
+/* 예전에는 경험치로 친구를 키웠다. 그때 모은 친구를 도감에 남긴다. */
+const OLD_PETS=[['bee',300],['fly',450],['lady',600],['owl',750],['cri',900]];
+function oldDex(xp){
+  const got=[];
+  for(const [k,cost] of OLD_PETS){ if(xp>=cost){ got.push(k); xp-=cost } else break }
+  return got;
+}
 function blank(){return {
   dev:newDev(),
-  own:{xp:0,earn:0,spend:0},   // 이 기기가 만든 몫
-  peers:{},                    // 다른 기기의 몫 {기기id:{xp,earn,spend}}
+  own:{earn:0,spend:0},        // 이 기기가 만든 몫 (번 코인, 쓴 코인)
+  peers:{},                    // 다른 기기의 몫 {기기id:{earn,spend}}
   buys:[],                     // 산 것 [아이템, 시각, 기기]
   garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
-  w:{}, hist:{}, day:{d:null,xp:0,coin:0},
+  w:{}, hist:{}, day:{d:null,coin:0},
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -1217,19 +1250,29 @@ function load(id){
     Object.entries(d.items||{}).forEach(([k,n])=>{for(let i=0;i<n;i++)owned.push(k)});
     (d.garden||[]).forEach(k=>owned.push(k));
     const spent=owned.reduce((a,k)=>a+((shopItem(k)||{c:0}).c),0);
-    b.own={xp:d.xp||0, earn:(d.coin||0)+spent, spend:spent};
+    b.own={earn:(d.coin||0)+spent, spend:spent};
+    b.dexLegacy=oldDex(d.xp||0);
     b.buys=owned.map(k=>[k,0,b.dev]);
     b.garden=(d.garden||[]).slice();
     b.w=d.w||{}; b.hist=d.hist||{}; b.day=d.day||b.day;
     b.streak=d.streak||0; b.last=d.last||null; b.list=d.list||null;
     return b;
   }
-  return Object.assign(b,d,{own:Object.assign(b.own,d.own)});
+  const out=Object.assign(b,d,{own:Object.assign(b.own,d.own)});
+  // 예전에는 경험치로 친구를 키웠다. 그때 모은 친구는 도감에 남겨준다.
+  if(out.own.xp!==undefined){
+    const xp=(out.own.xp||0)+Object.values(out.peers||{}).reduce((a,p)=>a+(p.xp||0),0);
+    const got=(out.dexLegacy||[]).slice();
+    oldDex(xp).forEach(k=>{ if(!got.includes(k))got.push(k) });
+    out.dexLegacy=got;
+    delete out.own.xp;
+    Object.values(out.peers||{}).forEach(p=>{ delete p.xp });
+  }
+  return out;
 }
 
 /* --- 계산해서 쓰는 값들 --- */
 const sumField=f=>S.own[f]+Object.values(S.peers).reduce((a,p)=>a+(p[f]||0),0);
-const totalXP =()=>sumField('xp');
 const coins   =()=>sumField('earn')-sumField('spend');
 function invCount(id){
   const bought=S.buys.filter(b=>b[0]===id).length;
@@ -1240,13 +1283,6 @@ function inventory(){
   const m={}; S.buys.forEach(b=>m[b[0]]=(m[b[0]]||0)+1);
   S.garden.forEach(g=>{ if(m[g]){m[g]--; if(!m[g])delete m[g]} });
   return m;
-}
-/* 성장도 저장하지 않고 전체 XP에서 계산한다. 그래야 합칠 때 저절로 맞는다. */
-function growth(){
-  let xp=totalXP(), idx=0; const dex=[];
-  while(idx<SPECIES.length-1 && xp>=growCost(idx)){ dex.push(SPECIES[idx].key); xp-=growCost(idx); idx++ }
-  if(idx===SPECIES.length-1 && xp>=growCost(idx)){ dex.push(SPECIES[idx].key); xp=growCost(idx) }
-  return {idx,petXp:xp,dex};
 }
 function todayHist(){
   const t=today(); return S.hist[t]||(S.hist[t]={p:0,tw:0,tok:0,voice:0,typed:0});
@@ -1260,14 +1296,12 @@ function poolWords(){ const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]==
 
 /* ---------- rewards ---------- */
 function grantPractice(){
-  const t=today(); if(S.day.d!==t)S.day={d:t,xp:0,coin:0};
-  let xp=Math.min(5,CAP.xp-S.day.xp), coin=Math.min(1,CAP.coin-S.day.coin);
-  xp=Math.max(0,xp); coin=Math.max(0,coin);
-  S.day.xp+=xp; S.day.coin+=coin; addCoin(coin);
-  const grown=addXP(xp);
+  const t=today(); if(S.day.d!==t)S.day={d:t,coin:0};
+  const coin=Math.max(0, Math.min(1, CAP.coin-S.day.coin));
+  S.day.coin+=coin; addCoin(coin);
   todayHist().p++;
   bumpStreak();
-  return {xp,coin,capped:xp===0,grown};
+  return {coin, capped:coin===0};
 }
 function bumpStreak(){
   const t=today(); if(S.last===t)return;
@@ -1353,6 +1387,7 @@ function go(id){
   if(id==='s-tsetup')renderSetup();
   if(id==='s-parent')renderParent();
   if(id==='s-garden')renderGarden();
+  if(id==='s-pickpet')renderPickPet();
   if(id==='s-quizhome')renderQuizHome();
   if(id==='s-study')renderStudy();
   if(id==='s-shop')renderShop();
@@ -1364,7 +1399,7 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function pickProfile(id){
   pid=id; S=load(id); sec='all';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
-  // XP와 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
+  // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=PROFILES[id].list;
   if(S.list!==want){ S.w={}; S.list=want; save(); }
   go('s-home');
@@ -1373,65 +1408,110 @@ function pickProfile(id){
 /* ---------- character ----------
    스펠링'비'에 맞춘 꿀벌 성장. 이모지는 기기 글꼴이 그리므로 라이선스가 필요 없고,
    아이패드에서는 애플 이모지로 또렷하게 나온다. */
-const SPECIES=[
-  {key:'bee',  name:'꿀벌',     home:'🐝',
-   st:['🥚','🐛','🐝','🍯','👑'], sn:['알','애벌레','꿀벌','꿀단지 꿀벌','여왕벌']},
-  {key:'fly',  name:'나비',     home:'🦋',
-   st:['🥚','🐛','🦋','🌸','🌈'], sn:['알','애벌레','나비','꽃나비','무지개 나비']},
-  {key:'lady', name:'무당벌레',  home:'🐞',
-   st:['🥚','🐛','🐞','🍀','✨'], sn:['알','애벌레','무당벌레','네잎 무당벌레','반짝 무당벌레']},
-  {key:'owl',  name:'부엉이',   home:'🦉',
-   st:['🥚','🐣','🦉','🌙','⭐'], sn:['알','아기새','부엉이','달빛 부엉이','별 부엉이']},
-  {key:'cri',  name:'귀뚜라미',  home:'🦗',
-   st:['🥚','🐛','🦗','🍃','🌟'], sn:['알','애벌레','귀뚜라미','풀잎 귀뚜라미','빛나는 귀뚜라미']}
+/* ---------- 키우는 친구 ----------
+   이모지에는 '아기 악어' 같은 그림이 없다. 그래서 앞 두 단계(알, 부화)는
+   모든 동물이 함께 쓰고, 뒤 세 단계는 같은 이모지를 크기로 키운다.
+   덕분에 동물을 늘릴 때 이모지 하나와 이름 하나만 적으면 된다.
+
+   묶음은 고르기 쉬우라고 나눈 것이고, 아이는 어느 쪽이든 고를 수 있다. */
+const ANIMALS=[
+  // 귀여운 친구들
+  {k:'rabbit', n:'토끼',     e:'🐰', g:'cute'},
+  {k:'cat',    n:'고양이',   e:'🐱', g:'cute'},
+  {k:'dog',    n:'강아지',   e:'🐶', g:'cute'},
+  {k:'hamster',n:'햄스터',   e:'🐹', g:'cute'},
+  {k:'panda',  n:'판다',     e:'🐼', g:'cute'},
+  {k:'koala',  n:'코알라',   e:'🐨', g:'cute'},
+  {k:'fox',    n:'여우',     e:'🦊', g:'cute'},
+  {k:'squirl', n:'다람쥐',   e:'🐿', g:'cute'},
+  {k:'hedge',  n:'고슴도치', e:'🦔', g:'cute'},
+  {k:'chick',  n:'병아리',   e:'🐤', g:'cute'},
+  {k:'penguin',n:'펭귄',     e:'🐧', g:'cute'},
+  {k:'deer',   n:'사슴',     e:'🦌', g:'cute'},
+  {k:'sheep',  n:'양',       e:'🐑', g:'cute'},
+  {k:'fly',    n:'나비',     e:'🦋', g:'cute'},
+  {k:'lady',   n:'무당벌레', e:'🐞', g:'cute'},
+  {k:'bee',    n:'꿀벌',     e:'🐝', g:'cute'},
+  {k:'owl',    n:'부엉이',   e:'🦉', g:'cute'},
+  {k:'cri',    n:'귀뚜라미', e:'🦗', g:'cute'},
+  // 크고 멋진 친구들
+  {k:'croc',   n:'악어',     e:'🐊', g:'wild'},
+  {k:'trex',   n:'티라노',   e:'🦖', g:'wild'},
+  {k:'bronto', n:'브라키오', e:'🦕', g:'wild'},
+  {k:'whale',  n:'고래',     e:'🐋', g:'wild'},
+  {k:'shark',  n:'상어',     e:'🦈', g:'wild'},
+  {k:'octo',   n:'문어',     e:'🐙', g:'wild'},
+  {k:'lion',   n:'사자',     e:'🦁', g:'wild'},
+  {k:'tiger',  n:'호랑이',   e:'🐯', g:'wild'},
+  {k:'eleph',  n:'코끼리',   e:'🐘', g:'wild'},
+  {k:'rhino',  n:'코뿔소',   e:'🦏', g:'wild'},
+  {k:'hippo',  n:'하마',     e:'🦛', g:'wild'},
+  {k:'wolf',   n:'늑대',     e:'🐺', g:'wild'},
+  {k:'eagle',  n:'독수리',   e:'🦅', g:'wild'},
+  {k:'snake',  n:'뱀',       e:'🐍', g:'wild'},
+  {k:'lizard', n:'도마뱀',   e:'🦎', g:'wild'},
+  {k:'dragon', n:'용',       e:'🐲', g:'wild'}
 ];
-/* 친구를 키우는 비용은 뒤로 갈수록 올라간다.
-   같은 값으로 두면 하루 한 마리씩 졸업해서 며칠 만에 볼 게 없어진다.
-   300 / 450 / 600 / 750 / 900 = 다 모으는 데 3000 XP. */
-const growCost = i => 300 + i*150;
-/* 마지막 단계(여왕벌 등)는 비용의 75%에서 나타난다.
-   100%에 두면 졸업과 동시에 지나가 아이가 볼 틈이 없다. */
-const RATIO=[0, .10, .27, .50, .75];
+const GROUPS=[['all','전체'],['cute','귀여운 친구'],['wild','크고 멋진 친구']];
+const animal=k=>ANIMALS.find(a=>a.k===k);
+
+/* 다섯 단계. 마지막 단계는 그 주 단어를 다 맞혔을 때만 나온다. */
+const STAGE_AT=[0, .25, .5, .75, 1];
+const STAGE_NAME=['알','부화','아기','자람','다 컸어요'];
+function stageOfRatio(r){ let i=0; STAGE_AT.forEach((v,k)=>{ if(r>=v)i=k }); return i }
+
+/* 그 주 진행률 = 맞힌 단어 / 그 주 단어. 개수가 매주 달라도 다섯 단계로 자란다. */
+function weekRatio(k){
+  const words=weekWords(k); if(!words.length)return 0;
+  const p=(S.qw&&S.qw[k])||{};
+  return words.filter(r=>p[r[0]]).length / words.length;
+}
+function weekDone(k){ return weekWords(k).length>0 && weekRatio(k)>=1 }
+/* 이번 주에 고른 친구 */
+function petOf(k){ return ((S&&S.pick)||{})[k] || null }
+/* 도감 = 다 채운 주의 친구들 (예전 방식으로 모은 것도 함께) */
+function dexList(){
+  const out=[];
+  Object.keys(weeks()).sort().forEach(k=>{
+    const a=petOf(k);
+    if(a && weekDone(k) && !out.includes(a)) out.push(a);
+  });
+  ((S&&S.dexLegacy)||[]).forEach(a=>{ if(!out.includes(a) && animal(a)) out.push(a) });
+  return out;
+}
+function petHTML(k, ratio, size){
+  const a=animal(k);
+  if(!a) return '<span class="pet-emoji" style="font-size:'+size+'px">🥚</span>';
+  const st=stageOfRatio(ratio);
+  const face = st<=0 ? '🥚' : st===1 ? '🐣' : a.e;
+  const scale = st<=1 ? 1 : st===2 ? .72 : st===3 ? .88 : 1.05;
+  return '<span class="pet-emoji'+(st===4?' full':'')+'" style="font-size:'+Math.round(size*scale)+'px" '+
+         'role="img" aria-label="'+a.n+' '+STAGE_NAME[st]+'">'+face+'</span>';
+}
 
 const SHOP=[
+  // 꽃과 나무
   {id:'tulip', e:'🌷', n:'튤립',        c:5},
   {id:'sun',   e:'🌻', n:'해바라기',     c:8},
   {id:'clover',e:'🍀', n:'네잎클로버',   c:10},
   {id:'mush',  e:'🍄', n:'버섯',        c:12},
   {id:'cactus',e:'🌵', n:'선인장',      c:14},
   {id:'tree',  e:'🌳', n:'나무',        c:15},
+  // 먹을 것
+  {id:'apple', e:'🍎', n:'사과',        c:8},
+  {id:'cookie',e:'🍪', n:'쿠키',        c:12},
+  {id:'donut', e:'🍩', n:'도넛',        c:16},
+  {id:'ice',   e:'🍦', n:'아이스크림',   c:20},
+  {id:'pizza', e:'🍕', n:'피자',        c:28},
+  {id:'cake',  e:'🎂', n:'케이크',       c:40},
+  // 하늘과 집
   {id:'star',  e:'⭐', n:'별',          c:25},
   {id:'rain',  e:'🌈', n:'무지개',      c:30},
-  {id:'cat',   e:'🐱', n:'고양이 친구',  c:35},
-  {id:'bunny', e:'🐰', n:'토끼 친구',    c:35},
-  {id:'fount', e:'⛲', n:'분수',        c:40},
+  {id:'fount', e:'⛲', n:'분수',        c:38},
   {id:'house', e:'🏡', n:'작은 집',      c:45},
-  {id:'cake',  e:'🎂', n:'케이크',       c:50},
   {id:'crown', e:'👑', n:'왕관',        c:60}
 ];
 const shopItem=id=>SHOP.find(x=>x.id===id);
-const curSpec =()=>SPECIES[Math.min(growth().idx,SPECIES.length-1)];
-function stageOf(px,idx){
-  const c=growCost(idx===undefined?(S?growth().idx:0):idx);
-  let i=0; RATIO.forEach((r,k)=>{if(px>=r*c)i=k}); return i;
-}
-const nextStepXP=()=>{
-  const g=growth(), c=growCost(g.idx), i=stageOf(g.petXp);
-  return i<RATIO.length-1 ? Math.ceil(RATIO[i+1]*c)-g.petXp : c-g.petXp;
-};
-
-function petHTML(px,size){
-  const sp=curSpec(), i=stageOf(px);
-  return `<span class="pet-emoji" style="font-size:${size}px" role="img" aria-label="${sp.sn[i]}">${sp.st[i]}</span>`;
-}
-/* XP를 더한다. 성장은 저장하지 않고 전체 XP에서 계산하므로,
-   더하기 전후의 도감을 비교해 방금 다 자란 친구를 알아낸다. */
-function addXP(n){
-  const before=growth().dex.length;
-  S.own.xp+=n;
-  const after=growth().dex;
-  return after.length>before ? SPECIES.find(x=>x.key===after[after.length-1]) : null;
-}
 function addCoin(n){ S.own.earn+=n }
 function spendCoin(n){ S.own.spend+=n }
 
@@ -1439,23 +1519,30 @@ function spendCoin(n){ S.own.spend+=n }
 function renderHome(){
   const P=PROFILES[pid];
   document.getElementById('who').textContent=P.name;
-  document.getElementById('xp').textContent=totalXP();
   document.getElementById('coin').textContent=coins();
   document.getElementById('listchip').textContent=listOf(pid).name;
   const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
   document.getElementById('dday').textContent='D-'+d;
-  if(S.day.d!==today())S.day={d:today(),xp:0,coin:0};
-  document.getElementById('capxp').textContent=S.day.xp;
+  if(S.day.d!==today())S.day={d:today(),coin:0};
+  document.getElementById('capxp').textContent=S.day.coin;
 
-  const g=growth(), sp=curSpec(), i=stageOf(g.petXp), done=g.dex.length>=SPECIES.length;
-  document.getElementById('pet').innerHTML=petHTML(g.petXp,104);
-  document.getElementById('pet-name').textContent=sp.sn[i];
-  document.getElementById('pet-next').textContent = done
-    ? '친구를 모두 모았어요! 이제 정원을 꾸며보자'
-    : (i===RATIO.length-1
-        ? `${nextStepXP()} XP 더 모으면 정원으로 가요`
-        : `${nextStepXP()} XP 더 모으면 자라요`);
-  document.getElementById('dexcount').textContent=g.dex.length;
+  qLoad();
+  const wk=curWeek, words=weekWords(wk), prog=weekProg(wk);
+  const solved=words.filter(r=>prog[r[0]]).length;
+  const ratio=weekRatio(wk), petKey=petOf(wk), a=animal(petKey);
+  document.getElementById('pet').innerHTML=petHTML(petKey, ratio, 104);
+  document.getElementById('pet-name').textContent =
+    !words.length ? '이번 주 단어를 기다리는 중'
+    : !a ? '친구를 골라주세요'
+    : a.n + ' · ' + STAGE_NAME[stageOfRatio(ratio)];
+  document.getElementById('pet-next').textContent =
+    !words.length ? '부모 화면에서 단어를 넣으면 시작해요'
+    : !a ? '이번 주에 키울 친구를 골라요'
+    : ratio>=1 ? '다 컸어요! 정원에서 만날 수 있어요'
+    : `단어 ${words.length-solved}개 더 맞히면 다 커요`;
+  document.getElementById('pet-pick').textContent = a ? '친구 바꾸기' : '친구 고르기';
+  document.getElementById('pet-pick').style.display = words.length ? '' : 'none';
+  document.getElementById('dexcount').textContent=dexList().length;
   qLoad();
   const qws=QW(), qp=weekProg(curWeek);
   const qdone=qws.filter(r=>qp[r[0]]).length;
@@ -1463,8 +1550,9 @@ function renderHome(){
     ? weekLabel(curWeek)+' · '+qdone+'/'+qws.length+' 맞힘'
     : '이번 주 단어가 아직 없어요';
   document.getElementById('gardencount').textContent=S.garden.length;
+  // 사진이 없으면 이름 배지 대신 점을 둔다. 옆에 이름이 이미 있어 두 번 나온다.
   const chip=document.getElementById('whoface');
-  if(chip)chip.innerHTML=faceHTML(pid,26);
+  if(chip)chip.innerHTML = getPhoto(pid) ? faceHTML(pid,26) : '<span class="dot"></span>';
 
   const mine=myWords(); let m=0,pa=0,l=0;
   mine.forEach(w=>{const s=S.w[w[0]];if(!s)return;
@@ -1621,8 +1709,7 @@ function checkPractice(){
     const g=grantPractice();
     fb.innerHTML=`<div class="msg good">맞았어! 🎉</div>`+
       (g.capped?`<div class="ans">오늘 연습 보상은 다 받았어 — 시험장에 가면 더 받을 수 있어</div>`
-               :`<div class="ans">+${g.xp} XP · +${g.coin} 코인</div>`);
-    if(g.grown)setTimeout(()=>toast(`${g.grown.name}가 다 자라서 정원으로 갔어요! 🎉`),700);
+               :`<div class="ans">+${g.coin} 코인</div>`);
     done++; document.getElementById('play-count').textContent=done;
     document.querySelectorAll('#slots .tile').forEach(t=>t.classList.add('ok'));
     document.getElementById('checkbtn').disabled=true;
@@ -1798,13 +1885,12 @@ function finishTest(){
   if(okn===tres.length){xp+=50;coin+=10}
   const allVoice=tres.every(r=>r.ok&&!r.typed);
   if(allVoice&&tres.length>0)xp+=20;
-  addCoin(coin); const grown=addXP(xp); bumpStreak();
+  addCoin(coin); bumpStreak();
   const h=todayHist();
   tres.forEach(r=>{h.tw++; if(r.ok){h.tok++; r.typed?h.typed++:h.voice++}});
   save();
-  if(grown)setTimeout(()=>toast(`${grown.name}가 다 자라서 정원으로 갔어요! 🎉`),900);
   document.getElementById('res-ok').textContent=`${okn}/${tres.length}`;
-  document.getElementById('res-xp').textContent=xp;
+  document.getElementById('res-voice').textContent=tres.filter(r=>r.ok&&!r.typed).length;
   document.getElementById('res-coin').textContent=coin;
   document.getElementById('res-title').textContent=okn===tres.length?'다 맞았어!':'잘했어!';
   document.getElementById('res-sub').textContent=allVoice
@@ -2077,7 +2163,15 @@ function qCheck(){
   const fb=document.getElementById('q-fb');
   if(ans===w){
     const p=weekProg(curWeek), k=qWord()[0];
+    const first=!p[k];
     p[k]=p[k]||{n:0}; p[k].n++; if(!p[k].at)p[k].at=Date.now();
+    if(first){ addCoin(2); }                    // 처음 맞힌 단어만 코인을 준다
+    const justDone = first && weekDone(curWeek);
+    if(justDone){
+      addCoin(15);                              // 그 주를 다 채우면 보너스
+      const a=animal(petOf(curWeek));
+      setTimeout(()=>toast(a?(a.n+'가 다 자랐어요! 🎉'):'이번 주 단어를 다 맞혔어요! 🎉'),900);
+    }
     save(); qDone++;
     fb.innerHTML='<div class="msg good">맞았어! 🎉</div>';
     document.querySelectorAll('#q-slots .tile').forEach(t=>t.classList.add('ok'));
@@ -2118,19 +2212,43 @@ function qNext(){
 }
 function quitQuiz(){ clearInterval(qCheck._t); go('s-quizhome') }
 
+/* ---------- 친구 고르기 ---------- */
+let ppGroup='all';
+function renderPickPet(){
+  qLoad();
+  const wk=curWeek, cur=petOf(wk), dex=dexList();
+  document.getElementById('pp-sub').textContent =
+    weekLabel(wk)+' · 이 주 단어를 다 맞히면 다 자라요. 언제든 바꿀 수 있어요.';
+  document.getElementById('pp-group').innerHTML=GROUPS.map(([k,label])=>
+    '<button class="'+(k===ppGroup?'on':'')+'" onclick="ppGroup=\''+k+'\';renderPickPet()">'+label+'</button>').join('');
+  const list=ANIMALS.filter(a=>ppGroup==='all'||a.g===ppGroup);
+  document.getElementById('pp-list').innerHTML=list.map(a=>
+    '<button class="petcell'+(a.k===cur?' on':'')+'" onclick="choosePet(\''+a.k+'\')">'+
+      '<div class="e">'+a.e+'</div><div class="n">'+a.n+'</div>'+
+      '<div class="got">'+(dex.includes(a.k)?'키워봤어요':'&nbsp;')+'</div>'+
+    '</button>').join('');
+}
+function choosePet(k){
+  if(weekDone(curWeek)){ toast('이번 주는 이미 다 키웠어요'); return }
+  S.pick=S.pick||{}; S.pick[curWeek]=k; save();
+  toast(animal(k).n+'를 키우기로 했어요');
+  go('s-home');
+}
+
 /* ---------- garden & shop ---------- */
 const SLOTS=24;
 function renderGarden(){
   document.getElementById('g-coin').textContent=coins();
-  const gr=growth();
+  const dex=dexList();
   const g=document.getElementById('garden');
-  let html=`<span class="pet-here" title="지금 키우는 친구">${curSpec().st[stageOf(gr.petXp)]}</span>`;
+  let html=`<span class="pet-here" title="지금 키우는 친구">${
+    petHTML(petOf(curWeek), weekRatio(curWeek), 40)}</span>`;
   // 다 키운 친구들이 정원에 같이 산다
-  html+=gr.dex.map(k=>{const sp=SPECIES.find(x=>x.key===k);
-    return `<span class="slot filled" title="${sp.name}">${sp.home}</span>`}).join('');
+  html+=dex.map(k=>{const a=animal(k); if(!a)return '';
+    return `<span class="slot filled" title="${a.n}">${a.e}</span>`}).join('');
   html+=S.garden.map((id,i)=>{const it=shopItem(id);
     return it?`<button class="slot filled" onclick="unplace2(${i})" title="${it.n} — 눌러서 가져오기">${it.e}</button>`:''}).join('');
-  const used=2+gr.dex.length+S.garden.length;
+  const used=2+dex.length+S.garden.length;
   for(let i=used;i<SLOTS;i++)html+='<span class="slot empty"></span>';
   g.innerHTML=html;
 
@@ -2142,15 +2260,15 @@ function renderGarden(){
           <span class="e">${it.e}</span><span class="n">${it.n}</span><span class="own">×${n}</span></button>`}).join('')
     : '<p class="empty-note">아직 아이템이 없어요. 상점에서 코인으로 사보자!</p>';
 
-  document.getElementById('dexall').textContent=SPECIES.length;
-  document.getElementById('dex').innerHTML=SPECIES.map(sp=>{
-    const got=gr.dex.includes(sp.key);
-    return `<div class="dexcell${got?'':' locked'}"><div class="e">${got?sp.home:'❔'}</div>
-            <div class="n">${got?sp.name:'아직'}</div></div>`}).join('');
+  document.getElementById('dexall').textContent=ANIMALS.length;
+  document.getElementById('dex').innerHTML=ANIMALS.map(a=>{
+    const got=dex.includes(a.k);
+    return `<div class="dexcell${got?'':' locked'}"><div class="e">${got?a.e:'❔'}</div>
+            <div class="n">${got?a.n:'아직'}</div></div>`}).join('');
 }
 function place2(id){
   if(invCount(id)<=0){toast('그 아이템이 없어');return}
-  if(2+growth().dex.length+S.garden.length>=SLOTS){toast('정원이 꽉 찼어');return}
+  if(2+dexList().length+S.garden.length>=SLOTS){toast('정원이 꽉 찼어');return}
   S.garden.push(id); save(); renderGarden();
 }
 function unplace2(i){
