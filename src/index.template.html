@@ -229,6 +229,18 @@ img.face{border:2px solid var(--line)}
 .scard .sd .hl{color:var(--practice);font-weight:600}
 .scard .stap{font-size:12px;color:var(--ink-3);margin-top:8px;min-height:0}
 .scard.hide .sw{visibility:hidden}
+.zone.quiz{border-left:7px solid var(--blue,#3A6FB0)}
+.zone.quiz .tag{background:var(--retry-soft);color:var(--retry)}
+.seg.wrap{flex-wrap:wrap}
+.qe-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.qe-pick select{padding:9px 12px;border-radius:var(--r-m);border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);font:inherit;font-size:15px;min-height:var(--tap)}
+.wk-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.wk{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-s);background:var(--sunk)}
+.wk-n{flex:1;font-size:14px}
+.wk-bar{width:80px;height:8px;border-radius:999px;background:var(--line);overflow:hidden;flex:none}
+.wk-bar i{display:block;height:100%;background:var(--good)}
+.wk-c{font-size:13px;color:var(--ink-3);min-width:44px;text-align:right}
 .bk-act{display:flex;gap:8px;flex-wrap:wrap}
 .bk-text{width:100%;min-height:110px;margin-top:10px;padding:10px;border-radius:var(--r-m);
   border:1px solid var(--line);background:var(--sunk);color:var(--ink-2);
@@ -319,6 +331,14 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   padding:12px 22px;border-radius:999px;font-size:15px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
   transition:opacity .25s;z-index:50}
 .toast.on{opacity:1}
+/* --- 화면이 짧으면 어디서든 주 버튼을 아래에 붙인다 ---
+   기기 크기뿐 아니라 창을 작게 연 경우까지 덮는다. */
+@media (max-height:700px){
+  .footer-bar{position:sticky;bottom:0;z-index:5;margin-top:auto;
+    padding:8px 0 max(4px,env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--bg) 72%,transparent)}
+}
+
 /* --- 누르는 것의 최소 크기 (애플 권장 44pt) ---
    반드시 아래 화면 대응 분기보다 먼저 와야 한다.
    뒤에 두면 min-height가 분기에서 줄인 height를 도로 밀어올린다. */
@@ -449,10 +469,15 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   .write-in{font-size:28px;padding:8px 14px}
   .study{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 
-  /* 홈: 넓은 폭을 살려 세 칸으로 편다. 세로로 쌓으면 높이가 모자란다. */
-  .home-grid{grid-template-columns:1.25fr .9fr .9fr;gap:8px}
-  .side{display:contents}
-  .zones{gap:8px}
+  /* 홈: 카드가 셋이라 세로로 쌓으면 높이가 모자란다.
+     위 줄에 구역 셋, 아래 줄에 캐릭터와 진행을 나란히 놓는다. */
+  .home-grid{display:flex;flex-direction:column;gap:8px}
+  .zones{flex-direction:row;gap:8px}
+  .zones .zone{flex:1;min-height:0;padding:10px 13px}
+  .zones .zone p{font-size:13px}
+  .zones .zone .tag{top:8px;right:10px;font-size:11px;padding:3px 8px}
+  .side{flex-direction:row;gap:8px}
+  .side > .card{flex:1}
   .pet-emoji{font-size:46px!important}
   .pet h3{font-size:16px}
   .pet p{font-size:12px}
@@ -524,14 +549,6 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <button class="a2hs-x" onclick="dismissA2HS()" aria-label="안내 닫기">✕</button>
     </div>
 
-    <button class="card quiz-entry" onclick="openQuiz()">
-      <span class="qe-icon">🧩</span>
-      <span class="qe-text">
-        <b>유진 · 단어 퀴즈</b>
-        <span>뜻을 보고 스펠링 맞추기 · 소리 없이</span>
-      </span>
-      <span class="qe-go">→</span>
-    </button>
 
     <p style="color:var(--ink-3);font-size:14px;margin-top:22px">
       기록은 이 기기에만 저장됩니다. 기획서 §5.2 — MVP는 로컬 저장.
@@ -554,6 +571,12 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
   <div class="home-grid">
     <div class="zones">
+      <button class="card zone quiz" onclick="openQuiz()">
+        <span class="tag">이번 주</span>
+        <h2>단어 퀴즈</h2>
+        <p>뜻을 보고 스펠링을 맞춰요. 소리는 나오지 않아요.</p>
+        <p style="font-size:14px;color:var(--ink-3)" id="home-q"></p>
+      </button>
       <button class="card zone practice" onclick="go('s-pick')">
         <span class="tag">연습</span>
         <h2>연습장</h2>
@@ -827,14 +850,15 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 <!-- ============ WORD QUIZ HOME ============ -->
 <section id="s-quizhome" class="screen">
   <header class="topbar">
-    <button class="btn ghost" onclick="go('s-profile')">← 처음으로</button>
+    <button class="btn ghost" onclick="go('s-home')">← 홈</button>
     <span class="spacer"></span>
     <span class="chip">단어 퀴즈</span>
   </header>
   <div style="margin:auto;width:100%;max-width:720px">
-    <p class="eyebrow">유진</p>
+    <p class="eyebrow" id="q-who">유진</p>
     <h1 style="font-size:34px;margin:6px 0 2px">단어 퀴즈</h1>
     <p style="color:var(--ink-2);margin:0" id="q-hint"></p>
+    <div class="seg wrap" id="q-weeks" style="margin-top:12px"></div>
 
     <div class="card" style="margin-top:18px">
       <div style="display:flex;align-items:baseline;gap:8px">
@@ -843,7 +867,11 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <div class="bar" style="margin-top:12px"><i class="m" id="q-bar"></i></div>
     </div>
 
-    <div class="profiles" style="margin-top:16px">
+    <div id="q-empty" class="note" style="margin-top:16px;display:none">
+      이번 주 단어가 아직 없어요. <b>홈 → 부모 → 주간 단어</b> 에서 넣을 수 있어요.
+    </div>
+
+    <div class="profiles q-need" style="margin-top:16px">
       <button class="card pcard" onclick="go('s-study')">
         <span class="ava" style="font-size:44px;display:grid;place-items:center">📖</span>
         <span><h2>학습하기</h2><p>뜻과 스펠링을 함께 보며 외워요</p></span>
@@ -854,23 +882,25 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       </button>
     </div>
 
-    <div style="margin-top:16px;text-align:center">
-      <button class="btn ghost" onclick="openEditor()" style="color:var(--ink-3)">✏️ 단어 바꾸기</button>
-    </div>
+
   </div>
 </section>
 
 <!-- ============ QUIZ WORD EDITOR ============ -->
 <section id="s-qedit" class="screen">
   <header class="topbar">
-    <button class="btn ghost" onclick="go('s-quizhome')">← 뒤로</button>
+    <button class="btn ghost" onclick="go('s-parent')">← 부모 화면</button>
     <span class="spacer"></span>
     <button class="btn" onclick="previewQuizList()">확인해보기</button>
     <button class="btn primary" onclick="saveQuizList()">저장</button>
   </header>
   <div style="width:100%;max-width:820px;margin:0 auto;overflow:auto">
-    <h1 style="font-size:28px">단어 바꾸기</h1>
-    <p style="color:var(--ink-2);margin:6px 0 0">
+    <h1 style="font-size:28px">주간 단어</h1>
+    <div class="qe-pick">
+      <span class="seg" id="qe-kid"></span>
+      <select id="qe-week" onchange="changeEditWeek(this.value)"></select>
+    </div>
+    <p style="color:var(--ink-2);margin:10px 0 0">
       한 줄에 하나씩 <b>단어 : 뜻</b> 으로 적어주세요. 앞의 번호는 있어도 되고 없어도 됩니다.
     </p>
     <div class="note" style="margin-top:12px">
@@ -882,7 +912,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <div id="qe-msg" class="qe-msg"></div>
     <div class="footer-bar" style="justify-content:flex-start;margin:14px 0 20px">
       <button class="btn big primary" onclick="saveQuizList()">저장하기</button>
-      <button class="btn big ghost" onclick="resetQuizList()">처음 목록으로</button>
+      <button class="btn big ghost" onclick="deleteQuizWeek()">이 주차 지우기</button>
     </div>
   </div>
 </section>
@@ -895,6 +925,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <button class="btn" id="study-toggle" onclick="toggleStudy()">단어 가리기</button>
   </header>
   <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <p class="eyebrow" id="study-week"></p>
     <h1 style="font-size:30px">학습하기</h1>
     <p style="color:var(--ink-2);margin:4px 0 0">
       뜻 안에서 그 단어가 어떻게 쓰이는지 함께 보세요. 카드를 누르면 단어를 가렸다 보였다 할 수 있어요.
@@ -1026,6 +1057,16 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <tbody id="sectbl"></tbody>
       </table>
       <div class="wordgrid" id="wordgrid"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">주간 단어</p>
+      <p class="sub">아이마다 다른 목록을 주차별로 넣습니다. 지난 주차는 남아 있어 복습할 수 있어요.</p>
+      <div id="p-weeks" class="wk-list"></div>
+      <div class="bk-act" style="margin-top:12px">
+        <button class="btn primary" onclick="openEditor(pid, weekKey())">이번 주 단어 넣기</button>
+        <button class="btn" onclick="openEditor(pid, shiftWeek(weekKey(),1))">다음 주 미리 넣기</button>
+      </div>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -1390,6 +1431,12 @@ function renderHome(){
         ? `${nextStepXP()} XP 더 모으면 정원으로 가요`
         : `${nextStepXP()} XP 더 모으면 자라요`);
   document.getElementById('dexcount').textContent=g.dex.length;
+  qLoad();
+  const qws=QW(), qp=weekProg(curWeek);
+  const qdone=qws.filter(r=>qp[r[0]]).length;
+  document.getElementById('home-q').textContent = qws.length
+    ? weekLabel(curWeek)+' · '+qdone+'/'+qws.length+' 맞힘'
+    : '이번 주 단어가 아직 없어요';
   document.getElementById('gardencount').textContent=S.garden.length;
   const chip=document.getElementById('whoface');
   if(chip)chip.innerHTML=faceHTML(pid,26);
@@ -1763,20 +1810,79 @@ const QUIZ_DEFAULT=[
  ['bilingual','People who are bilingual can speak two languages.'],
  ['mismatched','Things that are mismatched do not fit or belong together.']
 ];
-let QUIZ_WORDS=QUIZ_DEFAULT.slice();
 /* 문제를 낼 때는 뜻 문장에서 그 단어만 빈칸으로 바꾼다.
    나머지는 원문 그대로라 설명하는 뜻이 달라지지 않는다. */
 const QRE=w=>new RegExp('\\b'+w+'\\b','ig');
 const blankOut=(w,d)=>d.replace(QRE(w),'______');
 const markWord=(w,d)=>d.replace(QRE(w),m=>'<b class="hl">'+m+'</b>');
 
-let qState={solved:{},best:0}, qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
+/* ---------- 주차 ----------
+   단어는 매주 바뀌고 아이마다 다르다. 주는 월요일에 시작한다.
+   주차 이름은 '2026-W36' 처럼 두어 이름순 정렬이 곧 시간순이 된다. */
+function weekKey(d){
+  d = d || new Date();
+  const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dow=(t.getUTCDay()+6)%7;            // 월=0
+  t.setUTCDate(t.getUTCDate()-dow+3);       // 그 주 목요일로 옮겨 연도를 정한다
+  const first=new Date(Date.UTC(t.getUTCFullYear(),0,4));
+  const n=1+Math.round(((t-first)/864e5-3+((first.getUTCDay()+6)%7))/7);
+  return t.getUTCFullYear()+'-W'+String(n).padStart(2,'0');
+}
+function weekMonday(k){
+  const [y,w]=k.split('-W').map(Number);
+  const jan4=new Date(Date.UTC(y,0,4));
+  const mon=new Date(jan4);
+  mon.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+(w-1)*7);
+  return mon;
+}
+function weekLabel(k){
+  const m=weekMonday(k);
+  const tag = k===weekKey() ? ' · 이번 주'
+            : k===weekKey(new Date(Date.now()-7*864e5)) ? ' · 지난 주'
+            : k===weekKey(new Date(Date.now()+7*864e5)) ? ' · 다음 주' : '';
+  return (m.getUTCMonth()+1)+'월 '+m.getUTCDate()+'일 주'+tag;
+}
+function shiftWeek(k,n){ const m=weekMonday(k); m.setUTCDate(m.getUTCDate()+n*7); return weekKey(m) }
+
+/* 주차별 단어와 진도는 아이 저장본 안에 둔다.
+   그래야 내보내기와 합치기에 그대로 따라간다. */
+function weeks(){ return (S && S.weeks) || {} }
+function weekWords(k){ const w=weeks()[k]; return (w && w.words) || [] }
+function weekProg(k){ S.qw=S.qw||{}; return S.qw[k]||(S.qw[k]={}) }
+function weekList(){ return Object.keys(weeks()).sort().reverse() }
+function defaultWeek(){
+  const t=weekKey();
+  if(weekWords(t).length) return t;
+  const all=weekList();
+  return all.length ? all[0] : t;
+}
+let curWeek=null;
+let qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
+function QW(){ return weekWords(curWeek) }
+
 function qLoad(){
-  try{qState=JSON.parse(localStorage.getItem('sb_quiz'))||{}}catch(e){qState={}}
-  if(!qState.solved)qState.solved={}; if(!qState.best)qState.best=0;
-  let custom=null;
-  try{custom=JSON.parse(localStorage.getItem('sb_quiz_words'))}catch(e){}
-  QUIZ_WORDS = (Array.isArray(custom)&&custom.length) ? custom : QUIZ_DEFAULT.slice();
+  if(!S) return;
+  S.weeks=S.weeks||{}; S.qw=S.qw||{};
+  migrateOldQuiz();
+  if(!curWeek || !weeks()[curWeek]) curWeek=defaultWeek();
+}
+/* 예전에는 아이 구분 없이 퀴즈가 하나였다. 그 단어와 기록을 유진이의 이번 주로 옮긴다. */
+function migrateOldQuiz(){
+  if(S.quizMoved) return;
+  S.quizMoved=true;
+  if(pid!=='yujin' || Object.keys(S.weeks).length){ save(); return }
+  let custom=null, old=null;
+  try{ custom=JSON.parse(localStorage.getItem('sb_quiz_words')) }catch(e){}
+  try{ old=JSON.parse(localStorage.getItem('sb_quiz')) }catch(e){}
+  const words=(Array.isArray(custom)&&custom.length)?custom:QUIZ_DEFAULT.slice();
+  const k=weekKey();
+  S.weeks[k]={words:words, at:Date.now()};
+  if(old && old.solved){
+    const prog={};
+    Object.entries(old.solved).forEach(([w,n])=>{ if(n) prog[w]={n:n} });
+    S.qw[k]=prog;
+  }
+  save();
 }
 /* 붙여넣은 목록을 읽는다. "1. word : 뜻" 도 "word : 뜻" 도 받는다. */
 function parseQuizList(text){
@@ -1792,11 +1898,37 @@ function parseQuizList(text){
   });
   return {out,bad,noBlank};
 }
-function openEditor(){
+let editWeek=null, editKid=null;
+function saveOf(id){ try{ return JSON.parse(localStorage.getItem(key(id))||'null') }catch(e){ return null } }
+function weekWordsOf(id,wk){
+  if(id===pid) return weekWords(wk);
+  const d=saveOf(id);
+  return ((d && d.weeks && d.weeks[wk]) || {}).words || [];
+}
+function openEditor(kid,wk){
+  editKid = kid || pid || 'yujin';
+  editWeek = wk || weekKey();
   go('s-qedit');
-  document.getElementById('qe-text').value=QUIZ_WORDS.map(([w,d],i)=>`${i+1}. ${w} : ${d}`).join('\n');
+  renderEditorHead();
+  const src=weekWordsOf(editKid,editWeek);
+  document.getElementById('qe-text').value =
+    src.map((r,i)=>(i+1)+'. '+r[0]+' : '+r[1]).join(String.fromCharCode(10));
   document.getElementById('qe-msg').innerHTML='';
 }
+function renderEditorHead(){
+  document.getElementById('qe-kid').innerHTML=Object.keys(PROFILES).map(id=>
+    '<button class="'+(id===editKid?'on':'')+'" onclick="openEditor(\''+id+'\',editWeek)">'+
+    PROFILES[id].name+'</button>').join('');
+  const opts=[shiftWeek(weekKey(),1), weekKey(), shiftWeek(weekKey(),-1), shiftWeek(weekKey(),-2)];
+  Object.keys((saveOf(editKid)||{}).weeks||{}).forEach(k=>{ if(!opts.includes(k))opts.push(k) });
+  opts.sort().reverse();
+  document.getElementById('qe-week').innerHTML=opts.map(k=>{
+    const n=weekWordsOf(editKid,k).length;
+    return '<option value="'+k+'"'+(k===editWeek?' selected':'')+'>'+
+           weekLabel(k)+(n?' ('+n+'개)':' (비어 있음)')+'</option>';
+  }).join('');
+}
+function changeEditWeek(k){ openEditor(editKid,k) }
 function previewQuizList(){
   const {out,bad,noBlank}=parseQuizList(document.getElementById('qe-text').value);
   const msg=document.getElementById('qe-msg');
@@ -1810,33 +1942,57 @@ function previewQuizList(){
 }
 function saveQuizList(){
   const out=previewQuizList();
-  if(!out.length){toast('저장할 단어가 없어요');return}
-  try{localStorage.setItem('sb_quiz_words',JSON.stringify(out))}catch(e){toast('저장하지 못했어요');return}
-  qState.solved={}; qSave(); qLoad();
-  toast(`단어 ${out.length}개로 바꿨어요`); go('s-quizhome');
+  if(!out.length){ toast('저장할 단어가 없어요'); return }
+  const target=editKid, wk=editWeek;
+  const d = target===pid ? S : (saveOf(target) || blank());
+  d.weeks=d.weeks||{}; d.qw=d.qw||{};
+  d.weeks[wk]={words:out, at:Date.now()};
+  try{ localStorage.setItem(key(target), JSON.stringify(d)) }
+  catch(e){ toast('저장하지 못했어요'); return }
+  if(target===pid){ S=load(pid); curWeek=wk; qLoad() }
+  toast(PROFILES[target].name+' · '+weekLabel(wk)+' 단어 '+out.length+'개 저장');
+  renderEditorHead();
+  document.getElementById('qe-msg').innerHTML='<span class="bk-ok">저장했어요.</span>';
 }
-function resetQuizList(){
-  if(!confirm('처음 12단어로 되돌릴까요? 맞힌 기록도 지워집니다.'))return;
-  try{localStorage.removeItem('sb_quiz_words')}catch(e){}
-  qState.solved={}; qSave(); qLoad(); toast('처음 목록으로 되돌렸어요'); go('s-quizhome');
+function deleteQuizWeek(){
+  if(!confirm(PROFILES[editKid].name+'의 '+weekLabel(editWeek)+' 단어를 지울까요?')) return;
+  const d = editKid===pid ? S : (saveOf(editKid) || blank());
+  if(d.weeks) delete d.weeks[editWeek];
+  if(d.qw) delete d.qw[editWeek];
+  try{ localStorage.setItem(key(editKid), JSON.stringify(d)) }catch(e){}
+  if(editKid===pid){ S=load(pid); curWeek=defaultWeek(); qLoad() }
+  toast('지웠어요');
+  openEditor(editKid, editWeek);
 }
-function qSave(){ try{localStorage.setItem('sb_quiz',JSON.stringify(qState))}catch(e){} }
 function openQuiz(){ qLoad(); go('s-quizhome') }
 
 function renderQuizHome(){
-  const solved=QUIZ_WORDS.filter(([w])=>qState.solved[w]).length;
+  qLoad();
+  const words=QW(), prog=weekProg(curWeek);
+  const solved=words.filter(r=>prog[r[0]]).length;
+  document.getElementById('q-who').textContent=PROFILES[pid].name;
   document.getElementById('q-solved').textContent=solved;
-  document.getElementById('q-all').textContent=QUIZ_WORDS.length;
-  document.getElementById('q-bar').style.width=(solved/QUIZ_WORDS.length*100)+'%';
-  document.getElementById('q-hint').textContent = solved===QUIZ_WORDS.length
-    ? '12개를 모두 맞혔어요! 한 번 더 돌아볼까요?'
+  document.getElementById('q-all').textContent=words.length;
+  document.getElementById('q-bar').style.width=(words.length?solved/words.length*100:0)+'%';
+  document.getElementById('q-hint').textContent =
+    !words.length ? '이번 주 단어가 아직 없어요. 부모 화면에서 넣어주세요.'
+    : solved===words.length ? '이번 주 단어를 모두 맞혔어요! 한 번 더 돌아볼까요?'
     : '뜻을 읽고 알파벳 타일로 단어를 만들어요. 소리는 나오지 않아요.';
+  const all=weekList();
+  const box=document.getElementById('q-weeks');
+  box.innerHTML = all.length<=1 ? '' : all.map(k=>
+    '<button class="'+(k===curWeek?'on':'')+'" onclick="pickWeek(\''+k+'\')">'+
+    weekLabel(k)+'</button>').join('');
+  document.querySelectorAll('.q-need').forEach(el=>{ el.style.display=words.length?'':'none' });
+  document.getElementById('q-empty').style.display=words.length?'none':'';
 }
+function pickWeek(k){ curWeek=k; renderQuizHome() }
 
 /* ---------- 학습 화면 ---------- */
 function renderStudy(){
+  document.getElementById('study-week').textContent=PROFILES[pid].name+' · '+weekLabel(curWeek);
   document.getElementById('study-toggle').textContent = studyHide ? '단어 보이기' : '단어 가리기';
-  document.getElementById('study').innerHTML=QUIZ_WORDS.map(([w,d])=>
+  document.getElementById('study').innerHTML=QW().map(([w,d])=>
     '<div class="scard'+(studyHide?' hide':'')+'" onclick="this.classList.toggle(\'hide\')">'+
       '<div class="sw en">'+w+'</div>'+
       '<div class="sd">'+(studyHide?blankOut(w,d):markWord(w,d))+'</div>'+
@@ -1847,11 +2003,12 @@ function toggleStudy(){ studyHide=!studyHide; renderStudy() }
 
 /* ---------- 퍼즐 퀴즈 ---------- */
 function startQuiz(){
-  qList=QUIZ_WORDS.map((_,i)=>i);
+  if(!QW().length){ toast('이번 주 단어가 아직 없어요'); return }
+  qList=QW().map((_,i)=>i);
   for(let i=qList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[qList[i],qList[j]]=[qList[j],qList[i]]}
   qi=0; qDone=0; go('s-quiz'); qLoadWord();
 }
-const qWord=()=>QUIZ_WORDS[qList[qi]];
+const qWord=()=>QW()[qList[qi]];
 function qLoadWord(){
   qTries=0;
   const [w,d]=qWord();
@@ -1894,7 +2051,9 @@ function qCheck(){
   const ans=qPlaced.map(p=>p.c).join(''), w=qWord()[0].toLowerCase();
   const fb=document.getElementById('q-fb');
   if(ans===w){
-    qState.solved[qWord()[0]]=(qState.solved[qWord()[0]]||0)+1; qSave(); qDone++;
+    const p=weekProg(curWeek), k=qWord()[0];
+    p[k]=p[k]||{n:0}; p[k].n++; if(!p[k].at)p[k].at=Date.now();
+    save(); qDone++;
     fb.innerHTML='<div class="msg good">맞았어! 🎉</div>';
     document.querySelectorAll('#q-slots .tile').forEach(t=>t.classList.add('ok'));
     document.getElementById('q-check').disabled=true;
@@ -1929,7 +2088,6 @@ function qCheck(){
 function qNext(){
   clearInterval(qCheck._t);
   if(qi<qList.length-1){qi++;qLoadWord();return}
-  qState.best=Math.max(qState.best,qDone); qSave();
   document.getElementById('q-final').textContent=qDone+' / '+qList.length;
   go('s-quizdone');
 }
@@ -2007,11 +2165,9 @@ function snapshot(){
   });
   const photos={};
   Object.keys(PROFILES).forEach(id=>{ const p=getPhoto(id); if(p)photos[id]=p });
-  let quiz=null, quizWords=null;
-  try{ quiz=JSON.parse(localStorage.getItem('sb_quiz')||'null') }catch(e){}
-  try{ quizWords=JSON.parse(localStorage.getItem('sb_quiz_words')||'null') }catch(e){}
+  // 주차별 단어와 진도는 프로필 안에 들어 있어 따로 담지 않는다
   return {app:'home-spelling-bee', v:BK_VERSION, at:new Date().toISOString(),
-          profiles, photos, quiz, quizWords};
+          profiles, photos};
 }
 
 function bkName(){
@@ -2073,6 +2229,24 @@ function mergeProfile(local, inc){
     out.hist[d]={p:maxNum(c.p,v.p), tw:maxNum(c.tw,v.tw), tok:maxNum(c.tok,v.tok),
                  voice:maxNum(c.voice,v.voice), typed:maxNum(c.typed,v.typed)};
   });
+  // 주차별 단어: 없으면 받아오고, 양쪽에 있으면 나중에 넣은 쪽을 쓴다
+  out.weeks=Object.assign({}, local.weeks||{});
+  Object.entries(inc.weeks||{}).forEach(([k,v])=>{
+    const cur=out.weeks[k];
+    if(!cur || (v.at||0)>(cur.at||0)) out.weeks[k]=v;
+  });
+  // 주차별 진도: 단어마다 많이 맞힌 쪽
+  out.qw=Object.assign({}, local.qw||{});
+  Object.entries(inc.qw||{}).forEach(([k,words])=>{
+    const cur=Object.assign({}, out.qw[k]||{});
+    Object.entries(words).forEach(([w,v])=>{
+      const c=cur[w];
+      cur[w]={n:maxNum(c&&c.n, v&&v.n), at:Math.min(c&&c.at||Infinity, v&&v.at||Infinity)};
+      if(!isFinite(cur[w].at)) delete cur[w].at;
+    });
+    out.qw[k]=cur;
+  });
+  out.quizMoved = local.quizMoved || inc.quizMoved;
   out.streak=maxNum(local.streak, inc.streak);
   out.last=(local.last||'')>(inc.last||'')?local.last:inc.last;
   out.list=local.list||inc.list;
@@ -2100,7 +2274,10 @@ function describeBackup(d){
     const xp=(own.xp||0)+Object.values(p.peers||{}).reduce((a,x)=>a+(x.xp||0),0);
     return `${name} · 단어 ${words}개 · XP ${xp}`;
   });
-  if(d.quiz && d.quiz.solved) rows.push('단어 퀴즈 '+Object.keys(d.quiz.solved).length+'개 맞힘');
+  Object.entries(d.profiles).forEach(([id,p])=>{
+    const wk=Object.keys(p.weeks||{}).length;
+    if(wk) rows.push(((PROFILES[id]||{}).name||id)+' · 주간 단어 '+wk+'주치');
+  });
   const when=d.at ? new Date(d.at).toLocaleString('ko-KR') : '시각 모름';
   return {when, rows};
 }
@@ -2156,14 +2333,20 @@ function applyBackup(mode){
   Object.entries(d.photos||{}).forEach(([id,src])=>{
     if(PROFILES[id] && !getPhoto(id)){ try{localStorage.setItem(PKEY(id),src)}catch(e){} }
   });
-  if(d.quiz){
-    qLoad();
-    const solved=Object.assign({}, qState.solved);
-    Object.entries(d.quiz.solved||{}).forEach(([w,n])=>{ solved[w]=maxNum(solved[w],n) });
-    qState.solved=solved; qState.best=maxNum(qState.best, d.quiz.best); qSave();
-  }
-  if(d.quizWords && d.quizWords.length){
-    try{ localStorage.setItem('sb_quiz_words', JSON.stringify(d.quizWords)) }catch(e){}
+  // 예전 방식(아이 구분 없는 퀴즈)으로 만든 파일이면 유진이의 이번 주로 넣는다
+  if((d.quizWords && d.quizWords.length) || (d.quiz && d.quiz.solved)){
+    const t=saveOf('yujin') || blank();
+    t.weeks=t.weeks||{}; t.qw=t.qw||{};
+    const k=weekKey();
+    if(d.quizWords && d.quizWords.length && !(t.weeks[k]&&t.weeks[k].words&&t.weeks[k].words.length))
+      t.weeks[k]={words:d.quizWords, at:Date.now()};
+    if(d.quiz && d.quiz.solved){
+      const p=Object.assign({}, t.qw[k]||{});
+      Object.entries(d.quiz.solved).forEach(([w,n])=>{ p[w]={n:maxNum((p[w]||{}).n, n)} });
+      t.qw[k]=p;
+    }
+    t.quizMoved=true;
+    try{ localStorage.setItem(key('yujin'), JSON.stringify(t)) }catch(e){}
   }
   pendingBackup=null;
   if(pid){ S=load(pid); }
@@ -2222,6 +2405,7 @@ function testVoice(){ sayEn('hesitate') }
 function renderParent(){
   renderVoices();
   renderStorage();
+  renderWeekList();
   renderKidTabs();
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
 
@@ -2306,6 +2490,23 @@ function renderParent(){
     return `<div class="wcell"><span class="n tnum">${w[0]}</span><span class="w">${w[1]}</span>
             <span class="s ${cls}"></span></div>`}).join('');
 }
+function renderWeekList(){
+  const box=document.getElementById('p-weeks'); if(!box)return;
+  const all=weekList();
+  if(!all.length){ box.innerHTML='<p class="empty-note">아직 넣은 단어가 없어요.</p>'; return }
+  box.innerHTML=all.map(k=>{
+    const words=weekWords(k), prog=S.qw&&S.qw[k]||{};
+    const done=words.filter(r=>prog[r[0]]).length;
+    const pct=words.length?Math.round(done/words.length*100):0;
+    return '<div class="wk">'+
+      '<span class="wk-n">'+weekLabel(k)+'</span>'+
+      '<span class="wk-bar"><i style="width:'+pct+'%"></i></span>'+
+      '<span class="wk-c tnum">'+done+'/'+words.length+'</span>'+
+      '<button class="btn" onclick="openEditor(pid,\''+k+'\')">고치기</button>'+
+    '</div>';
+  }).join('');
+}
+
 /* 이 기기에 기록이 있는 아이들을 탭으로 전환한다 */
 function renderKidTabs(){
   document.getElementById('kidseg').innerHTML=Object.keys(PROFILES).map(id=>{
