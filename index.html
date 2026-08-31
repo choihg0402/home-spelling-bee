@@ -254,6 +254,16 @@ img.face{border:2px solid var(--line)}
 .scard .sd .hl{color:var(--practice);font-weight:600}
 .scard .stap{font-size:12px;color:var(--ink-3);margin-top:8px;min-height:0}
 .scard.hide .sw{visibility:hidden}
+.bk-act{display:flex;gap:8px;flex-wrap:wrap}
+.bk-text{width:100%;min-height:110px;margin-top:10px;padding:10px;border-radius:var(--r-m);
+  border:1px solid var(--line);background:var(--sunk);color:var(--ink-2);
+  font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
+.bk-msg{margin-top:10px;font-size:14px;color:var(--ink-2);line-height:1.7}
+.bk-msg .bk-err{color:var(--brick,#A8382C)}
+.bk-msg .bk-ok{color:var(--good)}
+.bk-note{font-size:13px;color:var(--ink-3);display:block;margin-top:6px}
+#bk-state .ok{color:var(--good)}
+#bk-state .warn{color:var(--stage)}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:6px}
 .big-num{font-family:"Jua",sans-serif;font-size:38px;line-height:1.15;margin-top:6px;
   font-variant-numeric:tabular-nums}
@@ -1043,6 +1053,23 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <div class="wordgrid" id="wordgrid"></div>
     </div>
 
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">기록 내보내기 / 가져오기</p>
+      <p class="sub" id="bk-state"></p>
+      <p class="sub" style="margin-top:8px">
+        서버가 없는 동안 기록은 이 기기 안에만 있습니다. 가끔 내보내 두면 안전하고,
+        유진이처럼 기기를 두 대 쓸 때는 한쪽에서 내보내 다른 쪽에서 <b>합치기</b> 하면 됩니다.
+      </p>
+      <div class="bk-act" style="margin-top:12px">
+        <button class="btn primary" onclick="exportData()">파일로 내보내기</button>
+        <button class="btn" onclick="copyData()">복사하기</button>
+        <button class="btn" onclick="pickBackupFile()">파일에서 가져오기</button>
+        <button class="btn ghost" onclick="pasteBackup()">붙여넣기로 가져오기</button>
+      </div>
+      <textarea id="bk-text" class="bk-text" hidden readonly></textarea>
+      <div id="bk-msg" class="bk-msg"></div>
+    </div>
+
     <div class="note" style="margin-top:14px">
       <b>이 기기에 있는 기록만 보입니다.</b> 두 아이가 각자 기기를 쓰므로, 한 화면에서 함께 보려면
       동기화가 필요합니다 (기획서 §5.2 — 이후 단계).
@@ -1120,14 +1147,65 @@ const CONTEST=new Date('2026-09-21T00:00:00');
 let pid=null, S=null, sec='all', testLen=5;
 
 const key=id=>'sb_'+id;
-function blank(){return {xp:0,coin:0,streak:0,last:null,day:{d:null,xp:0,coin:0},w:{},list:null,
-  petXp:0,petIdx:0,dex:[],items:{},garden:[],hist:{},pin:null}}
+/* ---------- 저장 구조 ----------
+   유진이는 폰과 아이패드 둘 다 쓴다. 두 기기에서 각각 논 것을 나중에 합치려면
+   코인 잔액 같은 '결과'를 저장하면 안 된다. 어느 쪽을 덮어써도 한쪽이 사라진다.
+
+   그래서 기기마다 자기가 만든 몫(own)만 적고, 남의 몫은 peers 에 기기별로 담는다.
+   합칠 때는 더하지 않고 그 기기 칸을 통째로 바꿔치므로, 같은 파일을 몇 번 가져와도
+   이중으로 세지 않는다. 잔액과 성장 단계는 그때그때 계산한다. */
+function newDev(){ return 'd' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4) }
+function blank(){return {
+  dev:newDev(),
+  own:{xp:0,earn:0,spend:0},   // 이 기기가 만든 몫
+  peers:{},                    // 다른 기기의 몫 {기기id:{xp,earn,spend}}
+  buys:[],                     // 산 것 [아이템, 시각, 기기]
+  garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
+  w:{}, hist:{}, day:{d:null,xp:0,coin:0},
+  streak:0, last:null, list:null
+}}
 function load(id){
   let d=null; try{d=JSON.parse(localStorage.getItem(key(id))||'null')}catch(e){}
   if(!d)return blank();
-  // 예전 저장본에는 정원·도감 항목이 없다. 지금까지 모은 XP는 첫 친구에게 그대로 얹어준다.
-  if(d.petXp===undefined)d.petXp=Math.min(d.xp||0,growCost(0));
-  return Object.assign(blank(),d);
+  const b=blank();
+  if(!d.own){
+    // 예전 저장본을 새 구조로 옮긴다.
+    // 가진 아이템과 정원에 놓은 것을 합치면 무엇을 샀는지 나오고,
+    // 거기 쓴 코인을 잔액에 더하면 여태 번 코인이 나온다.
+    const owned=[];
+    Object.entries(d.items||{}).forEach(([k,n])=>{for(let i=0;i<n;i++)owned.push(k)});
+    (d.garden||[]).forEach(k=>owned.push(k));
+    const spent=owned.reduce((a,k)=>a+((shopItem(k)||{c:0}).c),0);
+    b.own={xp:d.xp||0, earn:(d.coin||0)+spent, spend:spent};
+    b.buys=owned.map(k=>[k,0,b.dev]);
+    b.garden=(d.garden||[]).slice();
+    b.w=d.w||{}; b.hist=d.hist||{}; b.day=d.day||b.day;
+    b.streak=d.streak||0; b.last=d.last||null; b.list=d.list||null;
+    return b;
+  }
+  return Object.assign(b,d,{own:Object.assign(b.own,d.own)});
+}
+
+/* --- 계산해서 쓰는 값들 --- */
+const sumField=f=>S.own[f]+Object.values(S.peers).reduce((a,p)=>a+(p[f]||0),0);
+const totalXP =()=>sumField('xp');
+const coins   =()=>sumField('earn')-sumField('spend');
+function invCount(id){
+  const bought=S.buys.filter(b=>b[0]===id).length;
+  const placed=S.garden.filter(g=>g===id).length;
+  return bought-placed;
+}
+function inventory(){
+  const m={}; S.buys.forEach(b=>m[b[0]]=(m[b[0]]||0)+1);
+  S.garden.forEach(g=>{ if(m[g]){m[g]--; if(!m[g])delete m[g]} });
+  return m;
+}
+/* 성장도 저장하지 않고 전체 XP에서 계산한다. 그래야 합칠 때 저절로 맞는다. */
+function growth(){
+  let xp=totalXP(), idx=0; const dex=[];
+  while(idx<SPECIES.length-1 && xp>=growCost(idx)){ dex.push(SPECIES[idx].key); xp-=growCost(idx); idx++ }
+  if(idx===SPECIES.length-1 && xp>=growCost(idx)){ dex.push(SPECIES[idx].key); xp=growCost(idx) }
+  return {idx,petXp:xp,dex};
 }
 function todayHist(){
   const t=today(); return S.hist[t]||(S.hist[t]={p:0,tw:0,tok:0,voice:0,typed:0});
@@ -1144,7 +1222,7 @@ function grantPractice(){
   const t=today(); if(S.day.d!==t)S.day={d:t,xp:0,coin:0};
   let xp=Math.min(5,CAP.xp-S.day.xp), coin=Math.min(1,CAP.coin-S.day.coin);
   xp=Math.max(0,xp); coin=Math.max(0,coin);
-  S.day.xp+=xp; S.day.coin+=coin; S.coin+=coin;
+  S.day.xp+=xp; S.day.coin+=coin; addCoin(coin);
   const grown=addXP(xp);
   todayHist().p++;
   bumpStreak();
@@ -1291,59 +1369,52 @@ const SHOP=[
   {id:'crown', e:'👑', n:'왕관',        c:60}
 ];
 const shopItem=id=>SHOP.find(x=>x.id===id);
-const curSpec =()=>SPECIES[Math.min(S.petIdx,SPECIES.length-1)];
+const curSpec =()=>SPECIES[Math.min(growth().idx,SPECIES.length-1)];
 function stageOf(px,idx){
-  const c=growCost(idx===undefined?(S?S.petIdx:0):idx);
+  const c=growCost(idx===undefined?(S?growth().idx:0):idx);
   let i=0; RATIO.forEach((r,k)=>{if(px>=r*c)i=k}); return i;
 }
 const nextStepXP=()=>{
-  const c=growCost(S.petIdx), i=stageOf(S.petXp);
-  return i<RATIO.length-1 ? Math.ceil(RATIO[i+1]*c)-S.petXp : c-S.petXp;
+  const g=growth(), c=growCost(g.idx), i=stageOf(g.petXp);
+  return i<RATIO.length-1 ? Math.ceil(RATIO[i+1]*c)-g.petXp : c-g.petXp;
 };
 
 function petHTML(px,size){
   const sp=curSpec(), i=stageOf(px);
   return `<span class="pet-emoji" style="font-size:${size}px" role="img" aria-label="${sp.sn[i]}">${sp.st[i]}</span>`;
 }
-/* XP는 두 곳에 쌓인다: 전체 누적(S.xp)과 지금 키우는 친구(S.petXp).
-   친구가 다 자라면 도감과 정원에 남고, 새 알을 받는다. */
+/* XP를 더한다. 성장은 저장하지 않고 전체 XP에서 계산하므로,
+   더하기 전후의 도감을 비교해 방금 다 자란 친구를 알아낸다. */
 function addXP(n){
-  S.xp+=n; S.petXp+=n;
-  let grown=null;
-  while(S.petIdx<SPECIES.length-1 && S.petXp>=growCost(S.petIdx)){
-    const sp=SPECIES[S.petIdx];
-    if(!S.dex.includes(sp.key))S.dex.push(sp.key);
-    S.petXp-=growCost(S.petIdx); S.petIdx++; grown=sp;
-  }
-  // 마지막 친구까지 다 키우면 도감을 채우고 더는 졸업하지 않는다.
-  const last=SPECIES[SPECIES.length-1];
-  if(S.petIdx===SPECIES.length-1 && S.petXp>=growCost(S.petIdx) && !S.dex.includes(last.key)){
-    S.dex.push(last.key); grown=last; S.petXp=growCost(S.petIdx);
-  }
-  return grown;
+  const before=growth().dex.length;
+  S.own.xp+=n;
+  const after=growth().dex;
+  return after.length>before ? SPECIES.find(x=>x.key===after[after.length-1]) : null;
 }
+function addCoin(n){ S.own.earn+=n }
+function spendCoin(n){ S.own.spend+=n }
 
 /* ---------- home ---------- */
 function renderHome(){
   const P=PROFILES[pid];
   document.getElementById('who').textContent=P.name;
-  document.getElementById('xp').textContent=S.xp;
-  document.getElementById('coin').textContent=S.coin;
+  document.getElementById('xp').textContent=totalXP();
+  document.getElementById('coin').textContent=coins();
   document.getElementById('listchip').textContent=listOf(pid).name;
   const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
   document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),xp:0,coin:0};
   document.getElementById('capxp').textContent=S.day.xp;
 
-  const sp=curSpec(), i=stageOf(S.petXp), done=S.dex.length>=SPECIES.length;
-  document.getElementById('pet').innerHTML=petHTML(S.petXp,104);
+  const g=growth(), sp=curSpec(), i=stageOf(g.petXp), done=g.dex.length>=SPECIES.length;
+  document.getElementById('pet').innerHTML=petHTML(g.petXp,104);
   document.getElementById('pet-name').textContent=sp.sn[i];
   document.getElementById('pet-next').textContent = done
     ? '친구를 모두 모았어요! 이제 정원을 꾸며보자'
     : (i===RATIO.length-1
         ? `${nextStepXP()} XP 더 모으면 정원으로 가요`
         : `${nextStepXP()} XP 더 모으면 자라요`);
-  document.getElementById('dexcount').textContent=S.dex.length;
+  document.getElementById('dexcount').textContent=g.dex.length;
   document.getElementById('gardencount').textContent=S.garden.length;
   const chip=document.getElementById('whoface');
   if(chip)chip.innerHTML=faceHTML(pid,26);
@@ -1680,7 +1751,7 @@ function finishTest(){
   if(okn===tres.length){xp+=50;coin+=10}
   const allVoice=tres.every(r=>r.ok&&!r.typed);
   if(allVoice&&tres.length>0)xp+=20;
-  S.coin+=coin; const grown=addXP(xp); bumpStreak();
+  addCoin(coin); const grown=addXP(xp); bumpStreak();
   const h=todayHist();
   tres.forEach(r=>{h.tw++; if(r.ok){h.tok++; r.typed?h.typed++:h.voice++}});
   save();
@@ -1892,19 +1963,20 @@ function quitQuiz(){ clearInterval(qCheck._t); go('s-quizhome') }
 /* ---------- garden & shop ---------- */
 const SLOTS=24;
 function renderGarden(){
-  document.getElementById('g-coin').textContent=S.coin;
+  document.getElementById('g-coin').textContent=coins();
+  const gr=growth();
   const g=document.getElementById('garden');
-  let html=`<span class="pet-here" title="지금 키우는 친구">${curSpec().st[stageOf(S.petXp)]}</span>`;
+  let html=`<span class="pet-here" title="지금 키우는 친구">${curSpec().st[stageOf(gr.petXp)]}</span>`;
   // 다 키운 친구들이 정원에 같이 산다
-  html+=S.dex.map(k=>{const sp=SPECIES.find(x=>x.key===k);
+  html+=gr.dex.map(k=>{const sp=SPECIES.find(x=>x.key===k);
     return `<span class="slot filled" title="${sp.name}">${sp.home}</span>`}).join('');
   html+=S.garden.map((id,i)=>{const it=shopItem(id);
     return it?`<button class="slot filled" onclick="unplace2(${i})" title="${it.n} — 눌러서 가져오기">${it.e}</button>`:''}).join('');
-  const used=2+S.dex.length+S.garden.length;
+  const used=2+gr.dex.length+S.garden.length;
   for(let i=used;i<SLOTS;i++)html+='<span class="slot empty"></span>';
   g.innerHTML=html;
 
-  const owned=Object.entries(S.items).filter(([,n])=>n>0);
+  const owned=Object.entries(inventory()).filter(([,n])=>n>0);
   const tray=document.getElementById('g-tray');
   tray.innerHTML = owned.length
     ? owned.map(([id,n])=>{const it=shopItem(id); if(!it)return '';
@@ -1914,24 +1986,23 @@ function renderGarden(){
 
   document.getElementById('dexall').textContent=SPECIES.length;
   document.getElementById('dex').innerHTML=SPECIES.map(sp=>{
-    const got=S.dex.includes(sp.key);
+    const got=gr.dex.includes(sp.key);
     return `<div class="dexcell${got?'':' locked'}"><div class="e">${got?sp.home:'❔'}</div>
             <div class="n">${got?sp.name:'아직'}</div></div>`}).join('');
 }
 function place2(id){
-  if(!S.items[id]){toast('그 아이템이 없어');return}
-  if(2+S.dex.length+S.garden.length>=SLOTS){toast('정원이 꽉 찼어');return}
-  S.items[id]--; if(!S.items[id])delete S.items[id];
+  if(invCount(id)<=0){toast('그 아이템이 없어');return}
+  if(2+growth().dex.length+S.garden.length>=SLOTS){toast('정원이 꽉 찼어');return}
   S.garden.push(id); save(); renderGarden();
 }
 function unplace2(i){
-  const id=S.garden[i]; if(!id)return;
-  S.garden.splice(i,1); S.items[id]=(S.items[id]||0)+1; save(); renderGarden();
+  if(!S.garden[i])return;
+  S.garden.splice(i,1); save(); renderGarden();
 }
 function renderShop(){
-  document.getElementById('s-coin').textContent=S.coin;
+  document.getElementById('s-coin').textContent=coins();
   document.getElementById('shop').innerHTML=SHOP.map(it=>{
-    const own=S.items[it.id]||0, can=S.coin>=it.c;
+    const own=invCount(it.id), can=coins()>=it.c;
     return `<button class="item" ${can?'':'disabled'} onclick="buy('${it.id}')">
       <span class="e">${it.e}</span><span class="n">${it.n}</span>
       <span class="c">${it.c} 코인</span>
@@ -1939,9 +2010,215 @@ function renderShop(){
 }
 function buy(id){
   const it=shopItem(id); if(!it)return;
-  if(S.coin<it.c){toast('코인이 모자라');return}
-  S.coin-=it.c; S.items[id]=(S.items[id]||0)+1; save();
+  if(coins()<it.c){toast('코인이 모자라');return}
+  spendCoin(it.c); S.buys.push([id,Date.now(),S.dev]); save();
   renderShop(); toast(`${it.n} 샀어! 정원에 놓아보자`);
+}
+
+/* ---------- 내보내기 / 가져오기 ----------
+   두 가지 일을 겸한다.
+   1) 백업 - 서버가 없는 동안 기기 안 기록이 유일한 사본이다
+   2) 기기 합치기 - 유진이는 폰과 아이패드 둘 다 쓴다
+
+   합치기는 '더하기'가 아니라 '기기 칸 바꿔치기'다.
+   그래서 같은 파일을 두 번 가져와도 코인이 두 배가 되지 않는다. */
+const BK_VERSION = 1;
+
+function snapshot(){
+  const profiles={};
+  Object.keys(PROFILES).forEach(id=>{
+    const raw=localStorage.getItem(key(id));
+    if(raw){ try{ profiles[id]=JSON.parse(raw) }catch(e){} }
+  });
+  const photos={};
+  Object.keys(PROFILES).forEach(id=>{ const p=getPhoto(id); if(p)photos[id]=p });
+  let quiz=null, quizWords=null;
+  try{ quiz=JSON.parse(localStorage.getItem('sb_quiz')||'null') }catch(e){}
+  try{ quizWords=JSON.parse(localStorage.getItem('sb_quiz_words')||'null') }catch(e){}
+  return {app:'home-spelling-bee', v:BK_VERSION, at:new Date().toISOString(),
+          profiles, photos, quiz, quizWords};
+}
+
+function bkName(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `스펠링비-기록-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+}
+
+function exportData(){
+  const text=JSON.stringify(snapshot());
+  const blob=new Blob([text],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=bkName();
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove()},1000);
+  toast('기록 파일을 내보냈어요');
+}
+async function copyData(){
+  const text=JSON.stringify(snapshot());
+  try{ await navigator.clipboard.writeText(text); toast('기록을 복사했어요'); }
+  catch(e){
+    const t=document.getElementById('bk-text');
+    t.value=text; t.hidden=false; t.select();
+    toast('아래 글을 길게 눌러 복사하세요');
+  }
+}
+
+/* --- 합치기 --- */
+const maxNum=(a,b)=>Math.max(a||0,b||0);
+function mergeWord(a,b){
+  if(!a)return Object.assign({},b);
+  if(!b)return a;
+  const rank={new:0,learning:1,pass:2,master:3};
+  const st=(rank[b.st]||0)>(rank[a.st]||0)?b.st:a.st;
+  return {p:maxNum(a.p,b.p), ok:maxNum(a.ok,b.ok), voice:maxNum(a.voice,b.voice),
+          pass:maxNum(a.pass,b.pass), miss:maxNum(a.miss,b.miss),
+          peek:maxNum(a.peek,b.peek), st:st};
+}
+function mergeProfile(local, inc){
+  const out=Object.assign({}, local);
+  // 상대 기기의 몫은 통째로 바꿔친다 (몇 번 가져와도 같은 결과)
+  out.peers=Object.assign({}, local.peers||{});
+  if(inc.dev && inc.dev!==local.dev) out.peers[inc.dev]=Object.assign({}, inc.own);
+  Object.entries(inc.peers||{}).forEach(([d,v])=>{
+    if(d===local.dev)return;                 // 내 몫은 내가 갖고 있는 것이 맞다
+    const cur=out.peers[d]||{};
+    out.peers[d]={xp:maxNum(cur.xp,v.xp), earn:maxNum(cur.earn,v.earn), spend:maxNum(cur.spend,v.spend)};
+  });
+  // 단어 기록은 항목별로 큰 쪽을 남긴다
+  out.w=Object.assign({}, local.w||{});
+  Object.entries(inc.w||{}).forEach(([k,v])=>{ out.w[k]=mergeWord(out.w[k], v) });
+  // 산 것은 합집합 (기기+시각+아이템으로 같은 것을 걸러낸다)
+  const seen=new Set((local.buys||[]).map(b=>b.join('|')));
+  out.buys=(local.buys||[]).slice();
+  (inc.buys||[]).forEach(b=>{ const k=b.join('|'); if(!seen.has(k)){seen.add(k); out.buys.push(b)} });
+  // 날짜별 기록도 항목별로 큰 쪽
+  out.hist=Object.assign({}, local.hist||{});
+  Object.entries(inc.hist||{}).forEach(([d,v])=>{
+    const c=out.hist[d]||{p:0,tw:0,tok:0,voice:0,typed:0};
+    out.hist[d]={p:maxNum(c.p,v.p), tw:maxNum(c.tw,v.tw), tok:maxNum(c.tok,v.tok),
+                 voice:maxNum(c.voice,v.voice), typed:maxNum(c.typed,v.typed)};
+  });
+  out.streak=maxNum(local.streak, inc.streak);
+  out.last=(local.last||'')>(inc.last||'')?local.last:inc.last;
+  out.list=local.list||inc.list;
+  // 정원 배치는 겉모습이라 이 기기 것을 그대로 둔다.
+  // 다만 산 것보다 많이 놓여 있으면 줄인다.
+  const bought={}; out.buys.forEach(b=>bought[b[0]]=(bought[b[0]]||0)+1);
+  const used={}; out.garden=(local.garden||[]).filter(id=>{
+    used[id]=(used[id]||0)+1; return used[id]<=(bought[id]||0);
+  });
+  return out;
+}
+
+function readBackup(text){
+  let d; try{ d=JSON.parse(text) }catch(e){ throw new Error('파일을 읽을 수 없어요. 스펠링비에서 내보낸 파일이 맞나요?') }
+  if(!d || d.app!=='home-spelling-bee') throw new Error('스펠링비 기록 파일이 아니에요.');
+  if(!d.profiles) throw new Error('기록이 들어 있지 않아요.');
+  return d;
+}
+
+function describeBackup(d){
+  const rows=Object.entries(d.profiles).map(([id,p])=>{
+    const name=(PROFILES[id]||{}).name||id;
+    const words=Object.keys(p.w||{}).length;
+    const own=p.own||{};
+    const xp=(own.xp||0)+Object.values(p.peers||{}).reduce((a,x)=>a+(x.xp||0),0);
+    return `${name} · 단어 ${words}개 · XP ${xp}`;
+  });
+  if(d.quiz && d.quiz.solved) rows.push('단어 퀴즈 '+Object.keys(d.quiz.solved).length+'개 맞힘');
+  const when=d.at ? new Date(d.at).toLocaleString('ko-KR') : '시각 모름';
+  return {when, rows};
+}
+
+function pasteBackup(){
+  const t=document.getElementById('bk-text');
+  if(t.hidden||t.readOnly){ t.hidden=false; t.readOnly=false; t.value=''; t.placeholder='내보낸 기록을 여기에 붙여넣으세요';
+    t.focus(); document.getElementById('bk-msg').innerHTML='<span class="bk-note">붙여넣은 뒤 다시 누르면 읽어들입니다.</span>'; return }
+  stageBackup(t.value);
+}
+let pendingBackup=null;
+function stageBackup(text){
+  const box=document.getElementById('bk-msg');
+  try{
+    pendingBackup=readBackup(text);
+    const {when,rows}=describeBackup(pendingBackup);
+    box.innerHTML=`<b>${when}</b> 에 내보낸 기록이에요.<br>`+rows.join('<br>')+
+      `<div class="bk-act">
+         <button class="btn primary" onclick="applyBackup('merge')">합치기</button>
+         <button class="btn" onclick="applyBackup('replace')">이 기기 것을 지우고 덮어쓰기</button>
+       </div>
+       <span class="bk-note">합치기는 몇 번 해도 안전해요. 같은 파일을 두 번 가져와도 코인이 두 배가 되지 않아요.</span>`;
+  }catch(e){
+    pendingBackup=null;
+    box.innerHTML='<span class="bk-err">'+e.message+'</span>';
+  }
+}
+function pickBackupFile(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='application/json,.json';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f)return;
+    const fr=new FileReader(); fr.onload=()=>stageBackup(String(fr.result)); fr.readAsText(f); };
+  inp.click();
+}
+function applyBackup(mode){
+  const d=pendingBackup; if(!d){toast('가져올 기록이 없어요');return}
+  if(mode==='replace' && !confirm('이 기기의 기록을 지우고 파일 내용으로 덮어쓸까요?'))return;
+  Object.entries(d.profiles).forEach(([id,inc])=>{
+    if(!PROFILES[id])return;
+    let next;
+    if(mode==='replace'){
+      next=Object.assign(blank(), inc);
+      next.dev=newDev();                 // 남의 기기 표식을 물려받지 않는다
+      next.peers=Object.assign({}, inc.peers||{});
+      if(inc.dev)next.peers[inc.dev]=Object.assign({}, inc.own||{});
+      next.own={xp:0,earn:0,spend:0};
+    }else{
+      const local=load(id);
+      next=mergeProfile(local, Object.assign(blank(), inc));
+    }
+    try{ localStorage.setItem(key(id), JSON.stringify(next)) }catch(e){}
+  });
+  Object.entries(d.photos||{}).forEach(([id,src])=>{
+    if(PROFILES[id] && !getPhoto(id)){ try{localStorage.setItem(PKEY(id),src)}catch(e){} }
+  });
+  if(d.quiz){
+    qLoad();
+    const solved=Object.assign({}, qState.solved);
+    Object.entries(d.quiz.solved||{}).forEach(([w,n])=>{ solved[w]=maxNum(solved[w],n) });
+    qState.solved=solved; qState.best=maxNum(qState.best, d.quiz.best); qSave();
+  }
+  if(d.quizWords && d.quizWords.length){
+    try{ localStorage.setItem('sb_quiz_words', JSON.stringify(d.quizWords)) }catch(e){}
+  }
+  pendingBackup=null;
+  if(pid){ S=load(pid); }
+  qLoad(); renderFaces();
+  document.getElementById('bk-msg').innerHTML=
+    '<span class="bk-ok">' + (mode==='merge'?'합쳤어요.':'덮어썼어요.') + ' 기록이 반영됐습니다.</span>';
+  toast(mode==='merge'?'기록을 합쳤어요':'기록을 덮어썼어요');
+  if(document.getElementById('s-parent').classList.contains('on'))renderParent();
+}
+
+/* 저장이 얼마나 안전한 상태인지 부모에게 보여준다 */
+async function renderStorage(){
+  const el=document.getElementById('bk-state'); if(!el)return;
+  let persisted=false, usage='';
+  try{
+    if(navigator.storage){
+      if(navigator.storage.persisted) persisted=await navigator.storage.persisted();
+      if(navigator.storage.estimate){
+        const e=await navigator.storage.estimate();
+        usage=(e.usage/1024).toFixed(0)+'KB';
+      }
+    }
+  }catch(e){}
+  const home=standalone();
+  el.innerHTML=
+    `<span class="${home?'ok':'warn'}">${home?'홈 화면 앱으로 실행 중':'브라우저에서 실행 중'}</span>` +
+    ` · <span class="${persisted?'ok':'warn'}">저장 보호 ${persisted?'켜짐':'꺼짐'}</span>` +
+    (usage?` · 사용 ${usage}`:'') +
+    (home && persisted ? '' :
+      '<br><span class="bk-note">홈 화면에 추가해서 쓰면 기록이 지워질 걱정이 크게 줄어요. 그전까지는 가끔 내보내 두세요.</span>');
 }
 
 /* ---------- parent ---------- */
@@ -1969,6 +2246,7 @@ function setVoice(uri){
 function testVoice(){ sayEn('hesitate') }
 function renderParent(){
   renderVoices();
+  renderStorage();
   renderKidTabs();
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
 
