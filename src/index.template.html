@@ -243,6 +243,16 @@ img.face{border:2px solid var(--line)}
 .wk-bar{width:80px;height:8px;border-radius:999px;background:var(--line);overflow:hidden;flex:none}
 .wk-bar i{display:block;height:100%;background:var(--good)}
 .wk-c{font-size:13px;color:var(--ink-3);min-width:44px;text-align:right}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin:24px 0 20px;min-height:18px}
+.pin-dots i{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);display:block}
+.pin-dots i.on{background:var(--practice);border-color:var(--practice)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto}
+.pin-pad button{min-height:56px;border-radius:var(--r-m);background:var(--paper);
+  border:1px solid var(--line);font-family:"Jua",sans-serif;font-size:22px;box-shadow:var(--shadow)}
+.pin-pad button:active{transform:translateY(2px)}
+.pin-pad button.ghost{background:transparent;box-shadow:none;font-size:15px;
+  font-family:"Gowun Dodum",sans-serif;color:var(--ink-3)}
+.pin-msg{margin-top:16px;font-size:14px;color:var(--stage);min-height:22px}
 .bk-act{display:flex;gap:8px;flex-wrap:wrap}
 .bk-text{width:100%;min-height:110px;margin-top:10px;padding:10px;border-radius:var(--r-m);
   border:1px solid var(--line);background:var(--sunk);color:var(--ink-2);
@@ -1005,6 +1015,25 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   </div>
 </section>
 
+<!-- ============ PARENT LOCK ============ -->
+<section id="s-lock" class="screen">
+  <div style="margin:auto;width:100%;max-width:360px;text-align:center">
+    <div style="font-size:44px">🔒</div>
+    <h1 style="font-size:26px;margin-top:10px" id="lock-title">부모 화면</h1>
+    <p style="color:var(--ink-2);margin:6px 0 0" id="lock-sub"></p>
+    <div class="pin-dots" id="pin-dots"></div>
+    <div class="pin-pad">
+      <button onclick="pinKey('1')">1</button><button onclick="pinKey('2')">2</button><button onclick="pinKey('3')">3</button>
+      <button onclick="pinKey('4')">4</button><button onclick="pinKey('5')">5</button><button onclick="pinKey('6')">6</button>
+      <button onclick="pinKey('7')">7</button><button onclick="pinKey('8')">8</button><button onclick="pinKey('9')">9</button>
+      <button class="ghost" onclick="go('s-home')">취소</button>
+      <button onclick="pinKey('0')">0</button>
+      <button class="ghost" onclick="pinKey('back')">←</button>
+    </div>
+    <p class="pin-msg" id="pin-msg"></p>
+  </div>
+</section>
+
 <!-- ============ PARENT ============ -->
 <section id="s-parent" class="screen">
   <header class="topbar">
@@ -1100,6 +1129,14 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     </div>
 
     <div class="card" style="margin-top:14px">
+      <p class="eyebrow">부모 화면 잠금</p>
+      <p class="sub" id="lock-state"></p>
+      <div class="bk-act" style="margin-top:10px">
+        <button class="btn" id="lock-btn">잠금 만들기</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
       <p class="eyebrow">주간 단어</p>
       <p class="sub">아이마다 다른 목록을 주차별로 넣습니다. 지난 주차는 남아 있어 복습할 수 있어요.</p>
       <div id="p-weeks" class="wk-list"></div>
@@ -1107,6 +1144,40 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <button class="btn primary" onclick="openEditor(pid, weekKey())">이번 주 단어 넣기</button>
         <button class="btn" onclick="openEditor(pid, shiftWeek(weekKey(),1))">다음 주 미리 넣기</button>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">기기끼리 맞추기</p>
+      <p class="sub" id="sync-state"></p>
+
+      <div id="sync-acct" hidden style="margin-top:12px">
+        <div id="sync-in" class="bk-act">
+          <input id="sync-email" type="email" inputmode="email" autocomplete="email"
+                 placeholder="부모 메일 주소"
+                 style="flex:1;min-width:200px;padding:11px 13px;border-radius:var(--r-m);
+                        border:1px solid var(--line);background:var(--paper);color:var(--ink);
+                        font:inherit;font-size:15px;min-height:var(--tap)">
+          <button class="btn primary" onclick="doSignIn()">연결 링크 받기</button>
+        </div>
+        <div id="sync-out" class="bk-act" hidden>
+          <button class="btn primary" onclick="syncNow()">지금 맞추기</button>
+          <button class="btn ghost" onclick="signOut()">연결 끊기</button>
+        </div>
+      </div>
+
+      <details style="margin-top:14px">
+        <summary class="sub" style="cursor:pointer">서버 설정</summary>
+        <div id="sync-cfg" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <input id="sync-url" placeholder="https://xxxx.supabase.co"
+                 style="padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--line);
+                        background:var(--paper);color:var(--ink);font:inherit;font-size:14px">
+          <input id="sync-key" placeholder="공개 키 (anon public key)"
+                 style="padding:10px 12px;border-radius:var(--r-m);border:1px solid var(--line);
+                        background:var(--paper);color:var(--ink);font:inherit;font-size:14px">
+          <div class="bk-act"><button class="btn" onclick="saveSyncSettings()">설정 저장</button></div>
+          <span class="bk-note">공개 키는 숨길 값이 아닙니다. 실제 보호는 서버 쪽 행 단위 보안이 합니다.</span>
+        </div>
+      </details>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -1166,6 +1237,10 @@ async function askPersist(){
   }catch(e){}
 }
 addEventListener('load', askPersist, {once:true});
+addEventListener('load', ()=>{
+  if(catchAuthRedirect()){ toast('가족 계정에 연결됐어요'); setTimeout(()=>syncNow(true),400) }
+  else setTimeout(()=>autoSync(),800);
+}, {once:true});
 
 const standalone = () =>
   window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
@@ -1224,7 +1299,7 @@ function blank(){return {
   peers:{},                    // 다른 기기의 몫 {기기id:{earn,spend}}
   buys:[],                     // 산 것 [아이템, 시각, 기기]
   garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
-  w:{}, hist:{}, day:{d:null,coin:0},
+  w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -2225,7 +2300,8 @@ function renderPickPet(){
 }
 function choosePet(k){
   if(weekDone(curWeek)){ toast('이번 주는 이미 다 키웠어요'); return }
-  S.pick=S.pick||{}; S.pick[curWeek]=k; save();
+  S.pick=S.pick||{}; S.pickAt=S.pickAt||{};
+  S.pick[curWeek]=k; S.pickAt[curWeek]=Date.now(); save();
   toast(animal(k).n+'를 키우기로 했어요');
   go('s-home');
 }
@@ -2286,6 +2362,205 @@ function buy(id){
   renderShop(); toast(`${it.n} 샀어! 정원에 놓아보자`);
 }
 
+/* ---------- 기기 사이 동기화 ----------
+   서버는 Supabase 를 쓴다. 주소와 공개 키는 앱 안에서 붙여넣고 이 기기에 저장한다.
+   (공개 키는 숨길 값이 아니다. 실제 보호는 서버 쪽 행 단위 보안이 한다.)
+
+   보내고 받는 방식은 내보내기/가져오기와 똑같다.
+   기기마다 자기 몫을 한 줄씩 올리고, 남의 줄을 받아 합친다.
+   합치기가 몇 번 해도 안전하므로 동기화도 몇 번이든 안전하다. */
+const SYNC_CFG='sb_sync_cfg', SYNC_TOK='sb_sync_tok';
+let syncCfg=null, syncUser=null, syncBusy=false;
+
+function loadSyncCfg(){
+  try{ syncCfg=JSON.parse(localStorage.getItem(SYNC_CFG)||'null') }catch(e){ syncCfg=null }
+  return syncCfg;
+}
+function saveSyncCfg(url,key){
+  syncCfg={url:url.replace(/\/+$/,''), key:key};
+  try{ localStorage.setItem(SYNC_CFG, JSON.stringify(syncCfg)) }catch(e){}
+}
+function syncToken(){
+  try{ return JSON.parse(localStorage.getItem(SYNC_TOK)||'null') }catch(e){ return null }
+}
+function setSyncToken(t){
+  try{ t ? localStorage.setItem(SYNC_TOK, JSON.stringify(t)) : localStorage.removeItem(SYNC_TOK) }catch(e){}
+}
+const syncOn = () => !!(loadSyncCfg() && syncToken());
+
+async function sbFetch(path, opt){
+  const cfg=loadSyncCfg(); if(!cfg) throw new Error('서버 설정이 없어요');
+  const tok=syncToken();
+  const h=Object.assign({
+    'apikey': cfg.key,
+    'Content-Type': 'application/json'
+  }, (opt&&opt.headers)||{});
+  if(tok && tok.access_token) h['Authorization']='Bearer '+tok.access_token;
+  const res=await fetch(cfg.url+path, Object.assign({}, opt, {headers:h}));
+  if(!res.ok){
+    let msg=res.status+'';
+    try{ const j=await res.json(); msg=j.msg||j.message||j.error_description||j.error||msg }catch(e){}
+    throw new Error(msg);
+  }
+  return res.status===204 ? null : res.json();
+}
+
+/* --- 로그인: 비밀번호 없이 메일 링크 --- */
+async function sendMagicLink(email){
+  const cfg=loadSyncCfg(); if(!cfg) throw new Error('서버 설정을 먼저 넣어주세요');
+  const res=await fetch(cfg.url+'/auth/v1/otp', {
+    method:'POST',
+    headers:{'apikey':cfg.key,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email, create_user:true,
+      options:{email_redirect_to:location.href.split('#')[0]}})
+  });
+  if(!res.ok){
+    let m=res.status+''; try{const j=await res.json(); m=j.msg||j.message||m}catch(e){}
+    throw new Error(m);
+  }
+}
+/* 메일 링크로 돌아오면 주소 뒤에 토큰이 붙어 있다 */
+function catchAuthRedirect(){
+  if(!location.hash || location.hash.indexOf('access_token')<0) return false;
+  const p=new URLSearchParams(location.hash.slice(1));
+  const t={access_token:p.get('access_token'), refresh_token:p.get('refresh_token'),
+           expires_at: Math.floor(Date.now()/1000)+Number(p.get('expires_in')||3600)};
+  if(!t.access_token) return false;
+  setSyncToken(t);
+  history.replaceState(null,'',location.pathname+location.search);
+  return true;
+}
+async function refreshIfNeeded(){
+  const t=syncToken(); if(!t) return false;
+  if(t.expires_at && t.expires_at-60 > Math.floor(Date.now()/1000)) return true;
+  const cfg=loadSyncCfg();
+  try{
+    const res=await fetch(cfg.url+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST', headers:{'apikey':cfg.key,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:t.refresh_token})});
+    if(!res.ok) throw new Error('만료');
+    const j=await res.json();
+    setSyncToken({access_token:j.access_token, refresh_token:j.refresh_token,
+                  expires_at: Math.floor(Date.now()/1000)+(j.expires_in||3600)});
+    return true;
+  }catch(e){ setSyncToken(null); return false }
+}
+async function whoAmI(){
+  if(!syncOn()) return null;
+  if(!await refreshIfNeeded()) return null;
+  try{ syncUser=await sbFetch('/auth/v1/user',{method:'GET'}); return syncUser }
+  catch(e){ return null }
+}
+function signOut(){
+  setSyncToken(null); syncUser=null;
+  toast('연결을 끊었어요'); renderSync();
+}
+
+/* --- 주고받기 --- */
+async function syncNow(silent){
+  if(!syncOn()){ if(!silent)toast('먼저 가족 계정을 연결해 주세요'); return }
+  if(syncBusy) return;
+  syncBusy=true;
+  const st=document.getElementById('sync-state');
+  if(st) st.innerHTML='<span class="bk-note">주고받는 중…</span>';
+  try{
+    if(!await refreshIfNeeded()) throw new Error('로그인이 만료됐어요. 다시 연결해 주세요.');
+    let pulled=0, pushed=0;
+    for(const id of Object.keys(PROFILES)){
+      // 한 번도 쓴 적 없는 아이는 올릴 것이 없다.
+      // 그냥 load 하면 기기 식별자가 매번 새로 생겨 서버에 빈 줄이 쌓인다.
+      const seen=!!localStorage.getItem(key(id));
+      if(!seen){
+        const rows0=await sbFetch('/rest/v1/sb_sync?select=device_id,payload&profile_id=eq.'+id,{method:'GET'});
+        if(rows0 && rows0.length){
+          let merged=blank();
+          rows0.forEach(r=>{ if(r.payload){ merged=mergeProfile(merged, Object.assign(blank(), r.payload)); pulled++ } });
+          try{ localStorage.setItem(key(id), JSON.stringify(merged)) }catch(e){}
+        }
+        continue;
+      }
+      const local=load(id);
+      // 1) 내 몫을 올린다
+      await sbFetch('/rest/v1/sb_sync?on_conflict=family_id,profile_id,device_id', {
+        method:'POST',
+        headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify({profile_id:id, device_id:local.dev,
+                             payload:local, updated_at:new Date().toISOString()})
+      });
+      pushed++;
+      // 2) 남의 줄을 받아 합친다
+      const rows=await sbFetch('/rest/v1/sb_sync?select=device_id,payload&profile_id=eq.'+id,{method:'GET'});
+      let next=local;
+      (rows||[]).forEach(r=>{
+        if(!r.payload || r.device_id===local.dev) return;
+        next=mergeProfile(next, Object.assign(blank(), r.payload));
+        pulled++;
+      });
+      try{ localStorage.setItem(key(id), JSON.stringify(next)) }catch(e){}
+    }
+    if(pid){ S=load(pid); qLoad() }
+    renderFaces();
+    try{ localStorage.setItem('sb_sync_at', new Date().toISOString()) }catch(e){}
+    if(!silent) toast('기기끼리 맞췄어요');
+    renderSync();
+    if(document.getElementById('s-parent').classList.contains('on')) renderParent();
+  }catch(e){
+    if(st) st.innerHTML='<span class="bk-err">'+e.message+'</span>';
+    if(!silent) toast('맞추지 못했어요');
+  }finally{ syncBusy=false }
+}
+
+/* 앱을 열 때와 덮을 때 조용히 맞춘다 */
+function autoSync(){
+  if(!syncOn() || !navigator.onLine) return;
+  syncNow(true);
+}
+addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') autoSync() });
+addEventListener('online', ()=>autoSync());
+
+/* --- 화면 --- */
+async function renderSync(){
+  const box=document.getElementById('sync-state'); if(!box) return;
+  const cfg=loadSyncCfg();
+  const cfgBox=document.getElementById('sync-cfg');
+  if(cfgBox){
+    document.getElementById('sync-url').value=(cfg&&cfg.url)||'';
+    document.getElementById('sync-key').value=(cfg&&cfg.key)||'';
+  }
+  if(!cfg){
+    box.innerHTML='<span class="warn">아직 서버를 연결하지 않았어요.</span>'+
+      '<span class="bk-note">연결하기 전에도 앱은 그대로 쓸 수 있어요. 기기끼리 맞추려면 아래 설정이 필요합니다.</span>';
+    document.getElementById('sync-acct').hidden=true;
+    return;
+  }
+  document.getElementById('sync-acct').hidden=false;
+  const u=await whoAmI();
+  let when=''; try{ const t=localStorage.getItem('sb_sync_at'); if(t)when=new Date(t).toLocaleString('ko-KR') }catch(e){}
+  box.innerHTML = u
+    ? '<span class="ok">'+ (u.email||'연결됨') +' 로 연결됨</span>' + (when?'<span class="bk-note">마지막으로 맞춘 때 '+when+'</span>':'')
+    : '<span class="warn">아직 로그인하지 않았어요.</span><span class="bk-note">메일로 받은 링크를 이 기기에서 한 번 열면 됩니다.</span>';
+  document.getElementById('sync-in').hidden = !!u;
+  document.getElementById('sync-out').hidden = !u;
+}
+function saveSyncSettings(){
+  const url=document.getElementById('sync-url').value.trim();
+  const k=document.getElementById('sync-key').value.trim();
+  if(!/^https:\/\/.+/.test(url)){ toast('주소는 https:// 로 시작해요'); return }
+  if(k.length<20){ toast('공개 키가 짧아요. 다시 확인해 주세요'); return }
+  saveSyncCfg(url,k); toast('설정을 저장했어요'); renderSync();
+}
+async function doSignIn(){
+  const em=document.getElementById('sync-email').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast('메일 주소를 확인해 주세요'); return }
+  const box=document.getElementById('sync-state');
+  box.innerHTML='<span class="bk-note">메일을 보내는 중…</span>';
+  try{
+    await sendMagicLink(em);
+    box.innerHTML='<span class="ok">'+em+' 으로 링크를 보냈어요.</span>'+
+      '<span class="bk-note">그 메일을 <b>이 기기에서</b> 열어 링크를 누르면 연결됩니다.</span>';
+  }catch(e){ box.innerHTML='<span class="bk-err">보내지 못했어요 — '+e.message+'</span>' }
+}
+
 /* ---------- 내보내기 / 가져오기 ----------
    두 가지 일을 겸한다.
    1) 백업 - 서버가 없는 동안 기기 안 기록이 유일한 사본이다
@@ -2305,7 +2580,7 @@ function snapshot(){
   Object.keys(PROFILES).forEach(id=>{ const p=getPhoto(id); if(p)photos[id]=p });
   // 주차별 단어와 진도는 프로필 안에 들어 있어 따로 담지 않는다
   return {app:'home-spelling-bee', v:BK_VERSION, at:new Date().toISOString(),
-          profiles, photos};
+          profiles, photos, sync:loadSyncCfg()};
 }
 
 function bkName(){
@@ -2385,6 +2660,16 @@ function mergeProfile(local, inc){
     });
     out.qw[k]=cur;
   });
+  // 고른 친구: 나중에 고른 쪽이 이긴다. 시각이 없으면 있는 쪽을 쓴다.
+  out.pick=Object.assign({}, local.pick||{});
+  out.pickAt=Object.assign({}, local.pickAt||{});
+  Object.entries(inc.pick||{}).forEach(([k,v])=>{
+    const mine=out.pick[k], t0=out.pickAt[k]||0, t1=(inc.pickAt||{})[k]||0;
+    if(!mine || t1>t0){ out.pick[k]=v; out.pickAt[k]=t1||t0 }
+  });
+  // 예전 방식으로 모은 도감은 합집합
+  out.dexLegacy=(local.dexLegacy||[]).slice();
+  (inc.dexLegacy||[]).forEach(k=>{ if(!out.dexLegacy.includes(k))out.dexLegacy.push(k) });
   out.quizMoved = local.quizMoved || inc.quizMoved;
   out.streak=maxNum(local.streak, inc.streak);
   out.last=(local.last||'')>(inc.last||'')?local.last:inc.last;
@@ -2469,6 +2754,8 @@ function applyBackup(mode){
     }
     try{ localStorage.setItem(key(id), JSON.stringify(next)) }catch(e){}
   });
+  // 서버 설정이 들어 있으면 이 기기에도 넣어준다 (로그인은 기기마다 따로 한다)
+  if(d.sync && d.sync.url && d.sync.key && !loadSyncCfg()) saveSyncCfg(d.sync.url, d.sync.key);
   Object.entries(d.photos||{}).forEach(([id,src])=>{
     if(PROFILES[id] && !getPhoto(id)){ try{localStorage.setItem(PKEY(id),src)}catch(e){} }
   });
@@ -2519,10 +2806,71 @@ async function renderStorage(){
 }
 
 /* ---------- parent ---------- */
+/* ---------- 부모 화면 잠금 ----------
+   아이가 설정을 건드리거나 남의 기록을 보지 않게 막는다.
+   집안에서 쓰는 잠금이라 네 자리면 충분하다. 저장할 때는 그대로 두지 않고 섞어 둔다. */
+const PIN_KEY='sb_pin';
+function pinHash(v){
+  let h=2166136261;
+  for(const c of ('sb'+v)) { h^=c.charCodeAt(0); h=Math.imul(h,16777619) }
+  return (h>>>0).toString(36);
+}
+function pinSet(){ try{return localStorage.getItem(PIN_KEY)}catch(e){return null} }
+let pinBuf='', pinMode='enter', pinFirst='';
+
+function openParent(){
+  parentReturn=pid;
+  if(!pinSet()){ pinMode='new'; pinFirst=''; }
+  else { pinMode='enter'; }
+  pinBuf=''; go('s-lock'); paintPin();
+}
+function paintPin(){
+  document.getElementById('pin-dots').innerHTML=
+    [0,1,2,3].map(i=>'<i class="'+(i<pinBuf.length?'on':'')+'"></i>').join('');
+  const title=document.getElementById('lock-title'), sub=document.getElementById('lock-sub');
+  if(pinMode==='new'){ title.textContent='잠금 만들기'; sub.textContent='부모 화면을 열 네 자리를 정해주세요'; }
+  else if(pinMode==='again'){ title.textContent='한 번 더'; sub.textContent='같은 숫자를 다시 눌러주세요'; }
+  else { title.textContent='부모 화면'; sub.textContent='네 자리를 눌러주세요'; }
+}
+function pinKey(k){
+  const msg=document.getElementById('pin-msg');
+  if(k==='back'){ pinBuf=pinBuf.slice(0,-1); paintPin(); return }
+  if(pinBuf.length>=4) return;
+  pinBuf+=k; msg.textContent=''; paintPin();
+  if(pinBuf.length<4) return;
+  setTimeout(()=>{
+    if(pinMode==='new'){ pinFirst=pinBuf; pinBuf=''; pinMode='again'; paintPin(); return }
+    if(pinMode==='again'){
+      if(pinBuf===pinFirst){
+        try{ localStorage.setItem(PIN_KEY, pinHash(pinBuf)) }catch(e){}
+        toast('잠금을 만들었어요'); go('s-parent');
+      }else{
+        pinBuf=''; pinMode='new'; pinFirst=''; paintPin();
+        msg.textContent='숫자가 달라요. 처음부터 다시 정해주세요.';
+      }
+      return;
+    }
+    if(pinHash(pinBuf)===pinSet()){ pinBuf=''; go('s-parent') }
+    else { pinBuf=''; paintPin(); msg.textContent='숫자가 맞지 않아요.' }
+  }, 120);
+}
+function clearPin(){
+  if(!confirm('잠금을 없앨까요? 아이도 부모 화면에 들어올 수 있게 됩니다.'))return;
+  try{ localStorage.removeItem(PIN_KEY) }catch(e){}
+  toast('잠금을 없앴어요'); renderLockState();
+}
+function renderLockState(){
+  const el=document.getElementById('lock-state'); if(!el)return;
+  el.innerHTML = pinSet()
+    ? '<span class="ok">잠금이 켜져 있어요</span>'
+    : '<span class="warn">잠금이 꺼져 있어요 — 아이도 이 화면에 들어올 수 있습니다</span>';
+  document.getElementById('lock-btn').textContent = pinSet() ? '잠금 없애기' : '잠금 만들기';
+  document.getElementById('lock-btn').onclick = pinSet() ? clearPin : (()=>{ pinMode='new'; pinFirst=''; pinBuf=''; go('s-lock'); paintPin() });
+}
+
 /* 부모가 대시보드에서 다른 아이를 들여다봐도, 나갈 때는 원래 아이로 돌려놓는다.
    그러지 않으면 아이가 남의 프로필로 놀게 된다. */
 let parentReturn=null;
-function openParent(){ parentReturn=pid; go('s-parent') }
 function exitParent(){
   if(parentReturn && parentReturn!==pid){ pid=parentReturn; S=load(pid); }
   parentReturn=null; go('s-home');
@@ -2542,6 +2890,8 @@ function setVoice(uri){
 }
 function testVoice(){ sayEn('hesitate') }
 function renderParent(){
+  renderLockState();
+  renderSync();
   renderVoices();
   renderStorage();
   renderWeekList();
