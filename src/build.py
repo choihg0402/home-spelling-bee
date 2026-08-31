@@ -1,6 +1,7 @@
 """템플릿에 단어 데이터를 주입해 index.html 생성."""
-import io, json, re, collections, sys
+import io, json, re, collections, sys, hashlib
 import pymupdf
+import fonts, icons
 
 LISTS = [
     ('g23',    '2026 Spring G2–G3', '../docs/samples/G2-3_Spelling_Bee_List_1.pdf'),
@@ -72,6 +73,33 @@ for key, label, path in LISTS:
 data = 'const LISTS=' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';'
 tpl = io.open('index.template.html', encoding='utf-8').read()
 assert '/*__WORDS__*/' in tpl
+body = tpl.replace('/*__WORDS__*/', data)
+
+# --- 글꼴: 실제로 쓰인 글자만 받아 자체 호스팅한다 (오프라인 대비) ---
+font_css, font_files = fonts.build([body])
+icon_files = icons.build()
+
+# --- 홈 화면 추가용 정보 ---
+manifest = {
+    "name": "우리집 스펠링비",
+    "short_name": "스펠링비",
+    "description": "아이들이 스펠링비 대회 단어를 연습하는 앱",
+    "lang": "ko",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#EEF1F5",
+    "theme_color": "#EEF1F5",
+    "icons": [
+        {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png",
+         "purpose": "maskable"},
+    ],
+}
+io.open('../manifest.webmanifest', 'w', encoding='utf-8').write(
+    json.dumps(manifest, ensure_ascii=False, indent=1))
 
 # 온전한 HTML 문서로 감싼다.
 # viewport 메타가 없으면 휴대폰이 980px 가상 화면으로 그린 뒤 축소해버려
@@ -89,16 +117,28 @@ SHELL = """<!doctype html>
 <meta name="apple-mobile-web-app-title" content="스펠링비">
 <meta name="description" content="아이들이 스펠링비 대회 단어를 연습하는 앱">
 <title>우리집 스펠링비</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9D%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Fredoka:wght@400;500;600&display=swap">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+__FONTS__
+</style>
 </head>
 <body>
 {BODY}
 </body>
 </html>
 """
-doc = SHELL.replace('{BODY}', tpl.replace('/*__WORDS__*/', data))
+doc = SHELL.replace('__FONTS__', font_css).replace('{BODY}', body)
 io.open(OUT, 'w', encoding='utf-8').write(doc)
+
+# --- 서비스 워커: 화면을 기기에 저장해 두어 인터넷 없이도 열리게 한다 ---
+core = ['./', './index.html', './manifest.webmanifest'] + font_files + icon_files
+version = 'sb-' + hashlib.sha1(
+    (doc + json.dumps(core)).encode('utf-8')).hexdigest()[:10]
+sw = io.open('sw.template.js', encoding='utf-8').read()
+sw = sw.replace('__VERSION__', version).replace('__CORE__', json.dumps(core))
+io.open('../sw.js', 'w', encoding='utf-8').write(sw)
+
 print(f'-> {OUT}  ({len(doc):,} bytes)')
+print(f'-> ../sw.js  (버전 {version}, {len(core)}개 파일 저장)')

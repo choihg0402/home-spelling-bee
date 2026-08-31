@@ -195,6 +195,15 @@ img.face{border:2px solid var(--line)}
 .qcount{font-family:"Jua",sans-serif;color:var(--ink-3)}
 
 /* ---------- garden & shop ---------- */
+.a2hs{display:flex;gap:13px;align-items:flex-start;margin-top:16px;padding:14px 16px;
+  background:var(--stage-soft);border-radius:var(--r-m);border-left:4px solid var(--stage)}
+.a2hs[hidden]{display:none}
+.a2hs-i{font-size:24px;line-height:1.2}
+.a2hs-t{flex:1;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink-2)}
+.a2hs-t b{font-size:15px;color:var(--ink);font-family:"Jua",sans-serif;font-weight:400}
+.a2hs-how{color:var(--stage);font-size:13px}
+.a2hs-x{color:var(--ink-3);font-size:15px;padding:2px 6px;align-self:flex-start;min-height:32px}
+.offline-chip{background:var(--stage-soft);color:var(--stage);border-color:var(--stage)}
 .quiz-entry{display:flex;align-items:center;gap:16px;width:100%;text-align:left;margin-top:16px;
   border-left:7px solid var(--stage)}
 .quiz-entry .qe-icon{font-size:38px;line-height:1}
@@ -494,6 +503,17 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         </span>
       </div>
     </div>
+    <div id="a2hs" class="a2hs" hidden>
+      <span class="a2hs-i">📲</span>
+      <span class="a2hs-t">
+        <b>홈 화면에 추가해 두세요</b>
+        <span>사파리는 일주일 넘게 안 열면 저장한 기록을 지울 수 있어요.
+              홈 화면에 추가하면 그런 일이 없고, 인터넷 없이도 열립니다.</span>
+        <span class="a2hs-how" id="a2hs-how"></span>
+      </span>
+      <button class="a2hs-x" onclick="dismissA2HS()" aria-label="안내 닫기">✕</button>
+    </div>
+
     <button class="card quiz-entry" onclick="openQuiz()">
       <span class="qe-icon">🧩</span>
       <span class="qe-text">
@@ -516,6 +536,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <span class="chip"><b class="tnum" id="xp">0</b> XP</span>
     <span class="chip stage"><span class="dot"></span><b class="tnum" id="coin">0</b> 코인</span>
     <span class="spacer"></span>
+    <span class="chip offline-chip" id="netchip" hidden>✈️ 인터넷 없음</span>
     <span class="chip" id="listchip"></span>
     <span class="chip">대회까지 <b class="tnum" id="dday">D-30</b></span>
     <button class="btn ghost" onclick="openParent()">부모</button>
@@ -1014,6 +1035,55 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 <script>
 /*__WORDS__*/
 
+/* ---------- 오프라인 ----------
+   화면을 기기에 저장해 두면 인터넷 없이도 열린다.
+   기록은 원래 기기 안에만 있으므로 오프라인이어도 그대로 쌓인다.
+   다만 말하기 시험은 아이폰이 음성을 애플 서버로 보내 인식하므로 연결이 필요하다. */
+if ('serviceWorker' in navigator) {
+  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}) });
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;          // 새로고침이 반복되지 않게 한 번만
+    reloading = true; location.reload();
+  });
+}
+
+/* 사파리는 일주일 넘게 안 열면 저장한 것을 지울 수 있다.
+   영속 저장을 요청해 두면 그 대상에서 빠질 가능성이 커진다. */
+async function askPersist(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      if(!(await navigator.storage.persisted())) await navigator.storage.persist();
+    }
+  }catch(e){}
+}
+addEventListener('load', askPersist, {once:true});
+
+const standalone = () =>
+  window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+
+function showA2HS(){
+  const el=document.getElementById('a2hs'); if(!el)return;
+  let off=false; try{off=localStorage.getItem('sb_a2hs')==='off'}catch(e){}
+  if(standalone()||off){el.hidden=true;return}
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  document.getElementById('a2hs-how').textContent = ios
+    ? '사파리 아래 공유 버튼 → “홈 화면에 추가”'
+    : '브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”';
+  el.hidden=false;
+}
+function dismissA2HS(){
+  try{localStorage.setItem('sb_a2hs','off')}catch(e){}
+  document.getElementById('a2hs').hidden=true;
+}
+
+function paintNet(){
+  const chip=document.getElementById('netchip'); if(chip)chip.hidden=navigator.onLine;
+}
+addEventListener('online', paintNet);
+addEventListener('offline', paintNet);
+
 /* ---------- data model ---------- */
 const PROFILES={
   yujin:  {name:'유진', grade:'3학년', list:'g23',    sections:['B','C']},
@@ -1128,6 +1198,8 @@ const masked=s=>s.replace(/\{(.+?)\}/g,m=>'<span class="blank">'+'_'.repeat(Math
 /* ---------- screens ---------- */
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  paintNet();
+  if(id==='s-profile')showA2HS();
   if(id==='s-home')renderHome();
   if(id==='s-pick')renderPick();
   if(id==='s-tsetup')renderSetup();
@@ -1314,6 +1386,8 @@ function renderFaces(){
   });
 }
 renderFaces();
+showA2HS();
+paintNet();
 
 /* ---------- practice ---------- */
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
@@ -1473,6 +1547,11 @@ function renderSetup(){
   document.getElementById('lenseg').innerHTML=[3,5,10].map(n=>
     `<button class="${testLen===n?'on':''}" onclick="testLen=${n};renderSetup()">${n}개</button>`).join('');
   const n=document.getElementById('micnote');
+  if(!navigator.onLine){
+    n.innerHTML='<b>지금은 인터넷이 없어요.</b> 말하기 인식은 아이폰이 소리를 밖으로 보내 알아듣기 때문에 ' +
+      '연결이 필요합니다. 지금은 <b>타이핑으로</b> 볼 수 있고, 퍼즐과 쓰기 연습은 그대로 됩니다.';
+    return;
+  }
   n.innerHTML=SR
     ? '<b>마이크를 쓸 수 있어요.</b> 처음 시작할 때 마이크 권한을 한 번 물어봅니다. 인식이 잘 안 되면 언제든 타이핑으로 바꿀 수 있어요.'
     : '<b>이 브라우저는 음성 인식을 지원하지 않아요.</b> 타이핑으로 테스트할 수 있고, 보상은 절반으로 들어갑니다. 아이패드 Safari에서 다시 시도해 보세요.';
