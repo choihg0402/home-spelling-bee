@@ -1161,6 +1161,21 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
                         font:inherit;font-size:15px;min-height:var(--tap)">
           <button class="btn primary" onclick="doSignIn()">연결 링크 받기</button>
         </div>
+        <details style="margin-top:10px">
+          <summary class="sub" style="cursor:pointer">링크가 다른 주소로 열렸나요?</summary>
+          <p class="bk-note" style="margin-top:8px">
+            메일 링크를 눌렀는데 <b>연결할 수 없음</b> 같은 화면이 떴다면, 그 화면의
+            <b>주소창 주소를 통째로 복사</b>해 아래에 붙여넣으세요. 그것만으로 연결됩니다.
+          </p>
+          <div class="bk-act" style="margin-top:8px">
+            <input id="sync-paste" placeholder="http://localhost:3000/#access_token=..."
+                   style="flex:1;min-width:200px;padding:10px 12px;border-radius:var(--r-m);
+                          border:1px solid var(--line);background:var(--paper);color:var(--ink);
+                          font:inherit;font-size:14px">
+            <button class="btn" onclick="finishFromUrl()">연결 마치기</button>
+          </div>
+        </details>
+
         <div id="sync-out" class="bk-act" hidden>
           <button class="btn primary" onclick="syncNow()">지금 맞추기</button>
           <button class="btn ghost" onclick="signOut()">연결 끊기</button>
@@ -2410,17 +2425,39 @@ async function sbFetch(path, opt){
 /* --- 로그인: 비밀번호 없이 메일 링크 --- */
 async function sendMagicLink(email){
   const cfg=loadSyncCfg(); if(!cfg) throw new Error('서버 설정을 먼저 넣어주세요');
-  const res=await fetch(cfg.url+'/auth/v1/otp', {
+  // 돌아올 주소는 본문이 아니라 주소 뒤에 붙인다.
+  // 안 붙이면 Supabase 의 Site URL(기본 localhost:3000)로 가버린다.
+  const back=location.origin+location.pathname;
+  const res=await fetch(cfg.url+'/auth/v1/otp?redirect_to='+encodeURIComponent(back), {
     method:'POST',
     headers:{'apikey':cfg.key,'Content-Type':'application/json'},
-    body:JSON.stringify({email:email, create_user:true,
-      options:{email_redirect_to:location.href.split('#')[0]}})
+    body:JSON.stringify({email:email, create_user:true})
   });
   if(!res.ok){
     let m=res.status+''; try{const j=await res.json(); m=j.msg||j.message||m}catch(e){}
     throw new Error(m);
   }
 }
+/* 링크가 엉뚱한 주소(localhost 등)로 열렸을 때, 그 주소를 그대로 붙여넣어 끝낼 수 있게 한다.
+   증표는 주소 뒤 # 뒤에 들어 있어서 그 페이지가 열리지 않아도 값은 살아 있다. */
+function finishFromUrl(){
+  const raw=(document.getElementById('sync-paste').value||'').trim();
+  if(!raw){ toast('붙여넣은 주소가 없어요'); return }
+  const hash=raw.includes('#') ? raw.slice(raw.indexOf('#')+1) : raw;
+  const p=new URLSearchParams(hash);
+  const at=p.get('access_token');
+  if(!at){
+    document.getElementById('sync-state').innerHTML=
+      '<span class="bk-err">그 주소에는 로그인 증표가 없어요. # 뒤까지 통째로 붙여넣어 주세요.</span>';
+    return;
+  }
+  setSyncToken({access_token:at, refresh_token:p.get('refresh_token'),
+                expires_at: Math.floor(Date.now()/1000)+Number(p.get('expires_in')||3600)});
+  document.getElementById('sync-paste').value='';
+  toast('가족 계정에 연결됐어요');
+  renderSync(); setTimeout(()=>syncNow(true),400);
+}
+
 /* 메일 링크로 돌아오면 주소 뒤에 토큰이 붙어 있다 */
 function catchAuthRedirect(){
   if(!location.hash || location.hash.indexOf('access_token')<0) return false;
