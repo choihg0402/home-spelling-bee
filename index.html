@@ -1222,6 +1222,10 @@ const masked=s=>s.replace(/\{(.+?)\}/g,m=>'<span class="blank">'+'_'.repeat(Math
 
 /* ---------- screens ---------- */
 function go(id){
+  // 프로필을 고르기 전에 다른 화면으로 가면 그릴 것이 없다.
+  // 정상 흐름에서는 생기지 않지만, 생기면 조용히 처음 화면으로 돌린다.
+  if(!pid && id!=='s-profile' && id!=='s-quizhome' && id!=='s-study'
+     && id!=='s-quiz' && id!=='s-quizdone' && id!=='s-qedit') id='s-profile';
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
   paintNet();
   if(id==='s-profile')showA2HS();
