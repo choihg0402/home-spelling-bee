@@ -1178,6 +1178,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <div class="card" style="margin-top:14px">
       <p class="eyebrow">기기끼리 맞추기</p>
       <p class="sub" id="sync-state"></p>
+      <p class="sub" id="sync-err" hidden></p>
 
       <div id="sync-acct" hidden style="margin-top:12px">
         <div id="sync-in" class="bk-act">
@@ -2566,16 +2567,34 @@ async function syncNow(silent){
       });
       try{ localStorage.setItem(key(id), JSON.stringify(next)) }catch(e){}
     }
-    if(pid){ S=load(pid); qLoad() }
-    renderFaces();
+    // 여기까지 왔으면 주고받기는 끝났다.
     try{ localStorage.setItem('sb_sync_at', new Date().toISOString()) }catch(e){}
+    try{ localStorage.removeItem('sb_sync_err') }catch(e){}
     if(!silent) toast('기기끼리 맞췄어요');
-    renderSync();
-    if(document.getElementById('s-parent').classList.contains('on')) renderParent();
+    // 화면을 다시 그리다 난 오류는 주고받기 실패가 아니다. 따로 잡는다.
+    try{
+      if(pid){ S=load(pid); qLoad() }
+      renderFaces();
+      await renderSync();
+      if(document.getElementById('s-parent').classList.contains('on')) renderParent();
+    }catch(e2){
+      console.error('동기화 후 화면 그리기 실패', e2);
+      noteSyncError('화면을 다시 그리다 막혔어요 — ' + e2.message);
+    }
   }catch(e){
+    console.error('동기화 실패', e);
+    noteSyncError(e.message);
     if(st) st.innerHTML='<span class="bk-err">'+e.message+'</span>';
     if(!silent) toast('맞추지 못했어요');
   }finally{ syncBusy=false }
+}
+
+/* 무엇이 막혔는지 화면에서 바로 읽을 수 있게 남긴다.
+   팝업은 사라지고 상태줄은 다른 글이 덮어써서, 원인이 안 보이는 일이 있었다. */
+function noteSyncError(msg){
+  try{ localStorage.setItem('sb_sync_err', new Date().toISOString()+' | '+msg) }catch(e){}
+  const el=document.getElementById('sync-err');
+  if(el){ el.innerHTML='<span class="bk-err">지난 오류 — '+msg+'</span>'; el.hidden=false }
 }
 
 /* 앱을 열 때와 덮을 때 조용히 맞춘다 */
@@ -2613,6 +2632,12 @@ async function renderSync(){
       '<span class="bk-note">가족 비밀번호를 한 번만 넣으면 이 기기가 계속 연결됩니다. 아이는 다시 볼 일이 없어요.</span>';
   document.getElementById('sync-in').hidden = !!u;
   document.getElementById('sync-out').hidden = !u;
+  const errEl=document.getElementById('sync-err');
+  if(errEl){
+    let last=null; try{ last=localStorage.getItem('sb_sync_err') }catch(e){}
+    if(last){ errEl.innerHTML='<span class="bk-err">지난 오류 — '+last.split('| ').slice(1).join('| ')+'</span>'; errEl.hidden=false }
+    else errEl.hidden=true;
+  }
 }
 function saveSyncSettings(){
   const url=document.getElementById('sync-url').value.trim();
