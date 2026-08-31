@@ -11,6 +11,10 @@
   --sky:#DCEBF7; --grass:#D8EBD2;
   --shadow:0 1px 2px rgba(27,33,48,.07), 0 10px 28px rgba(27,33,48,.07);
   --r-s:8px; --r-m:14px; --r-l:22px;
+  /* 글자 타일 크기는 여기 한 곳에서만 정한다.
+     가로는 애플 권장 최소 터치 크기 44px 아래로 내리지 않는다. */
+  --tw:60px; --th:68px; --tfs:32px;
+  --tap:44px;              /* 누르는 것의 최소 높이 */
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -144,8 +148,8 @@ img.face{border:2px solid var(--line)}
 
 .slots{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;min-height:72px}
 .tray{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
-.tile{width:60px;height:68px;border-radius:var(--r-s);background:var(--tile);color:var(--tile-ink);
-  font-family:"Fredoka",sans-serif;font-weight:500;font-size:32px;display:grid;place-items:center;
+.tile{width:var(--tw);height:var(--th);border-radius:var(--r-s);background:var(--tile);color:var(--tile-ink);
+  font-family:"Fredoka",sans-serif;font-weight:500;font-size:var(--tfs);display:grid;place-items:center;
   border:1px solid var(--tile-edge);box-shadow:0 4px 0 var(--tile-edge),0 6px 12px rgba(0,0,0,.13);
   transition:transform .08s ease,box-shadow .08s ease;user-select:none;text-transform:uppercase}
 .tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tile-edge),0 2px 6px rgba(0,0,0,.13)}
@@ -154,7 +158,6 @@ img.face{border:2px solid var(--line)}
 .tile.ok{box-shadow:0 4px 0 var(--good),0 6px 12px rgba(0,0,0,.13);border-color:var(--good)}
 .tile.no{animation:shake .4s}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-@media (max-width:700px){.tile{width:46px;height:54px;font-size:25px}}
 
 .write-in{width:min(560px,90vw);font-family:"Fredoka",sans-serif;font-size:40px;text-align:center;
   padding:14px 18px;border:2px solid var(--line);border-radius:var(--r-m);background:var(--paper);
@@ -179,7 +182,10 @@ img.face{border:2px solid var(--line)}
   color:var(--stage);border:1px solid var(--stage);font-family:"Fredoka",sans-serif;font-size:28px;
   display:grid;place-items:center;text-transform:uppercase}
 .lchip.sel{background:var(--stage);color:#fff}
+.padwrap{display:none}
+.padwrap.on{display:block}
 .pad{display:grid;grid-template-columns:repeat(13,1fr);gap:5px;max-width:640px;margin:0 auto;width:100%}
+.test-ctrl{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .pad button{aspect-ratio:1;border-radius:6px;background:var(--paper);border:1px solid var(--line);
   font-family:"Fredoka",sans-serif;font-size:15px;display:grid;place-items:center}
 @media (max-width:640px){.pad{grid-template-columns:repeat(7,1fr);max-width:360px}}
@@ -294,18 +300,35 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   padding:12px 22px;border-radius:999px;font-size:15px;box-shadow:var(--shadow);opacity:0;pointer-events:none;
   transition:opacity .25s;z-index:50}
 .toast.on{opacity:1}
-/* ---------- 폰 (세로) ----------
-   아이패드 기준으로 짠 여백을 그대로 두면 확인 버튼이 화면 밖으로 밀린다.
-   주소창까지 감안하면 쓸 수 있는 높이가 650px 남짓이다. */
-@media (max-width:480px){
+/* --- 누르는 것의 최소 크기 (애플 권장 44pt) ---
+   반드시 아래 화면 대응 분기보다 먼저 와야 한다.
+   뒤에 두면 min-height가 분기에서 줄인 height를 도로 밀어올린다. */
+.btn,.seg button,.pad button,.lchip,.tile{min-height:var(--tap)}
+.tile{min-width:var(--tap)}
+.photo-edit button{min-height:32px;padding:6px 0}
+
+/* ==========================================================
+   화면 대응
+   분기 기준이 폭 하나뿐이면 아이폰 가로(폭 844)가 아이패드로 판정되어
+   큰 레이아웃을 받는다. 정작 모자란 건 높이(390)라 버튼이 화면 밖으로 밀린다.
+   그래서 폭과 높이를 따로 본다.
+   ========================================================== */
+
+/* --- 좁은 화면: 아이패드 세로, 화면 분할, 폰 --- */
+@media (max-width:820px){
+  :root{--tw:52px; --th:58px; --tfs:27px}
+}
+
+/* --- 폰 세로 --- */
+@media (max-width:520px){
+  :root{--tw:44px; --th:50px; --tfs:23px}
   body{font-size:16px}
   .app{gap:10px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
   .card{padding:16px}
   .play{gap:10px}
-  .tile{width:40px;height:48px;font-size:21px;border-radius:6px}
   .slots,.tray{gap:6px}
-  .slots{min-height:52px}
-  .btn{padding:10px 14px;font-size:15px}
+  .slots{min-height:54px}
+  .btn{padding:11px 14px;font-size:15px}
   .btn.big{padding:14px 20px;font-size:17px}
   .footer-bar{gap:8px}
   .q-def{font-size:18px;line-height:1.5}
@@ -322,7 +345,122 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   h1{font-size:26px!important}
   .speak-btn{width:88px;height:88px}
   .speak-btn svg{width:40px;height:40px}
+  .pgrid{grid-template-columns:1fr 1fr;gap:10px}
+  .big-num{font-size:28px}
+
+  /* 홈: 아이가 스크롤하지 않고 연습장·시험장을 둘 다 볼 수 있어야 한다.
+     캐릭터와 진행 카드는 그 아래로 밀어도 된다. */
+  /* 확인 버튼을 화면 아래에 붙여둔다.
+     13글자짜리 단어가 나오면 타일이 다섯 줄이 되어 버튼이 화면 밖으로 밀린다.
+     여백을 깎아 억지로 맞추는 대신, 눌러야 하는 것을 늘 보이게 한다. */
+  .footer-bar{position:sticky;bottom:0;z-index:5;margin-top:auto;
+    padding:10px 0 max(6px,env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--bg) 72%,transparent)}
+  .prompt > p{display:none}          /* “눌러서 다시 듣기” — 큰 아이콘으로 충분하다 */
+  .speak-btn{width:72px;height:72px}
+  .speak-btn svg{width:34px;height:34px}
+  .hints{gap:6px}
+  .hints .btn{padding:7px 11px;font-size:14px}
+  .feedback{min-height:38px}
+
+  .home-grid{gap:10px}
+  .zone{min-height:96px;padding:14px 16px}
+  .zone h2{font-size:24px}
+  .zone p{font-size:14px;max-width:none}
+  .zone .tag{top:12px;right:14px}
+  .pet-emoji{font-size:72px!important}
+  .pet{gap:5px}
+  .side{gap:10px}
+  .stat-row{gap:8px;margin-top:4px}
+  .stat{padding:9px 6px}
+  .stat b{font-size:19px}
 }
+
+/* --- 아주 좁은 화면: 아이패드 화면 분할 최소 폭(320) --- */
+@media (max-width:360px){
+  :root{--tw:44px; --th:48px; --tfs:22px}
+  .app{padding-left:8px;padding-right:8px}
+  .slots,.tray{gap:4px}
+  .pgrid{grid-template-columns:1fr}
+}
+
+/* --- 낮은 화면: 아이폰 가로 --------------------------------
+   높이가 520px 아래로 내려가면 세로 여백을 전부 조인다.
+   타일은 44px을 지키되(아이가 누르는 것), 안내 문구처럼
+   없어도 되는 것부터 덜어낸다. 폭이 넓어 타일이 한 줄에 많이 들어가므로
+   줄 수가 줄어 이 정도로 들어간다. */
+@media (max-height:520px) and (orientation:landscape){
+  :root{--tw:46px; --th:46px; --tfs:22px}
+  .app{gap:7px;padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  .card{padding:11px 16px}
+  .play{gap:7px}
+  h1{font-size:21px!important}
+  h2{font-size:19px}
+  .zone{min-height:0}
+  .zone h2{font-size:21px}
+  .zone p{font-size:14px}
+  .prompt{gap:5px}
+  .prompt > p{display:none}          /* “눌러서 다시 듣기” — 아이콘으로 충분하다 */
+  .speak-btn{width:58px;height:58px}
+  .speak-btn svg{width:26px;height:26px}
+  .slots{min-height:0}
+  .slots,.tray{gap:5px}
+  .q-def{font-size:16px;line-height:1.45}
+  .q-def-card{padding:9px 14px}
+  .q-def-card .eyebrow{display:none}
+  .hint-line{min-height:20px;font-size:15px}
+  .feedback{min-height:28px;gap:0}
+  .feedback .msg{font-size:17px}
+  .feedback .ans{font-size:14px}
+  .feedback .ans.reveal{font-size:26px}
+  .btn{padding:8px 12px;font-size:14px}
+  .btn.big{padding:10px 18px;font-size:15px;min-height:var(--tap)}
+  .hints{gap:6px}
+  .hints .btn{padding:6px 11px;font-size:13px}
+  .footer-bar{padding-top:0;gap:8px}
+  .letters{min-height:0}
+  .lchip{height:44px;min-width:38px;font-size:21px}
+  .pet-emoji{font-size:54px!important}
+  .pet{gap:4px}
+  .side{gap:8px}
+  .stat-row{margin-top:2px}
+  .stat{padding:7px 6px}
+  .stat b{font-size:17px}
+  .mic-state{min-height:18px;font-size:13px}
+  .write-in{font-size:28px;padding:8px 14px}
+  .study{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+
+  /* 홈: 넓은 폭을 살려 세 칸으로 편다. 세로로 쌓으면 높이가 모자란다. */
+  .home-grid{grid-template-columns:1.25fr .9fr .9fr;gap:8px}
+  .side{display:contents}
+  .zones{gap:8px}
+  .pet-emoji{font-size:46px!important}
+  .pet h3{font-size:16px}
+  .pet p{font-size:12px}
+  .legend{margin-top:6px;font-size:12px;gap:9px}
+  .bar{height:9px}
+
+  /* 시험장: 알파벳 자판이 정사각형이면 두 줄만으로 124px을 먹는다 */
+  .pad{gap:4px;max-width:700px}
+  .pad button{aspect-ratio:auto;height:34px;font-size:14px;min-height:0}
+  .letters{gap:5px}
+  .hints .btn{padding:5px 10px}
+  /* 보조 버튼까지 44px을 지키면 아무것도 안 들어간다.
+     아이가 실제로 누르는 타일과 주 버튼만 지킨다. */
+  .btn:not(.big),.seg button{min-height:34px}
+  .speak-btn{width:50px;height:50px}
+  .speak-btn svg{width:22px;height:22px}
+  .mic-state{min-height:16px}
+  /* 시험장은 요소가 많다. 가로에서는 발음 버튼을 힌트 버튼과 한 줄에 세워
+     세로로 쌓이는 높이를 줄인다. */
+  #s-test .prompt{flex-direction:row;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+  #s-test .hints{margin:0}
+  /* 자판을 펼치면 화면을 넘어간다. 눌러야 하는 버튼은 아래에 고정해 둔다. */
+  .footer-bar{position:sticky;bottom:0;z-index:5;margin-top:auto;
+    padding:6px 0 max(4px,env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--bg) 72%,transparent)}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -565,9 +703,9 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <div class="letters" id="letters"></div>
     <p class="mic-state" id="micstate">마이크를 누르고 알파벳을 말해줘</p>
 
-    <div style="text-align:center">
+    <div class="test-ctrl">
       <button class="btn" id="micbtn" onclick="toggleMic()">🎤 말하기 시작</button>
-      <button class="btn" onclick="delLetter()">글자 지우기</button>
+      <button class="btn" id="padbtn" onclick="togglePad()">⌨ 글자 고치기</button>
       <button class="btn ghost" onclick="toggleTyping()" id="typebtn">타이핑으로 바꾸기</button>
     </div>
 
@@ -579,7 +717,13 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       </p>
     </div>
 
-    <div class="pad" id="pad"></div>
+    <div class="padwrap" id="padwrap">
+      <div class="pad" id="pad"></div>
+      <div style="text-align:center;margin-top:8px">
+        <button class="btn" onclick="delLetter()">글자 지우기</button>
+        <button class="btn ghost" onclick="togglePad(false)">닫기</button>
+      </div>
+    </div>
 
     <div class="footer-bar">
       <button class="btn big stage" onclick="submitTest()">제출하기</button>
@@ -1347,6 +1491,7 @@ function startTest(){
 }
 function loadQ(){
   cur=tq[ti]; letters=[]; selIdx=-1;
+  togglePad(false);
   document.getElementById('q-now').textContent=ti+1;
   document.getElementById('testinput').value='';
   document.getElementById('defbtn').disabled=true;
@@ -1358,13 +1503,23 @@ function drawLetters(){
     `<button class="lchip ${selIdx===i?'sel':''}" onclick="selLetter(${i})">${c}</button>`).join('')
     :'<span style="color:var(--ink-3)">아직 아무것도 없어</span>';
 }
-function selLetter(i){selIdx=selIdx===i?-1:i;drawLetters()}
+function selLetter(i){ selIdx=selIdx===i?-1:i; drawLetters(); if(selIdx>=0)togglePad(true) }
+/* 자판은 글자를 고칠 때만 쓴다. 늘 펼쳐두면 폰 세로에서 180px을 먹어
+   제출 버튼이 화면 밖으로 밀린다. */
+function togglePad(force){
+  const w=document.getElementById('padwrap');
+  const open = force===undefined ? !w.classList.contains('on') : !!force;
+  w.classList.toggle('on',open);
+  document.getElementById('padbtn').textContent = open ? '⌨ 자판 닫기' : '⌨ 글자 고치기';
+  if(!open){ selIdx=-1; drawLetters() }
+}
 function addLetter(c){ if(selIdx>=0){letters[selIdx]=c;selIdx=-1}else letters.push(c); drawLetters() }
 function delLetter(){ if(selIdx>=0){letters.splice(selIdx,1);selIdx=-1}else letters.pop(); drawLetters() }
 function toggleTyping(){
   typing=!typing;
   document.getElementById('typing-ui').style.display=typing?'':'none';
-  document.getElementById('pad').style.display=typing?'none':'';
+  document.getElementById('padbtn').style.display=typing?'none':'';
+  if(typing)togglePad(false);
   document.getElementById('typebtn').textContent=typing?'말하기로 돌아가기':'타이핑으로 바꾸기';
   if(typing){stopMic();document.getElementById('testinput').focus()}
 }
