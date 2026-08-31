@@ -264,6 +264,11 @@ img.face{border:2px solid var(--line)}
 .qe-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .qe-pick select{padding:9px 12px;border-radius:var(--r-m);border:1px solid var(--line);
   background:var(--paper);color:var(--ink);font:inherit;font-size:15px;min-height:var(--tap)}
+.dex-given{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dex-given .sub{width:100%;margin:0}
+.given-chip{display:inline-flex;align-items:center;gap:6px;background:var(--good-soft);
+  color:var(--ink);border-radius:999px;padding:5px 6px 5px 12px;font-size:14px}
+.given-chip button{color:var(--ink-3);font-size:13px;padding:2px 6px;min-height:28px}
 .wk-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .wk{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-s);background:var(--sunk)}
 .wk.full{background:var(--good-soft)}
@@ -1238,6 +1243,19 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
           <span class="bk-note">공개 키는 숨길 값이 아닙니다. 실제 보호는 서버 쪽 행 단위 보안이 합니다.</span>
         </div>
       </details>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <p class="eyebrow">도감 손보기</p>
+      <p class="sub">예전에 키웠던 친구처럼, 지금 기록에 없지만 인정해주고 싶은 친구를 넣을 수 있어요.</p>
+      <div class="bk-act" style="margin-top:12px">
+        <select id="dex-pick"
+                style="flex:1;min-width:180px;padding:10px 12px;border-radius:var(--r-m);
+                       border:1px solid var(--line);background:var(--paper);color:var(--ink);
+                       font:inherit;font-size:15px;min-height:var(--tap)"></select>
+        <button class="btn primary" onclick="grantPet()">도감에 넣기</button>
+      </div>
+      <div class="dex-given" id="dex-given"></div>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -3076,6 +3094,7 @@ function renderParent(){
   renderVoices();
   renderStorage();
   renderWeekList();
+  renderDexTool();
   renderBothNote();
   renderKidTabs();
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
@@ -3197,6 +3216,42 @@ function renderBothNote(){
     a.textContent='이 기기에 있는 기록만 보입니다.';
     b.textContent='기기끼리 맞추기를 연결하면 두 아이를 한 화면에서 볼 수 있어요.';
   }
+}
+
+/* 예전 판에서 키운 친구처럼, 지금 기록에는 없지만 인정해주고 싶을 때 쓴다.
+   주간 완주로 얻은 친구와 합쳐져 도감에 나온다. */
+function renderDexTool(){
+  const sel=document.getElementById('dex-pick'); if(!sel)return;
+  const have=dexList();
+  const pick=sel.value;
+  sel.innerHTML=ANIMALS.map(a=>
+    '<option value="'+a.k+'"'+(a.k===pick?' selected':'')+'>'+a.e+' '+a.n+
+    (have.includes(a.k)?' (이미 있음)':'')+'</option>').join('');
+  const given=(S.dexLegacy||[]);
+  const box=document.getElementById('dex-given');
+  box.innerHTML = given.length
+    ? '<p class="sub" style="margin-top:10px">넣어준 친구</p>' + given.map(k=>{
+        const a=animal(k); if(!a)return '';
+        // 따옴표를 끼워 넣지 않고 데이터 속성으로 넘긴다
+        return '<span class="given-chip">'+a.e+' '+a.n+
+               '<button data-k="'+k+'" onclick="revokePet(this.dataset.k)" aria-label="빼기">✕</button></span>';
+      }).join('')
+    : '';
+}
+function grantPet(){
+  const k=document.getElementById('dex-pick').value;
+  const a=animal(k); if(!a)return;
+  S.dexLegacy=S.dexLegacy||[];
+  if(S.dexLegacy.includes(k)){ toast(a.n+'는 이미 넣어줬어요'); return }
+  S.dexLegacy.push(k); save();
+  toast(PROFILES[pid].name+'의 도감에 '+a.n+'를 넣었어요');
+  renderDexTool();
+}
+function revokePet(k){
+  S.dexLegacy=(S.dexLegacy||[]).filter(x=>x!==k); save();
+  const a=animal(k);
+  toast((a?a.n:'친구')+'를 뺐어요');
+  renderDexTool();
 }
 
 function renderWeekList(){
