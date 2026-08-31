@@ -2500,12 +2500,18 @@ async function sbFetch(path, opt){
   }, (opt&&opt.headers)||{});
   if(tok && tok.access_token) h['Authorization']='Bearer '+tok.access_token;
   const res=await fetch(cfg.url+path, Object.assign({}, opt, {headers:h}));
+  // 본문이 비어 있는 응답이 흔하다.
+  // 저장 요청은 return=minimal 이라 201 에 본문이 없다. 바로 json() 하면 터진다.
+  const text=await res.text();
   if(!res.ok){
     let msg=res.status+'';
-    try{ const j=await res.json(); msg=j.msg||j.message||j.error_description||j.error||msg }catch(e){}
+    try{ const j=JSON.parse(text); msg=j.msg||j.message||j.error_description||j.error||msg }catch(e){
+      if(text) msg=text.slice(0,120);
+    }
     throw new Error(msg);
   }
-  return res.status===204 ? null : res.json();
+  if(!text) return null;
+  try{ return JSON.parse(text) }catch(e){ return null }
 }
 
 /* --- 로그인: 가족 계정 하나에 비밀번호만 --- */
