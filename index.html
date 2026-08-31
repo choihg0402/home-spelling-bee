@@ -2167,9 +2167,13 @@ function migrateOldQuiz(){
   let custom=null, old=null;
   try{ custom=JSON.parse(localStorage.getItem('sb_quiz_words')) }catch(e){}
   try{ old=JSON.parse(localStorage.getItem('sb_quiz')) }catch(e){}
+  // 예전 기록이 실제로 있는 기기에서만 옮긴다.
+  // 새 기기에서 기본 단어를 심으면, 서버에 있는 진짜 단어를 밀어낸다.
+  if(!custom && !(old && old.solved)){ save(); return }
   const words=(Array.isArray(custom)&&custom.length)?custom:QUIZ_DEFAULT.slice();
   const k=weekKey();
-  S.weeks[k]={words:words, at:Date.now()};
+  // 심어둔 것임을 표시하고 시각을 아주 옛날로 둔다. 진짜 목록이 언제나 이긴다.
+  S.weeks[k]={words:words, at:1, seed:true};
   if(old && old.solved){
     const prog={};
     Object.entries(old.solved).forEach(([w,n])=>{ if(n) prog[w]={n:n} });
@@ -2239,7 +2243,7 @@ function saveQuizList(){
   const target=editKid, wk=editWeek;
   const d = target===pid ? S : (saveOf(target) || blank());
   d.weeks=d.weeks||{}; d.qw=d.qw||{};
-  d.weeks[wk]={words:out, at:Date.now()};
+  d.weeks[wk]={words:out, at:Date.now()};   // 부모가 넣은 진짜 목록 (seed 표시 없음)
   try{ localStorage.setItem(key(target), JSON.stringify(d)) }
   catch(e){ toast('저장하지 못했어요'); return }
   if(target===pid){ S=load(pid); curWeek=wk; qLoad() }
@@ -2811,6 +2815,16 @@ async function copyData(){
 
 /* --- 합치기 --- */
 const maxNum=(a,b)=>Math.max(a||0,b||0);
+/* 앱이 심어둔 기본 단어인지 가린다.
+   표시가 붙기 전에 심어진 기기가 있어, 내용이 기본과 똑같으면 심은 것으로 본다.
+   부모가 우연히 똑같은 목록을 넣었더라도 내용이 같으므로 잃는 것이 없다. */
+function isSeedWeek(w){
+  if(!w) return false;
+  if(w.seed) return true;
+  const ws=w.words||[];
+  if(ws.length!==QUIZ_DEFAULT.length) return false;
+  return ws.every((r,i)=>r[0]===QUIZ_DEFAULT[i][0] && r[1]===QUIZ_DEFAULT[i][1]);
+}
 function mergeWord(a,b){
   if(!a)return Object.assign({},b);
   if(!b)return a;
@@ -2844,11 +2858,16 @@ function mergeProfile(local, inc){
     out.hist[d]={p:maxNum(c.p,v.p), tw:maxNum(c.tw,v.tw), tok:maxNum(c.tok,v.tok),
                  voice:maxNum(c.voice,v.voice), typed:maxNum(c.typed,v.typed)};
   });
-  // 주차별 단어: 없으면 받아오고, 양쪽에 있으면 나중에 넣은 쪽을 쓴다
+  // 주차별 단어: 없으면 받아오고, 양쪽에 있으면 나중에 넣은 쪽을 쓴다.
+  // 단, 앱이 심어둔 기본 단어는 부모가 넣은 진짜 목록에 언제나 진다.
   out.weeks=Object.assign({}, local.weeks||{});
   Object.entries(inc.weeks||{}).forEach(([k,v])=>{
     const cur=out.weeks[k];
-    if(!cur || (v.at||0)>(cur.at||0)) out.weeks[k]=v;
+    if(!cur){ out.weeks[k]=v; return }
+    const cs=isSeedWeek(cur), vs=isSeedWeek(v);
+    if(cs && !vs) out.weeks[k]=v;
+    else if(!cs && vs) { /* 진짜 목록을 지킨다 */ }
+    else if((v.at||0)>(cur.at||0)) out.weeks[k]=v;
   });
   // 주차별 진도: 단어마다 많이 맞힌 쪽
   out.qw=Object.assign({}, local.qw||{});
