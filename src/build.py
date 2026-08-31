@@ -73,7 +73,8 @@ for key, label, path in LISTS:
 data = 'const LISTS=' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';'
 tpl = io.open('index.template.html', encoding='utf-8').read()
 assert '/*__WORDS__*/' in tpl
-body = tpl.replace('/*__WORDS__*/', data)
+cfg = io.open('config.js', encoding='utf-8').read()
+body = tpl.replace('/*__WORDS__*/', cfg + chr(10) + data)
 
 # --- 글꼴: 실제로 쓰인 글자만 받아 자체 호스팅한다 (오프라인 대비) ---
 font_css, font_files = fonts.build([body])

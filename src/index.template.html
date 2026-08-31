@@ -1154,27 +1154,14 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
       <div id="sync-acct" hidden style="margin-top:12px">
         <div id="sync-in" class="bk-act">
-          <input id="sync-email" type="email" inputmode="email" autocomplete="email"
-                 placeholder="부모 메일 주소"
-                 style="flex:1;min-width:200px;padding:11px 13px;border-radius:var(--r-m);
+          <input id="sync-pw" type="password" autocomplete="current-password"
+                 placeholder="가족 비밀번호"
+                 onkeydown="if(event.key==='Enter')doSignIn()"
+                 style="flex:1;min-width:180px;padding:11px 13px;border-radius:var(--r-m);
                         border:1px solid var(--line);background:var(--paper);color:var(--ink);
                         font:inherit;font-size:15px;min-height:var(--tap)">
-          <button class="btn primary" onclick="doSignIn()">연결 링크 받기</button>
+          <button class="btn primary" onclick="doSignIn()">로그인</button>
         </div>
-        <details style="margin-top:10px">
-          <summary class="sub" style="cursor:pointer">링크가 다른 주소로 열렸나요?</summary>
-          <p class="bk-note" style="margin-top:8px">
-            메일 링크를 눌렀는데 <b>연결할 수 없음</b> 같은 화면이 떴다면, 그 화면의
-            <b>주소창 주소를 통째로 복사</b>해 아래에 붙여넣으세요. 그것만으로 연결됩니다.
-          </p>
-          <div class="bk-act" style="margin-top:8px">
-            <input id="sync-paste" placeholder="http://localhost:3000/#access_token=..."
-                   style="flex:1;min-width:200px;padding:10px 12px;border-radius:var(--r-m);
-                          border:1px solid var(--line);background:var(--paper);color:var(--ink);
-                          font:inherit;font-size:14px">
-            <button class="btn" onclick="finishFromUrl()">연결 마치기</button>
-          </div>
-        </details>
 
         <div id="sync-out" class="bk-act" hidden>
           <button class="btn primary" onclick="syncNow()">지금 맞추기</button>
@@ -1182,7 +1169,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         </div>
       </div>
 
-      <details style="margin-top:14px">
+      <details style="margin-top:14px" id="sync-adv">
         <summary class="sub" style="cursor:pointer">서버 설정</summary>
         <div id="sync-cfg" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
           <input id="sync-url" placeholder="https://xxxx.supabase.co"
@@ -1254,10 +1241,7 @@ async function askPersist(){
   }catch(e){}
 }
 addEventListener('load', askPersist, {once:true});
-addEventListener('load', ()=>{
-  if(catchAuthRedirect()){ toast('가족 계정에 연결됐어요'); setTimeout(()=>syncNow(true),400) }
-  else setTimeout(()=>autoSync(),800);
-}, {once:true});
+addEventListener('load', ()=>setTimeout(()=>autoSync(),800), {once:true});
 
 const standalone = () =>
   window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
@@ -2390,8 +2374,17 @@ const SYNC_CFG='sb_sync_cfg', SYNC_TOK='sb_sync_tok';
 let syncCfg=null, syncUser=null, syncBusy=false;
 
 function loadSyncCfg(){
+  // 빌드에 박아둔 값이 있으면 그것을 쓴다. 기기마다 붙여넣을 필요가 없다.
+  if(typeof SB!=='undefined' && SB.url && SB.key){
+    syncCfg={url:SB.url.replace(/\/+$/,''), key:SB.key, email:SB.email};
+    return syncCfg;
+  }
   try{ syncCfg=JSON.parse(localStorage.getItem(SYNC_CFG)||'null') }catch(e){ syncCfg=null }
   return syncCfg;
+}
+function familyEmail(){
+  const c=loadSyncCfg();
+  return (c && c.email) || (typeof SB!=='undefined' && SB.email) || 'family@spellingbee.home';
 }
 function saveSyncCfg(url,key){
   syncCfg={url:url.replace(/\/+$/,''), key:key};
@@ -2422,52 +2415,23 @@ async function sbFetch(path, opt){
   return res.status===204 ? null : res.json();
 }
 
-/* --- 로그인: 비밀번호 없이 메일 링크 --- */
-async function sendMagicLink(email){
-  const cfg=loadSyncCfg(); if(!cfg) throw new Error('서버 설정을 먼저 넣어주세요');
-  // 돌아올 주소는 본문이 아니라 주소 뒤에 붙인다.
-  // 안 붙이면 Supabase 의 Site URL(기본 localhost:3000)로 가버린다.
-  const back=location.origin+location.pathname;
-  const res=await fetch(cfg.url+'/auth/v1/otp?redirect_to='+encodeURIComponent(back), {
+/* --- 로그인: 가족 계정 하나에 비밀번호만 --- */
+async function signInWithPassword(pw){
+  const cfg=loadSyncCfg(); if(!cfg) throw new Error('서버 설정이 없어요');
+  const res=await fetch(cfg.url+'/auth/v1/token?grant_type=password', {
     method:'POST',
     headers:{'apikey':cfg.key,'Content-Type':'application/json'},
-    body:JSON.stringify({email:email, create_user:true})
+    body:JSON.stringify({email:familyEmail(), password:pw})
   });
   if(!res.ok){
-    let m=res.status+''; try{const j=await res.json(); m=j.msg||j.message||m}catch(e){}
-    throw new Error(m);
+    let m=''; try{ const j=await res.json(); m=j.error_description||j.msg||j.message||'' }catch(e){}
+    if(/invalid/i.test(m)) m='비밀번호가 맞지 않아요.';
+    else if(/confirm/i.test(m)) m='계정이 아직 확인되지 않았어요. Supabase 에서 사용자를 만들 때 Auto Confirm 을 켜주세요.';
+    throw new Error(m||('로그인하지 못했어요 ('+res.status+')'));
   }
-}
-/* 링크가 엉뚱한 주소(localhost 등)로 열렸을 때, 그 주소를 그대로 붙여넣어 끝낼 수 있게 한다.
-   증표는 주소 뒤 # 뒤에 들어 있어서 그 페이지가 열리지 않아도 값은 살아 있다. */
-function finishFromUrl(){
-  const raw=(document.getElementById('sync-paste').value||'').trim();
-  if(!raw){ toast('붙여넣은 주소가 없어요'); return }
-  const hash=raw.includes('#') ? raw.slice(raw.indexOf('#')+1) : raw;
-  const p=new URLSearchParams(hash);
-  const at=p.get('access_token');
-  if(!at){
-    document.getElementById('sync-state').innerHTML=
-      '<span class="bk-err">그 주소에는 로그인 증표가 없어요. # 뒤까지 통째로 붙여넣어 주세요.</span>';
-    return;
-  }
-  setSyncToken({access_token:at, refresh_token:p.get('refresh_token'),
-                expires_at: Math.floor(Date.now()/1000)+Number(p.get('expires_in')||3600)});
-  document.getElementById('sync-paste').value='';
-  toast('가족 계정에 연결됐어요');
-  renderSync(); setTimeout(()=>syncNow(true),400);
-}
-
-/* 메일 링크로 돌아오면 주소 뒤에 토큰이 붙어 있다 */
-function catchAuthRedirect(){
-  if(!location.hash || location.hash.indexOf('access_token')<0) return false;
-  const p=new URLSearchParams(location.hash.slice(1));
-  const t={access_token:p.get('access_token'), refresh_token:p.get('refresh_token'),
-           expires_at: Math.floor(Date.now()/1000)+Number(p.get('expires_in')||3600)};
-  if(!t.access_token) return false;
-  setSyncToken(t);
-  history.replaceState(null,'',location.pathname+location.search);
-  return true;
+  const j=await res.json();
+  setSyncToken({access_token:j.access_token, refresh_token:j.refresh_token,
+                expires_at: Math.floor(Date.now()/1000)+(j.expires_in||3600)});
 }
 async function refreshIfNeeded(){
   const t=syncToken(); if(!t) return false;
@@ -2561,14 +2525,17 @@ addEventListener('online', ()=>autoSync());
 async function renderSync(){
   const box=document.getElementById('sync-state'); if(!box) return;
   const cfg=loadSyncCfg();
+  const built = typeof SB!=='undefined' && SB.url && SB.key;
+  const det=document.getElementById('sync-adv');
+  if(det) det.hidden = built;      // 앱에 이미 들어 있으면 설정 칸을 보일 이유가 없다
   const cfgBox=document.getElementById('sync-cfg');
-  if(cfgBox){
+  if(cfgBox && !built){
     document.getElementById('sync-url').value=(cfg&&cfg.url)||'';
     document.getElementById('sync-key').value=(cfg&&cfg.key)||'';
   }
   if(!cfg){
-    box.innerHTML='<span class="warn">아직 서버를 연결하지 않았어요.</span>'+
-      '<span class="bk-note">연결하기 전에도 앱은 그대로 쓸 수 있어요. 기기끼리 맞추려면 아래 설정이 필요합니다.</span>';
+    box.innerHTML='<span class="warn">아직 서버가 준비되지 않았어요.</span>'+
+      '<span class="bk-note">연결하기 전에도 앱은 그대로 쓸 수 있어요.</span>';
     document.getElementById('sync-acct').hidden=true;
     return;
   }
@@ -2577,7 +2544,8 @@ async function renderSync(){
   let when=''; try{ const t=localStorage.getItem('sb_sync_at'); if(t)when=new Date(t).toLocaleString('ko-KR') }catch(e){}
   box.innerHTML = u
     ? '<span class="ok">'+ (u.email||'연결됨') +' 로 연결됨</span>' + (when?'<span class="bk-note">마지막으로 맞춘 때 '+when+'</span>':'')
-    : '<span class="warn">아직 로그인하지 않았어요.</span><span class="bk-note">메일로 받은 링크를 이 기기에서 한 번 열면 됩니다.</span>';
+    : '<span class="warn">이 기기는 아직 연결되지 않았어요.</span>'+
+      '<span class="bk-note">가족 비밀번호를 한 번만 넣으면 이 기기가 계속 연결됩니다. 아이는 다시 볼 일이 없어요.</span>';
   document.getElementById('sync-in').hidden = !!u;
   document.getElementById('sync-out').hidden = !u;
 }
@@ -2589,15 +2557,20 @@ function saveSyncSettings(){
   saveSyncCfg(url,k); toast('설정을 저장했어요'); renderSync();
 }
 async function doSignIn(){
-  const em=document.getElementById('sync-email').value.trim();
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast('메일 주소를 확인해 주세요'); return }
+  const el=document.getElementById('sync-pw');
+  const pw=el.value;
+  if(!pw){ toast('비밀번호를 넣어주세요'); return }
   const box=document.getElementById('sync-state');
-  box.innerHTML='<span class="bk-note">메일을 보내는 중…</span>';
+  box.innerHTML='<span class="bk-note">로그인 중…</span>';
   try{
-    await sendMagicLink(em);
-    box.innerHTML='<span class="ok">'+em+' 으로 링크를 보냈어요.</span>'+
-      '<span class="bk-note">그 메일을 <b>이 기기에서</b> 열어 링크를 누르면 연결됩니다.</span>';
-  }catch(e){ box.innerHTML='<span class="bk-err">보내지 못했어요 — '+e.message+'</span>' }
+    await signInWithPassword(pw);
+    el.value='';
+    toast('가족 계정에 연결됐어요');
+    await renderSync();
+    syncNow(true);
+  }catch(e){
+    box.innerHTML='<span class="bk-err">'+e.message+'</span>';
+  }
 }
 
 /* ---------- 내보내기 / 가져오기 ----------
