@@ -44,6 +44,9 @@
 }
 
 *{box-sizing:border-box}
+/* hidden 속성은 무엇보다 우선한다.
+   기본 규칙은 .chip{display:inline-flex} 같은 클래스 규칙에 밀려 무시된다. */
+[hidden]{display:none!important}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
@@ -197,7 +200,6 @@ img.face{border:2px solid var(--line)}
 /* ---------- garden & shop ---------- */
 .a2hs{display:flex;gap:13px;align-items:flex-start;margin-top:16px;padding:14px 16px;
   background:var(--stage-soft);border-radius:var(--r-m);border-left:4px solid var(--stage)}
-.a2hs[hidden]{display:none}
 .a2hs-i{font-size:24px;line-height:1.2}
 .a2hs-t{flex:1;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink-2)}
 .a2hs-t b{font-size:15px;color:var(--ink);font-family:"Jua",sans-serif;font-weight:400}
