@@ -129,8 +129,20 @@ img.face{border:2px solid var(--line)}
 .photo-edit{display:flex;gap:10px;margin-top:6px}
 .photo-edit button{font-size:13px;color:var(--ink-3);text-decoration:underline;padding:2px 0}
 .photo-edit button:hover{color:var(--practice)}
+.pet-wrap{--pet:104px;position:relative;display:inline-grid;place-items:center;
+  width:calc(var(--pet)*1.32);height:calc(var(--pet)*1.32);
+  padding-bottom:calc(var(--pet)*.2);box-sizing:border-box}
 .pet-emoji{line-height:1;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.18));
-  animation:bob 3.4s ease-in-out infinite}
+  animation:bob 3.4s ease-in-out infinite;transition:font-size .35s ease}
+/* 알에서 다 클 때까지 두 배 반. 한 단계만 올라도 눈에 띈다. */
+.pet-wrap.s0 .pet-emoji{font-size:calc(var(--pet)*.42)}
+.pet-wrap.s1 .pet-emoji{font-size:calc(var(--pet)*.55)}
+.pet-wrap.s2 .pet-emoji{font-size:calc(var(--pet)*.70)}
+.pet-wrap.s3 .pet-emoji{font-size:calc(var(--pet)*.86)}
+.pet-wrap.s4 .pet-emoji{font-size:calc(var(--pet)*1.05)}
+.pet-deco{position:absolute;bottom:0;left:0;right:0;text-align:center;white-space:nowrap;
+  line-height:1;letter-spacing:.04em;font-size:calc(var(--pet)*.17);
+  transition:font-size .35s ease}
 @keyframes bob{50%{transform:translateY(-7px)}}
 .pcard h2{font-size:26px}
 .pcard p{margin:2px 0 0;color:var(--ink-2);font-size:15px}
@@ -329,7 +341,9 @@ img.face{border:2px solid var(--line)}
   transition:transform .1s}
 .garden .slot.filled:active{transform:scale(.9)}
 .garden .slot.empty{border:2px dashed rgba(125,125,125,.28)}
-.garden .pet-here{grid-column:span 2;font-size:44px;display:grid;place-items:center}
+.garden .pet-here{grid-column:span 2;display:grid;place-items:center}
+.garden .pet-here .pet-wrap{--pet:38px}
+.garden .pet-here .pet-emoji{animation:none;filter:none}
 .tray-items,.shop{display:grid;gap:10px;margin-top:10px}
 .tray-items{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
 .shop{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
@@ -469,7 +483,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   .zone h2{font-size:24px}
   .zone p{font-size:14px;max-width:none}
   .zone .tag{top:12px;right:14px}
-  .pet-emoji{font-size:72px!important}
+  .pet-wrap{--pet:78px}
   .pet{gap:5px}
   .side{gap:10px}
   .stat-row{gap:8px;margin-top:4px}
@@ -521,7 +535,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   .footer-bar{padding-top:0;gap:8px}
   .letters{min-height:0}
   .lchip{height:44px;min-width:38px;font-size:21px}
-  .pet-emoji{font-size:54px!important}
+  .pet-wrap{--pet:58px}
   .pet{gap:4px}
   .side{gap:8px}
   .stat-row{margin-top:2px}
@@ -540,7 +554,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   .zones .zone .tag{top:8px;right:10px;font-size:11px;padding:3px 8px}
   .side{flex-direction:row;gap:8px}
   .side > .card{flex:1}
-  .pet-emoji{font-size:46px!important}
+  .pet-wrap{--pet:52px}
   .pet h3{font-size:16px}
   .pet p{font-size:12px}
   .legend{margin-top:6px;font-size:12px;gap:9px}
@@ -1657,14 +1671,20 @@ function dexList(){
   ((S&&S.dexLegacy)||[]).forEach(a=>{ if(!out.includes(a) && animal(a)) out.push(a) });
   return out;
 }
-function petHTML(k, ratio, size){
+/* 자랄수록 커지고, 발밑에 풀과 꽃이 하나씩 늘어난다.
+   크기는 여기서 정하지 않는다. CSS 가 기준 크기에 단계 배율을 곱한다.
+   그래야 화면이 작아도 단계별 차이가 그대로 보인다. */
+const PET_DECO=['', '🌱', '🌱🌿', '🌿🌸🌱', '🌷🌿🌸'];
+function petHTML(k, ratio){
   const a=animal(k);
-  if(!a) return '<span class="pet-emoji" style="font-size:'+size+'px">🥚</span>';
-  const st=stageOfRatio(ratio);
-  const face = st<=0 ? '🥚' : st===1 ? '🐣' : a.e;
-  const scale = st<=1 ? 1 : st===2 ? .72 : st===3 ? .88 : 1.05;
-  return '<span class="pet-emoji'+(st===4?' full':'')+'" style="font-size:'+Math.round(size*scale)+'px" '+
-         'role="img" aria-label="'+a.n+' '+STAGE_NAME[st]+'">'+face+'</span>';
+  const st=a ? stageOfRatio(ratio) : 0;
+  const face = (!a || st===0) ? '🥚' : st===1 ? '🐣' : a.e;
+  const label = a ? a.n+' '+STAGE_NAME[st] : '알';
+  const deco = PET_DECO[st];
+  return '<span class="pet-wrap s'+st+'">'+
+           '<span class="pet-emoji'+(st===4?' full':'')+'" role="img" aria-label="'+label+'">'+face+'</span>'+
+           (deco ? '<span class="pet-deco">'+deco+'</span>' : '')+
+         '</span>';
 }
 
 const SHOP=[
@@ -1708,7 +1728,7 @@ function renderHome(){
   const wk=curWeek, words=weekWords(wk), prog=weekProg(wk);
   const solved=words.filter(r=>(prog[r[0]]||{}).n>0).length;
   const ratio=weekRatio(wk), petKey=petOf(wk), a=animal(petKey);
-  document.getElementById('pet').innerHTML=petHTML(petKey, ratio, 104);
+  document.getElementById('pet').innerHTML=petHTML(petKey, ratio);
   document.getElementById('pet-name').textContent =
     !words.length ? '이번 주 단어를 기다리는 중'
     : !a ? '친구를 골라주세요'
@@ -2451,7 +2471,7 @@ function renderGarden(){
   const dex=dexList();
   const g=document.getElementById('garden');
   let html=`<span class="pet-here" title="지금 키우는 친구">${
-    petHTML(petOf(curWeek), weekRatio(curWeek), 40)}</span>`;
+    petHTML(petOf(curWeek), weekRatio(curWeek))}</span>`;
   // 다 키운 친구들이 정원에 같이 산다
   html+=dex.map(k=>{const a=animal(k); if(!a)return '';
     return `<span class="slot filled" title="${a.n}">${a.e}</span>`}).join('');
