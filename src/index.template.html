@@ -656,6 +656,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <span class="tag">연습</span>
         <h2>연습장</h2>
         <p>퍼즐과 쓰기로 마음껏 연습해요. 틀려도 아무 일도 일어나지 않아요.</p>
+        <p style="font-size:14px;color:var(--ink-3)" id="home-plan"></p>
         <p style="font-size:14px;color:var(--ink-3)">오늘 받은 코인 <b class="tnum" id="capxp">0</b>/12</p>
       </button>
       <button class="card zone test" onclick="go('s-tsetup')">
@@ -797,6 +798,12 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <p style="color:var(--ink-2)">단어를 듣고 알파벳을 <b>한 글자씩 소리 내어</b> 말해줘.
       화면에 뜬 글자가 틀리면 눌러서 고칠 수 있어. 다 맞으면 제출!</p>
     <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="eyebrow">단어 묶음</span>
+      <span class="seg" id="tsecseg"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span style="font-size:14px;color:var(--ink-3)" id="tpickcount"></span>
+    </div>
+    <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span class="eyebrow">몇 개 볼까</span>
       <span class="seg" id="lenseg"></span>
     </div>
@@ -1347,7 +1354,7 @@ function listTag(id){
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
 const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='all', testLen=5;
+let pid=null, S=null, sec='week', testLen=5;
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -1428,7 +1435,47 @@ function today(){return new Date().toISOString().slice(0,10)}
 function ws(n){ return S.w[n]||(S.w[n]={p:0,ok:0,voice:0,pass:0,miss:0,peek:0,st:'new'}) }
 
 function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.includes(w[3])) }
-function poolWords(){ const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec) }
+
+/* ---------- 대회 준비 계획 ----------
+   대회 전 네 주. 세 주에 걸쳐 20% - 40% - 40%로 나눠 익히고,
+   마지막 한 주는 전체를 다시 훑어 최종 점검한다.
+   부모가 매주 넣는 단어 퀴즈와는 상관없다. 이건 대회 단어 쪽이다.
+   시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
+   지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
+const SB_FROM='2026-W36';
+const SB_CUTS=[.2, .6, 1];              // 누적 비율
+function planWeeks(){
+  const all=myWords(), n=all.length, out=[];
+  let from=0, k=SB_FROM;
+  SB_CUTS.forEach(c=>{
+    const to=Math.round(n*c);
+    if(to>from){ out.push({k:k, words:all.slice(from,to), last:false}); from=to; k=shiftWeek(k,1) }
+  });
+  out.push({k:k, words:all.slice(), last:true});
+  return out;
+}
+/* 오늘이 속한 주의 묶음. 계획보다 이르면 첫 주, 지났으면 마지막 점검 묶음. */
+function planNow(){
+  const t=weekKey(), ws=planWeeks();
+  if(!ws.length) return {k:t, words:[], last:false};
+  return ws.find(w=>w.k===t) || (t<SB_FROM ? ws[0] : ws[ws.length-1]);
+}
+function planLabel(){
+  const p=planNow(), i=planWeeks().findIndex(w=>w.k===p.k);
+  return p.last ? '최종 점검 · 전체 '+p.words.length+'개'
+                : (i+1)+'주차 · '+p.words.length+'개';
+}
+
+function poolWords(){
+  if(sec==='week') return planNow().words;
+  const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec);
+}
+const SEGS=[['week','이번 주'],['all','전체'],['B','Basic'],['C','Challenging']];
+function segHTML(fn){
+  return SEGS.filter(x=>x[0]==='week'||x[0]==='all'||PROFILES[pid].sections.includes(x[0]))
+    .map(x=>`<button class="${sec===x[0]?'on':''}" onclick="sec='${x[0]}';${fn}()">${x[1]}</button>`)
+    .join('');
+}
 
 /* ---------- rewards ---------- */
 function grantPractice(){
@@ -1570,7 +1617,7 @@ async function gateIn(){
 }
 
 function pickProfile(id){
-  pid=id; S=load(id); sec='all';
+  pid=id; S=load(id); sec='week';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=listTag(id);
@@ -1704,6 +1751,8 @@ function renderHome(){
   document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),coin:0};
   document.getElementById('capxp').textContent=S.day.coin;
+  const pw=planNow().words, pm=pw.filter(w=>(S.w[w[0]]||{}).st==='master').length;
+  document.getElementById('home-plan').textContent=planLabel()+' · 마스터 '+pm+'개';
 
   qLoad();
   const wk=curWeek, words=weekWords(wk), prog=weekProg(wk);
@@ -1810,11 +1859,9 @@ function renderProfNote(){
 /* ---------- practice ---------- */
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
 function renderPick(){
-  const segs=[['all','전체'],['B','Basic'],['C','Challenging']]
-    .filter(s=>s[0]==='all'||PROFILES[pid].sections.includes(s[0]));
-  document.getElementById('secseg').innerHTML=segs.map(s=>
-    `<button class="${sec===s[0]?'on':''}" onclick="sec='${s[0]}';renderPick()">${s[1]}</button>`).join('');
-  document.getElementById('pickcount').textContent=poolWords().length+'개 단어';
+  document.getElementById('secseg').innerHTML=segHTML('renderPick');
+  document.getElementById('pickcount').textContent =
+    sec==='week' ? planLabel() : poolWords().length+'개 단어';
 }
 function startPractice(m){mode=m;done=0;go('s-play');
   document.getElementById('play-mode').textContent=m==='puzzle'?'퍼즐':'쓰기';
@@ -1961,6 +2008,9 @@ const SPOKEN={a:'a',ay:'a',eh:'a',bee:'b',be:'b',b:'b',see:'c',sea:'c',cee:'c',c
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 
 function renderSetup(){
+  document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
+  document.getElementById('tpickcount').textContent =
+    (sec==='week' ? planLabel() : poolWords().length+'개')+' 중에서';
   document.getElementById('lenseg').innerHTML=[3,5,10].map(n=>
     `<button class="${testLen===n?'on':''}" onclick="testLen=${n};renderSetup()">${n}개</button>`).join('');
   const n=document.getElementById('micnote');
@@ -1974,7 +2024,7 @@ function renderSetup(){
     : '<b>이 브라우저는 음성 인식을 지원하지 않아요.</b> 타이핑으로 테스트할 수 있고, 보상은 절반으로 들어갑니다. 아이패드 Safari에서 다시 시도해 보세요.';
 }
 function startTest(){
-  const pool=myWords().slice();
+  const pool=poolWords().slice();
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
   pool.sort((a,b)=>{const sa=S.w[a[0]],sb=S.w[b[0]];
     const pa=sa?(sa.st==='master'?2:sa.p>0?0:1):1, pb=sb?(sb.st==='master'?2:sb.p>0?0:1):1;
@@ -2141,19 +2191,7 @@ function shiftWeek(k,n){ const m=weekMonday(k); m.setUTCDate(m.getUTCDate()+n*7)
 /* 주차별 단어와 진도는 아이 저장본 안에 둔다.
    그래야 내보내기와 합치기에 그대로 따라간다. */
 function weeks(){ return (S && S.weeks) || {} }
-/* 주차 단어. 대회 목록을 잘라 쓰는 주는 글을 베끼지 않고 어디를 쓸지만 적어둔다.
-   200개짜리 주가 저장본과 서버에 여러 벌 쌓이지 않는다. */
-function refWords(ref){
-  const p=String(ref).split(':'), L=LISTS[p[0]];
-  if(!L) return [];
-  return L.words.slice(+p[1]-1, +p[2]).map(r=>[r[1], r[2].replace(/[{}]/g,'')]);
-}
-function wordsOf(w){
-  if(!w) return [];
-  if(w.words && w.words.length) return w.words;
-  return w.ref ? refWords(w.ref) : [];
-}
-function weekWords(k){ return wordsOf(weeks()[k]) }
+function weekWords(k){ const w=weeks()[k]; return (w && w.words) || [] }
 function weekProg(k){ S.qw=S.qw||{}; return S.qw[k]||(S.qw[k]={}) }
 function weekList(){ return Object.keys(weeks()).sort().reverse() }
 function defaultWeek(){
@@ -2166,40 +2204,20 @@ let curWeek=null;
 let qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
 function QW(){ return weekWords(curWeek) }
 
-/* ---------- 학습 계획 ----------
-   대회 전 네 주. 세 주에 걸쳐 대회 단어를 20% - 40% - 40%로 나눠 익히고,
-   대회 직전 주에 전체를 다시 훑어 최종 점검한다.
-   이번 주는 이미 수요일이라 가볍게 두고 다음 두 주에 몰아준다.
-   시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
-   지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
-const PLAN_VER='26f-4w';
-const PLAN_FROM='2026-W36';
-const PLAN_CUTS=[.2, .6, 1];       // 누적 비율
-function planRefs(id){
-  const list=PROFILES[id].list, n=(((LISTS[list]||{}).words)||[]).length;
-  if(!n) return [];
-  const refs=[]; let from=1;
-  PLAN_CUTS.forEach(c=>{
-    const to=Math.round(n*c);
-    if(to>=from){ refs.push(list+':'+from+':'+to); from=to+1 }
-  });
-  refs.push(list+':1:'+n);         // 마지막 주는 전체 최종 점검
-  return refs;
-}
-function seedPlan(){
+/* 대회 단어를 주간 퀴즈에 잠깐 심어둔 적이 있다.
+   주간 퀴즈는 부모가 넣는 그 주 단어이고 대회 단어는 따로 준비하는 것이라,
+   섞이면 둘 다 헷갈린다. 기기와 서버에 남아 있을 수 있어 열 때마다 걷어낸다. */
+function dropPlantedWeeks(){
   Object.keys(PROFILES).forEach(id=>{
-    const mine=(id===pid);
-    const d = mine ? S : (saveOf(id) || blank());
-    if(!d || d.plan===PLAN_VER) return;
-    d.weeks=d.weeks||{};
-    let k=PLAN_FROM;
-    planRefs(id).forEach(ref=>{
-      // 부모가 넣은 진짜 목록은 건드리지 않는다. 심어둔 것만 바꾼다.
-      const cur=d.weeks[k];
-      if(!cur || isSeedWeek(cur)) d.weeks[k]={ref:ref, at:1, seed:true};
-      k=shiftWeek(k,1);
+    const mine=(id===pid), d = mine ? S : saveOf(id);
+    if(!d) return;
+    let hit=false;
+    Object.keys(d.weeks||{}).forEach(k=>{
+      const w=d.weeks[k];
+      if(w && w.seed && w.ref){ delete d.weeks[k]; if(d.qw) delete d.qw[k]; hit=true }
     });
-    d.plan=PLAN_VER;   // 한 번만 심는다. 부모가 지운 주가 되살아나지 않는다.
+    if(d.plan!==undefined){ delete d.plan; hit=true }
+    if(!hit) return;
     if(mine) save();
     else { try{ localStorage.setItem(key(id), JSON.stringify(d)) }catch(e){} }
   });
@@ -2209,7 +2227,7 @@ function qLoad(){
   if(!S) return;
   S.weeks=S.weeks||{}; S.qw=S.qw||{};
   migrateOldQuiz();
-  seedPlan();
+  dropPlantedWeeks();
   if(!curWeek || !weeks()[curWeek]) curWeek=defaultWeek();
 }
 /* 예전에는 아이 구분 없이 퀴즈가 하나였다. 그 단어와 기록을 유진이의 이번 주로 옮긴다. */
@@ -2253,7 +2271,7 @@ function saveOf(id){ try{ return JSON.parse(localStorage.getItem(key(id))||'null
 function weekWordsOf(id,wk){
   if(id===pid) return weekWords(wk);
   const d=saveOf(id);
-  return wordsOf(d && d.weeks && d.weeks[wk]);
+  return ((d && d.weeks && d.weeks[wk]) || {}).words || [];
 }
 function openEditor(kid,wk){
   editKid = kid || pid || 'yujin';
@@ -2958,7 +2976,6 @@ function mergeProfile(local, inc){
   out.dexLegacy=(local.dexLegacy||[]).slice();
   (inc.dexLegacy||[]).forEach(k=>{ if(!out.dexLegacy.includes(k))out.dexLegacy.push(k) });
   out.quizMoved = local.quizMoved || inc.quizMoved;
-  out.plan = local.plan || inc.plan;
   out.streak=maxNum(local.streak, inc.streak);
   out.last=(local.last||'')>(inc.last||'')?local.last:inc.last;
   out.list=local.list||inc.list;
