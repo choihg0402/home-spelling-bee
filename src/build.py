@@ -125,6 +125,11 @@ for key, grade, label in USE:
             if re.search(r'\b' + re.escape(w[1]) + r'\b',
                          re.sub(r'\{.*?\}', '', w[2]), re.I)]
     assert not leak, f'{grade}: 예문에 정답이 남는다 - {leak[:5]}'
+    # 주간 퀴즈는 뜻 문장에서 단어와 똑같은 꼴을 찾아 빈칸을 만든다.
+    # 변형된 꼴만 있으면 빈칸이 생기지 않아 답이 그대로 보인다.
+    odd = [w[1] for w in words
+           if re.search(r'\{(.+?)\}', w[2]).group(1).lower() != w[1].lower()]
+    assert not odd, f'{grade}: 예문 속 꼴이 달라 빈칸이 안 생긴다 - {odd[:5]}'
     out[key] = {'name': label, 'words': words}
     print(f'  {key:8} {len(words):>3}개  {collections.Counter(w[3] for w in words)}')
 

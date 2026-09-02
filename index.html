@@ -977,7 +977,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
     <div class="card" style="margin-top:18px">
       <div style="display:flex;align-items:baseline;gap:8px">
-        <span class="big-num"><span class="tnum" id="q-solved">0</span><small>/ <span class="tnum" id="q-all">12</span> 맞힘</small></span>
+        <span class="big-num"><span class="tnum" id="q-solved">0</span><small>/ <span class="tnum" id="q-total">12</span> 맞힘</small></span>
       </div>
       <div class="bar" style="margin-top:12px"><i class="m" id="q-bar"></i></div>
     </div>
@@ -1054,7 +1054,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   <header class="topbar">
     <button class="btn ghost" onclick="quitQuiz()">← 그만하기</button>
     <span class="spacer"></span>
-    <span class="qcount"><span class="tnum" id="q-now">1</span> / <span class="tnum" id="q-total">12</span></span>
+    <span class="qcount"><span class="tnum" id="qz-now">1</span> / <span class="tnum" id="qz-total">12</span></span>
   </header>
 
   <div class="play">
@@ -2176,7 +2176,19 @@ function shiftWeek(k,n){ const m=weekMonday(k); m.setUTCDate(m.getUTCDate()+n*7)
 /* 주차별 단어와 진도는 아이 저장본 안에 둔다.
    그래야 내보내기와 합치기에 그대로 따라간다. */
 function weeks(){ return (S && S.weeks) || {} }
-function weekWords(k){ const w=weeks()[k]; return (w && w.words) || [] }
+/* 주차 단어. 대회 목록을 잘라 쓰는 주는 글을 베끼지 않고 어디를 쓸지만 적어둔다.
+   200개짜리 주가 저장본과 서버에 여러 벌 쌓이지 않는다. */
+function refWords(ref){
+  const p=String(ref).split(':'), L=LISTS[p[0]];
+  if(!L) return [];
+  return L.words.slice(+p[1]-1, +p[2]).map(r=>[r[1], r[2].replace(/[{}]/g,'')]);
+}
+function wordsOf(w){
+  if(!w) return [];
+  if(w.words && w.words.length) return w.words;
+  return w.ref ? refWords(w.ref) : [];
+}
+function weekWords(k){ return wordsOf(weeks()[k]) }
 function weekProg(k){ S.qw=S.qw||{}; return S.qw[k]||(S.qw[k]={}) }
 function weekList(){ return Object.keys(weeks()).sort().reverse() }
 function defaultWeek(){
@@ -2189,10 +2201,43 @@ let curWeek=null;
 let qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
 function QW(){ return weekWords(curWeek) }
 
+/* ---------- 3주 학습 계획 ----------
+   대회까지 이번 주 포함 세 주. 앞 두 주에 대회 단어를 반씩 나눠 익히고,
+   마지막 주에 전체를 다시 훑어 점검한다.
+   시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
+   지난주에 익힌 앞쪽 절반이 다시 이번 주로 올라온다. */
+const PLAN_VER='26f-3w';
+const PLAN_FROM='2026-W36';
+function planRefs(id){
+  const list=PROFILES[id].list, n=(((LISTS[list]||{}).words)||[]).length;
+  if(!n) return [];
+  const half=Math.ceil(n/2);
+  return [list+':1:'+half, list+':'+(half+1)+':'+n, list+':1:'+n];
+}
+function seedPlan(){
+  Object.keys(PROFILES).forEach(id=>{
+    const mine=(id===pid);
+    const d = mine ? S : (saveOf(id) || blank());
+    if(!d || d.plan===PLAN_VER) return;
+    d.weeks=d.weeks||{};
+    let k=PLAN_FROM;
+    planRefs(id).forEach(ref=>{
+      // 부모가 넣은 진짜 목록은 건드리지 않는다. 심어둔 것만 바꾼다.
+      const cur=d.weeks[k];
+      if(!cur || isSeedWeek(cur)) d.weeks[k]={ref:ref, at:1, seed:true};
+      k=shiftWeek(k,1);
+    });
+    d.plan=PLAN_VER;   // 한 번만 심는다. 부모가 지운 주가 되살아나지 않는다.
+    if(mine) save();
+    else { try{ localStorage.setItem(key(id), JSON.stringify(d)) }catch(e){} }
+  });
+}
+
 function qLoad(){
   if(!S) return;
   S.weeks=S.weeks||{}; S.qw=S.qw||{};
   migrateOldQuiz();
+  seedPlan();
   if(!curWeek || !weeks()[curWeek]) curWeek=defaultWeek();
 }
 /* 예전에는 아이 구분 없이 퀴즈가 하나였다. 그 단어와 기록을 유진이의 이번 주로 옮긴다. */
@@ -2236,7 +2281,7 @@ function saveOf(id){ try{ return JSON.parse(localStorage.getItem(key(id))||'null
 function weekWordsOf(id,wk){
   if(id===pid) return weekWords(wk);
   const d=saveOf(id);
-  return ((d && d.weeks && d.weeks[wk]) || {}).words || [];
+  return wordsOf(d && d.weeks && d.weeks[wk]);
 }
 function openEditor(kid,wk){
   editKid = kid || pid || 'yujin';
@@ -2305,7 +2350,7 @@ function renderQuizHome(){
   const solved=words.filter(r=>(prog[r[0]]||{}).n>0).length;
   document.getElementById('q-who').textContent=PROFILES[pid].name;
   document.getElementById('q-solved').textContent=solved;
-  document.getElementById('q-all').textContent=words.length;
+  document.getElementById('q-total').textContent=words.length;
   document.getElementById('q-bar').style.width=(words.length?solved/words.length*100:0)+'%';
   document.getElementById('q-hint').textContent =
     !words.length ? '이번 주 단어가 아직 없어요. 부모 화면에서 넣어주세요.'
@@ -2351,8 +2396,8 @@ const qWord=()=>QW()[qList[qi]];
 function qLoadWord(){
   qTries=0;
   const [w,d]=qWord();
-  document.getElementById('q-now').textContent=qi+1;
-  document.getElementById('q-total').textContent=qList.length;
+  document.getElementById('qz-now').textContent=qi+1;
+  document.getElementById('qz-total').textContent=qList.length;
   document.getElementById('q-def').innerHTML=blankOut(w,d);
   document.getElementById('q-fb').innerHTML='';
   document.getElementById('q-check').disabled=false;
@@ -2941,6 +2986,7 @@ function mergeProfile(local, inc){
   out.dexLegacy=(local.dexLegacy||[]).slice();
   (inc.dexLegacy||[]).forEach(k=>{ if(!out.dexLegacy.includes(k))out.dexLegacy.push(k) });
   out.quizMoved = local.quizMoved || inc.quizMoved;
+  out.plan = local.plan || inc.plan;
   out.streak=maxNum(local.streak, inc.streak);
   out.last=(local.last||'')>(inc.last||'')?local.last:inc.last;
   out.list=local.list||inc.list;
