@@ -2201,18 +2201,25 @@ let curWeek=null;
 let qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
 function QW(){ return weekWords(curWeek) }
 
-/* ---------- 3주 학습 계획 ----------
-   대회까지 이번 주 포함 세 주. 앞 두 주에 대회 단어를 반씩 나눠 익히고,
-   마지막 주에 전체를 다시 훑어 점검한다.
+/* ---------- 학습 계획 ----------
+   대회 전 네 주. 세 주에 걸쳐 대회 단어를 20% - 40% - 40%로 나눠 익히고,
+   대회 직전 주에 전체를 다시 훑어 최종 점검한다.
+   이번 주는 이미 수요일이라 가볍게 두고 다음 두 주에 몰아준다.
    시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
-   지난주에 익힌 앞쪽 절반이 다시 이번 주로 올라온다. */
-const PLAN_VER='26f-3w';
+   지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
+const PLAN_VER='26f-4w';
 const PLAN_FROM='2026-W36';
+const PLAN_CUTS=[.2, .6, 1];       // 누적 비율
 function planRefs(id){
   const list=PROFILES[id].list, n=(((LISTS[list]||{}).words)||[]).length;
   if(!n) return [];
-  const half=Math.ceil(n/2);
-  return [list+':1:'+half, list+':'+(half+1)+':'+n, list+':1:'+n];
+  const refs=[]; let from=1;
+  PLAN_CUTS.forEach(c=>{
+    const to=Math.round(n*c);
+    if(to>=from){ refs.push(list+':'+from+':'+to); from=to+1 }
+  });
+  refs.push(list+':1:'+n);         // 마지막 주는 전체 최종 점검
+  return refs;
 }
 function seedPlan(){
   Object.keys(PROFILES).forEach(id=>{
