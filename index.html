@@ -694,11 +694,21 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
     <div class="side">
       <div class="card pet">
+        <p class="eyebrow">대회 친구</p>
+        <span id="sbpet"></span>
+        <h3 id="sbpet-name" style="font-size:20px">알</h3>
+        <p style="margin:0;font-size:14px;color:var(--ink-3)" id="sbpet-next"></p>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+          <button class="btn" id="sbpet-pick" onclick="pickSbPet()">친구 고르기</button>
+        </div>
+      </div>
+      <div class="card pet">
+        <p class="eyebrow">주간 퀴즈 친구</p>
         <span id="pet"></span>
         <h3 id="pet-name" style="font-size:20px">알</h3>
         <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next"></p>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
-          <button class="btn" id="pet-pick" onclick="go('s-pickpet')">친구 고르기</button>
+          <button class="btn" id="pet-pick" onclick="openPetPick(null)">친구 고르기</button>
           <button class="btn" onclick="go('s-garden')">🌱 내 정원 <b class="tnum" id="gardencount">0</b></button>
           <button class="btn" onclick="go('s-shop')">🛒 상점</button>
         </div>
@@ -758,7 +768,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     </div>
     <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span class="eyebrow">단어 묶음</span>
-      <span class="seg" id="secseg"></span>
+      <span class="seg wrap" id="secseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="pickcount"></span>
     </div>
@@ -824,7 +834,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       화면에 뜬 글자가 틀리면 눌러서 고칠 수 있어. 다 맞으면 제출!</p>
     <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span class="eyebrow">단어 묶음</span>
-      <span class="seg" id="tsecseg"></span>
+      <span class="seg wrap" id="tsecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="tpickcount"></span>
     </div>
@@ -1389,7 +1399,7 @@ function listTag(id){
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
 const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='week', testLen=5;
+let pid=null, S=null, sec='chap', testLen=5;
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -1414,6 +1424,7 @@ function blank(){return {
   buys:[],                     // 산 것 [아이템, 시각, 기기]
   garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
+  sbDone:{}, sbPick:{},        // 대회 묶음: 통과한 단어 / 묶음마다 고른 친구
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -1501,13 +1512,55 @@ function planLabel(){
                 : (i+1)+'주차 · '+p.words.length+'개';
 }
 
+/* ---------- 대회 친구 ----------
+   묶음 하나 = 대회 단어 10개. 묶음마다 친구 한 마리를 키운다.
+   시험에서 통과한 단어만 센다. 연습으로는 자라지 않는다.
+   묶음은 주차에 매여 있다. 그래야 마지막 점검 주에 앞서 통과해 둔 단어로
+   친구들이 시작부터 다 커 있지 않고, 다시 한 번 통과해야 자란다. */
+const SB_CHAP=10;
+function chaptersOf(pw){
+  const out=[];
+  for(let i=0;i<pw.words.length;i+=SB_CHAP)
+    out.push({cid:pw.k+'#'+(i/SB_CHAP), n:i/SB_CHAP+1, week:pw.k,
+              words:pw.words.slice(i,i+SB_CHAP)});
+  return out;
+}
+function chapterByCid(cid){
+  const wk=String(cid).split('#')[0];
+  const pw=planWeeks().find(w=>w.k===wk);
+  return pw ? chaptersOf(pw).find(c=>c.cid===cid) : null;
+}
+function sbMark(cid){ S.sbDone=S.sbDone||{}; return S.sbDone[cid]||(S.sbDone[cid]={}) }
+function sbGot(ch){ const d=(S.sbDone||{})[ch.cid]||{}; return ch.words.filter(w=>d[w[0]]).length }
+function sbRatio(ch){ return ch.words.length ? sbGot(ch)/ch.words.length : 0 }
+function sbPet(cid){ return ((S&&S.sbPick)||{})[cid]||null }
+/* 지금 키우는 묶음 = 이번 주에서 아직 안 끝났거나 친구를 안 고른 첫 묶음.
+   친구를 안 고른 채 다 채운 묶음도 잡아준다. 안 그러면 그 친구가 사라진다. */
+function sbCur(){
+  const chs=chaptersOf(planNow());
+  return chs.find(c=>sbRatio(c)<1 || !sbPet(c.cid)) || chs[chs.length-1] || null;
+}
+function sbLabel(ch){
+  return planLabel().split(' · ')[0]+' · 묶음 '+ch.n+'/'+chaptersOf(planNow()).length;
+}
+
+/* 기본은 '이번 묶음'. 지금 키우는 친구의 10단어만 나온다.
+   주 전체(40~80개)에서 뽑으면 네댓 마리가 조금씩만 자라서
+   시험을 아무리 봐도 아무도 다 크지 않는다. */
 function poolWords(){
+  if(sec==='chap'){ const c=sbCur(); return c ? c.words : planNow().words }
   if(sec==='week') return planNow().words;
   const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec);
 }
-const SEGS=[['week','이번 주'],['all','전체'],['B','Basic'],['C','Challenging']];
+function poolLabel(){
+  if(sec==='chap'){ const c=sbCur(); return c ? sbLabel(c)+' · '+c.words.length+'개' : planLabel() }
+  if(sec==='week') return planLabel();
+  return poolWords().length+'개';
+}
+const SEGS=[['chap','이번 묶음'],['week','이번 주'],['all','전체'],
+            ['B','Basic'],['C','Challenging']];
 function segHTML(fn){
-  return SEGS.filter(x=>x[0]==='week'||x[0]==='all'||PROFILES[pid].sections.includes(x[0]))
+  return SEGS.filter(x=>['chap','week','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
     .map(x=>`<button class="${sec===x[0]?'on':''}" onclick="sec='${x[0]}';${fn}()">${x[1]}</button>`)
     .join('');
 }
@@ -1652,7 +1705,7 @@ async function gateIn(){
 }
 
 function pickProfile(id){
-  pid=id; S=load(id); sec='week';
+  pid=id; S=load(id); sec='chap';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=listTag(id);
@@ -1731,6 +1784,11 @@ function dexList(){
     const a=petOf(k);
     if(a && weekDone(k) && !out.includes(a)) out.push(a);
   });
+  // 대회 묶음에서 다 키운 친구
+  Object.keys((S&&S.sbPick)||{}).sort().forEach(cid=>{
+    const ch=chapterByCid(cid), a=sbPet(cid);
+    if(ch && a && sbRatio(ch)>=1 && !out.includes(a)) out.push(a);
+  });
   ((S&&S.dexLegacy)||[]).forEach(a=>{ if(!out.includes(a) && animal(a)) out.push(a) });
   return out;
 }
@@ -1786,8 +1844,20 @@ function renderHome(){
   document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),coin:0};
   document.getElementById('capxp').textContent=S.day.coin;
-  const pw=planNow().words, pm=pw.filter(w=>(S.w[w[0]]||{}).st==='master').length;
-  document.getElementById('home-plan').textContent=planLabel()+' · 마스터 '+pm+'개';
+  const chs=chaptersOf(planNow()), grown=chs.filter(c=>sbRatio(c)>=1).length;
+  document.getElementById('home-plan').textContent =
+    planLabel()+' · 친구 '+grown+'/'+chs.length+'마리';
+  const ch=sbCur(), sa=ch?animal(sbPet(ch.cid)):null, sr=ch?sbRatio(ch):0;
+  document.getElementById('sbpet').innerHTML=petHTML(ch?sbPet(ch.cid):null, sr);
+  document.getElementById('sbpet-name').textContent =
+    !ch ? '대회 단어가 없어요' : !sa ? '친구를 골라주세요'
+        : sa.n+' · '+STAGE_NAME[stageOfRatio(sr)];
+  document.getElementById('sbpet-next').textContent =
+    !ch ? '' : !sa ? sbLabel(ch)+' · 친구를 고르면 시작해요'
+    : sr>=1 ? (grown===chs.length ? '이번 주 친구를 다 키웠어요!' : '다 컸어요! 다음 묶음으로 넘어가요')
+    : sbLabel(ch)+' · 시험에서 '+(ch.words.length-sbGot(ch))+'개 더 통과하면 다 커요';
+  document.getElementById('sbpet-pick').textContent = sa ? '친구 바꾸기' : '친구 고르기';
+  document.getElementById('sbpet-pick').style.display = ch ? '' : 'none';
 
   qLoad();
   const wk=curWeek, words=weekWords(wk), prog=weekProg(wk);
@@ -1806,6 +1876,7 @@ function renderHome(){
   document.getElementById('pet-pick').textContent = a ? '친구 바꾸기' : '친구 고르기';
   document.getElementById('pet-pick').style.display = words.length ? '' : 'none';
   document.getElementById('dexcount').textContent=dexList().length;
+  document.getElementById('dexall').textContent=ANIMALS.length;
   qLoad();
   const qws=QW(), qp=weekProg(curWeek);
   const qdone=qws.filter(r=>(qp[r[0]]||{}).n>0).length;
@@ -1895,8 +1966,7 @@ function renderProfNote(){
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
 function renderPick(){
   document.getElementById('secseg').innerHTML=segHTML('renderPick');
-  document.getElementById('pickcount').textContent =
-    sec==='week' ? planLabel() : poolWords().length+'개 단어';
+  document.getElementById('pickcount').textContent=poolLabel();
 }
 function startPractice(m){mode=m;done=0;go('s-play');
   document.getElementById('play-mode').textContent=m==='puzzle'?'퍼즐':'쓰기';
@@ -2044,8 +2114,7 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 
 function renderSetup(){
   document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
-  document.getElementById('tpickcount').textContent =
-    (sec==='week' ? planLabel() : poolWords().length+'개')+' 중에서';
+  document.getElementById('tpickcount').textContent=poolLabel()+' 중에서';
   document.getElementById('lenseg').innerHTML=[3,5,10].map(n=>
     `<button class="${testLen===n?'on':''}" onclick="testLen=${n};renderSetup()">${n}개</button>`).join('');
   const n=document.getElementById('micnote');
@@ -2064,7 +2133,7 @@ function startTest(){
   pool.sort((a,b)=>{const sa=S.w[a[0]],sb=S.w[b[0]];
     const pa=sa?(sa.st==='master'?2:sa.p>0?0:1):1, pb=sb?(sb.st==='master'?2:sb.p>0?0:1):1;
     return pa-pb});
-  tq=pool.slice(0,testLen); ti=0; tres=[]; typing=false;
+  tq=pool.slice(0,testLen); ti=0; tres=[]; typing=false; sbGrown=[];
   document.getElementById('q-all').textContent=tq.length;
   document.getElementById('pad').innerHTML=AZ.split('').map(c=>
     `<button onclick="addLetter('${c}')">${c}</button>`).join('');
@@ -2141,7 +2210,11 @@ function submitTest(){
   const ok=ans===cur[1].toLowerCase();
   const s=ws(cur[0]);
   if(!ok)s.miss=(s.miss||0)+1;
-  if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass' }
+  if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass';
+    // 이번 주 묶음에 든 단어면 그 친구가 한 칸 자란다
+    const ch=chaptersOf(planNow()).find(c=>c.words.some(w=>w[0]===cur[0]));
+    if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
+            if(was<1 && sbRatio(ch)>=1) sbGrown.push(ch) } }
   tres.push({w:cur[1],ok,typed:typing,ans});
   stopMic(); ti++;
   if(ti<tq.length){loadQ()} else finishTest();
@@ -2160,7 +2233,9 @@ function finishTest(){
   document.getElementById('res-ok').textContent=`${okn}/${tres.length}`;
   document.getElementById('res-voice').textContent=tres.filter(r=>r.ok&&!r.typed).length;
   document.getElementById('res-coin').textContent=coin;
-  document.getElementById('res-title').textContent=okn===tres.length?'다 맞았어!':'잘했어!';
+  document.getElementById('res-title').textContent =
+    sbGrown.length ? sbGrown.map(c=>(animal(sbPet(c.cid))||{n:'친구'}).n).join(', ')+' 다 컸어!'
+    : okn===tres.length ? '다 맞았어!' : '잘했어!';
   document.getElementById('res-sub').textContent=allVoice
     ? '전부 말하기로 통과했어요 — 마이크 배지 +20 XP'
     : (okn<tres.length?'틀린 단어는 연습장에서 다시 만나요.':'');
@@ -2237,6 +2312,7 @@ function defaultWeek(){
 }
 let curWeek=null;
 let qList=[], qi=0, qPlaced=[], qTries=0, qDone=0, studyHide=false;
+let sbGrown=[];   // 이번 시험에서 다 자란 묶음
 function QW(){ return weekWords(curWeek) }
 
 /* 대회 단어를 주간 퀴즈에 잠깐 심어둔 적이 있다.
@@ -2516,13 +2592,19 @@ function qNext(){
 }
 function quitQuiz(){ clearInterval(qCheck._t); go('s-quizhome') }
 
-/* ---------- 친구 고르기 ---------- */
-let ppGroup='all';
+/* ---------- 친구 고르기 ----------
+   주간 퀴즈의 친구와 대회 묶음의 친구를 같은 화면에서 고른다.
+   petTarget 이 비어 있으면 주간 퀴즈, 아니면 그 묶음. */
+let ppGroup='all', petTarget=null;
+function openPetPick(cid){ petTarget=cid||null; go('s-pickpet') }
+function pickSbPet(){ const c=sbCur(); if(c) openPetPick(c.cid) }
 function renderPickPet(){
   qLoad();
-  const wk=curWeek, cur=petOf(wk), dex=dexList();
-  document.getElementById('pp-sub').textContent =
-    weekLabel(wk)+' · 이 주 단어를 다 맞히면 다 자라요. 언제든 바꿀 수 있어요.';
+  const ch = petTarget ? chapterByCid(petTarget) : null;
+  const wk=curWeek, cur = ch ? sbPet(ch.cid) : petOf(wk), dex=dexList();
+  document.getElementById('pp-sub').textContent = ch
+    ? sbLabel(ch)+' · 이 '+ch.words.length+'단어를 시험에서 통과하면 다 자라요.'
+    : weekLabel(wk)+' · 이 주 단어를 다 맞히면 다 자라요. 언제든 바꿀 수 있어요.';
   document.getElementById('pp-group').innerHTML=GROUPS.map(([k,label])=>
     '<button class="'+(k===ppGroup?'on':'')+'" onclick="ppGroup=\''+k+'\';renderPickPet()">'+label+'</button>').join('');
   const list=ANIMALS.filter(a=>ppGroup==='all'||a.g===ppGroup);
@@ -2533,8 +2615,16 @@ function renderPickPet(){
     '</button>').join('');
 }
 function choosePet(k){
-  // 이미 다 채운 주는 바꾸지 못한다. 다만 아직 아무도 안 골랐다면
-  // 그 주의 친구를 지금이라도 정할 수 있어야 한다. 안 그러면 완주가 사라진다.
+  // 이미 다 채운 것은 바꾸지 못한다. 다만 아직 아무도 안 골랐다면
+  // 지금이라도 정할 수 있어야 한다. 안 그러면 다 키운 친구가 사라진다.
+  if(petTarget){
+    const ch=chapterByCid(petTarget);
+    if(!ch){ go('s-home'); return }
+    if(sbRatio(ch)>=1 && sbPet(ch.cid)){ toast('이 묶음은 이미 다 키웠어요'); return }
+    S.sbPick=S.sbPick||{}; S.sbPick[ch.cid]=k; save();
+    toast(animal(k).n+'를 키우기로 했어요');
+    go('s-home'); return;
+  }
   if(weekDone(curWeek) && petOf(curWeek)){ toast('이번 주는 이미 다 키웠어요'); return }
   S.pick=S.pick||{}; S.pickAt=S.pickAt||{};
   S.pick[curWeek]=k; S.pickAt[curWeek]=Date.now(); save();
@@ -3007,6 +3097,12 @@ function mergeProfile(local, inc){
     const mine=out.pick[k], t0=out.pickAt[k]||0, t1=(inc.pickAt||{})[k]||0;
     if(!mine || t1>t0){ out.pick[k]=v; out.pickAt[k]=t1||t0 }
   });
+  // 대회 묶음: 통과한 단어는 합집합, 고른 친구는 이 기기 것을 먼저 둔다
+  out.sbDone=Object.assign({}, local.sbDone||{});
+  Object.entries(inc.sbDone||{}).forEach(([c,ws])=>{
+    out.sbDone[c]=Object.assign({}, ws, out.sbDone[c]||{});
+  });
+  out.sbPick=Object.assign({}, inc.sbPick||{}, local.sbPick||{});
   // 예전 방식으로 모은 도감은 합집합
   out.dexLegacy=(local.dexLegacy||[]).slice();
   (inc.dexLegacy||[]).forEach(k=>{ if(!out.dexLegacy.includes(k))out.dexLegacy.push(k) });

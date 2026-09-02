@@ -1,7 +1,7 @@
 /* 오프라인 동작.
    버전 문자열은 빌드할 때 파일 내용 해시로 채워진다.
    버전이 바뀌면 예전 캐시를 지우므로, 새로 배포한 것이 확실히 반영된다. */
-const V = 'sb-db8ab33050';
+const V = 'sb-a02f1fd9c3';
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "fonts/jua.woff2", "fonts/gowun-dodum.woff2", "fonts/fredoka-400.woff2", "fonts/fredoka-500.woff2", "fonts/fredoka-600.woff2", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png"];
 
 self.addEventListener('install', e => {
