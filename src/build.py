@@ -3,70 +3,128 @@ import io, json, re, collections, sys, hashlib
 import pymupdf
 import fonts, icons
 
-LISTS = [
-    ('g23',    '2026 Spring G2–G3', '../docs/samples/G2-3_Spelling_Bee_List_1.pdf'),
-    ('kinder', '2026 Spring Kinder',      '../docs/samples/Kinder_Spelling_Bee_List.pdf'),
+# 이번 학기 목록은 한 파일에 학년별로 들어 있다.
+WORD_PDF = '../docs/samples/26_Fall_Spelling_Bee_Rules_Word_List.pdf'
+USE = [
+    ('g1',  'G1',    '2026 Fall G1'),        # 유혁
+    ('g23', 'G2-G3', '2026 Fall G2\u2013G3'),   # 유진
 ]
 OUT = '../index.html'
-def parse(path):
+def parse_all(path):
+    """쪽마다 예문 열을 따로 구해 모든 행을 뽑는다.
+    학년 제목도 나온 순서대로 모은다."""
     doc = pymupdf.open(path)
-    spans = []
-    for pno, page in enumerate(doc):
-        for block in page.get_text('dict')['blocks']:
-            for line in block.get('lines', []):
-                for s in line['spans']:
-                    if s['text'].strip():
-                        spans.append(dict(pg=pno, y=round(s['bbox'][1], 1),
-                                          yc=(s['bbox'][1] + s['bbox'][3]) / 2,
-                                          x0=s['bbox'][0], x1=s['bbox'][2],
-                                          t=s['text'], bold='Bold' in s['font']))
-    # 같은 줄이라도 조각마다 y가 1pt 안팎으로 어긋난다(번호가 단어보다 살짝 내려앉는 PDF가 있다).
-    # 정확히 같은 y로 묶으면 번호가 떨어져 나가므로 허용 오차를 두고 묶는다.
-    TOL = 6.0
-    rows = {}
-    for s in sorted(spans, key=lambda s: (s['pg'], s['yc'], s['x0'])):
-        key = next((k for k in rows
-                    if k[0] == s['pg'] and abs(k[1] - s['yc']) <= TOL), None)
-        if key is None:
-            key = (s['pg'], s['yc'])
-            rows[key] = []
-        rows[key].append(s)
-    for k in rows:
-        rows[k].sort(key=lambda s: s['x0'])
-
-    # 예문 열의 왼쪽 끝을 문서에서 직접 구한다 (기획서 §4.5-1)
-    sent_x = collections.Counter(round(s['x0'], 1) for s in spans).most_common(1)[0][0] - 2
+    entries, titles = [], []
+    section = None
 
     def join(items, mark=False):
         out = ''
-        for i, s in enumerate(items):
-            if i and (s['x0'] - items[i - 1]['x1']) > 0.8:
+        for i, sp in enumerate(items):
+            if i and (sp['x0'] - items[i - 1]['x1']) > 0.8:
                 out += ' '
-            t = s['t']
-            out += ('{' + t.strip() + '}') if (mark and s['bold'] and t.strip()) else t
+            t = sp['t']
+            out += ('{' + t.strip() + '}') if (mark and sp['bold'] and t.strip()) else t
         return re.sub(r'\s+', ' ', out).strip()
 
-    entries, section = [], None
-    for key in sorted(rows):
-        items = rows[key]
-        left = [s for s in items if s['x0'] < sent_x]
-        sent = [s for s in items if s['x0'] >= sent_x]
-        if left and re.fullmatch(r'\d+', left[0]['t'].strip()) and len(left) > 1:
-            entries.append([int(left[0]['t']), join(left[1:]), join(sent, mark=True),
-                            'C' if section == 'Challenging Words' else 'B'])
-        else:
-            line = join(items)
-            if re.fullmatch(r'(Basic|Challenging) Words', line):
-                section = line
-    return entries
+    for page in doc:
+        spans = []
+        for block in page.get_text('dict')['blocks']:
+            for line in block.get('lines', []):
+                for sp in line['spans']:
+                    if sp['text'].strip():
+                        spans.append(dict(y=round(sp['bbox'][1], 1),
+                                          yc=(sp['bbox'][1] + sp['bbox'][3]) / 2,
+                                          x0=sp['bbox'][0], x1=sp['bbox'][2],
+                                          t=sp['text'], bold='Bold' in sp['font']))
+        if not spans:
+            continue
+
+        # 이 쪽의 예문 열 시작점. 학년마다 위치가 달라 쪽 단위로 구한다.
+        # 그냥 최빈값을 쓰면 번호 열과 개수가 같은 쪽에서 번호 열이 뽑힌다.
+        # 자주 나오는 열들 중 가장 오른쪽이 예문 열이다.
+        freq = collections.Counter(round(sp['x0'], 1) for sp in spans)
+        top = max(freq.values())
+        cols = [x for x, n in freq.items() if n >= top * 0.5]
+        sent_x = max(cols) - 2
+
+        # 같은 줄 묶기 (조각마다 y가 1pt 안팎으로 어긋난다)
+        TOL = 6.0
+        rows = {}
+        for sp in sorted(spans, key=lambda sp: (sp['yc'], sp['x0'])):
+            key = next((k for k in rows if abs(k - sp['yc']) <= TOL), None)
+            if key is None:
+                key = sp['yc']
+                rows[key] = []
+            rows[key].append(sp)
+        for k in rows:
+            rows[k].sort(key=lambda sp: sp['x0'])
+
+        for k in sorted(rows):
+            items = rows[k]
+            left = [sp for sp in items if sp['x0'] < sent_x]
+            sent = [sp for sp in items if sp['x0'] >= sent_x]
+            if left and re.fullmatch(r'\d+', left[0]['t'].strip()) and len(left) > 1:
+                w = join(left[1:])
+                entries.append([int(left[0]['t']), w, hide(join(sent, mark=True), w),
+                                'C' if section == 'Challenging Words' else 'B'])
+            else:
+                line = join(items)
+                if re.fullmatch(r'(Basic|Challenging) Words', line):
+                    section = line
+                m = re.search(r'20\d\d\s+(?:Spring|Fall)\s+(.+?)\s+Spelling Bee List', line)
+                if m:
+                    g = m.group(1).strip()
+                    if g.lower() in ('kinder', 'gk'):
+                        g = 'GK'
+                    if not titles or titles[-1] != g:
+                        titles.append(g)
+    return entries, titles
+
+
+def hide(sent, word):
+    """예문 속 정답 단어를 {}로 감싼다.
+
+    이전 학기 파일은 정답이 굵은 글씨였지만 이번 파일은 굵기가 아예 없다.
+    표시가 없으면 글자를 맞춰 찾는다. 하나라도 놓치면 문제 화면에
+    정답이 그대로 보이므로 나온 곳을 모두 감싼다."""
+    if '{' in sent:
+        return sent
+    for pat in (r'\b{}\b', r'\b{}(?:s|es|ed|ing|d)\b'):
+        rx = re.compile(pat.format(re.escape(word)), re.I)
+        if rx.search(sent):
+            return rx.sub(lambda m: '{' + m.group(0) + '}', sent)
+    return sent
+
+
+def split_by_grade(entries, titles):
+    """번호가 1로 돌아가는 곳에서 학년을 나눈다."""
+    starts = [i for i, e in enumerate(entries) if e[0] == 1]
+    grades = {}
+    for k, i in enumerate(starts):
+        j = starts[k + 1] if k + 1 < len(starts) else len(entries)
+        name = titles[k] if k < len(titles) else 'part%d' % (k + 1)
+        grades[name] = entries[i:j]
+    return grades
+
+
+entries, titles = parse_all(WORD_PDF)
+by_grade = split_by_grade(entries, titles)
+print(f'  학년 구간: ' + ', '.join(f'{g}({len(w)})' for g, w in by_grade.items()))
 
 out = {}
-for key, label, path in LISTS:
-    words = parse(path)
-    assert words, f'{key}: 단어를 하나도 뽑지 못했다'
-    assert [w[0] for w in words] == list(range(1, len(words) + 1)), f'{key}: 번호가 끊긴다'
-    assert all(re.fullmatch(r"[A-Za-z'\-]+", w[1]) for w in words), f'{key}: 단어 셀이 깨졌다'
-    assert all(w[2].count('{') == 1 for w in words), f'{key}: 예문 강조 표시가 맞지 않는다'
+for key, grade, label in USE:
+    words = by_grade.get(grade)
+    assert words, f'{grade}: 이 학년 목록을 찾지 못했다 (있는 것: {list(by_grade)})'
+    assert [w[0] for w in words] == list(range(1, len(words) + 1)), f'{grade}: 번호가 끊긴다'
+    bad = [w[1] for w in words if not re.fullmatch(r"[A-Za-z'\-]+", w[1])]
+    assert not bad, f'{grade}: 단어 셀이 깨졌다 - {bad[:5]}'
+    lost = [w[1] for w in words if '{' not in w[2]]
+    assert not lost, f'{grade}: 예문에서 정답을 찾지 못했다 - {lost[:5]}'
+    # 가린 부분을 빼고도 정답이 남아 있으면 문제 화면에 답이 그대로 보인다.
+    leak = [w[1] for w in words
+            if re.search(r'\b' + re.escape(w[1]) + r'\b',
+                         re.sub(r'\{.*?\}', '', w[2]), re.I)]
+    assert not leak, f'{grade}: 예문에 정답이 남는다 - {leak[:5]}'
     out[key] = {'name': label, 'words': words}
     print(f'  {key:8} {len(words):>3}개  {collections.Counter(w[3] for w in words)}')
 

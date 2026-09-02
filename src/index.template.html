@@ -1333,11 +1333,20 @@ addEventListener('offline', paintNet);
 /* ---------- data model ---------- */
 const PROFILES={
   yujin:  {name:'유진', grade:'3학년', list:'g23',    sections:['B','C']},
-  yuhyeok:{name:'유혁', grade:'1학년', list:'kinder', sections:['B','C']}
+  yuhyeok:{name:'유혁', grade:'1학년', list:'g1'   , sections:['B','C']}
 };
 const listOf = id => LISTS[PROFILES[id].list];
+// 목록이 바뀌었는지 보는 표. 이름만 보면 같은 g23이라도 학기가 바뀌어
+// 단어가 통째로 달라진 것을 놓친다. 단어별 기록은 번호로 잡으므로
+// 옛 기록이 엉뚱한 새 단어에 붙는다. 그래서 내용까지 넣어 만든다.
+function listTag(id){
+  const L=listOf(id); let h=0;
+  for(const w of L.words){ const t=w[1];
+    for(let i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))|0; }
+  return PROFILES[id].list+':'+L.words.length+':'+(h>>>0).toString(36);
+}
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
-const CONTEST=new Date('2026-09-21T00:00:00');
+const CONTEST=new Date('2026-09-28T00:00:00');
 let pid=null, S=null, sec='all', testLen=5;
 
 const key=id=>'sb_'+id;
@@ -1564,7 +1573,7 @@ function pickProfile(id){
   pid=id; S=load(id); sec='all';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
-  const want=PROFILES[id].list;
+  const want=listTag(id);
   if(S.list!==want){ S.w={}; S.list=want; save(); }
   go('s-home');
 }
@@ -3052,7 +3061,7 @@ function openParent(){
     const ids=Object.keys(PROFILES);
     pid = ids.find(id=>localStorage.getItem(key(id))) || ids[0];
     S=load(pid);
-    const want=PROFILES[pid].list;
+    const want=listTag(pid);
     if(S.list!==want){ S.w={}; S.list=want; save() }
     qLoad();
   }
@@ -3323,7 +3332,7 @@ function renderKidTabs(){
 function switchKid(id){
   if(id===pid)return;
   pid=id; S=load(id);
-  const want=PROFILES[id].list;
+  const want=listTag(id);
   if(S.list!==want){S.w={};S.list=want;save()}
   renderParent();
 }
