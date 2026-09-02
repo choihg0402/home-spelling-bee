@@ -591,7 +591,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   <div style="margin:auto;width:100%;max-width:380px;text-align:center">
     <div class="gate-bee">🐝</div>
     <h1 style="font-size:30px;margin-top:12px">우리집 스펠링비</h1>
-    <p style="color:var(--ink-2);margin:8px 0 0">
+    <p style="color:var(--ink-2);margin:8px 0 0" id="gate-why">
       이 기기를 처음 여는군요. 가족 비밀번호를 한 번만 넣어주세요.
     </p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:22px">
@@ -1564,6 +1564,13 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function bootGate(){
   const cfg = (typeof SB!=='undefined' && SB.url && SB.key);
   if(!cfg || syncToken()){ go('s-profile'); return }   // 서버를 안 쓰거나 이미 연결된 기기
+  // 홈 화면에 추가한 앱은 사파리와 저장 공간이 따로다.
+  // 사파리에서 이미 넣었더라도 여기서 한 번 더 넣어야 한다.
+  const why=document.getElementById('gate-why');
+  if(why && standalone()){
+    why.innerHTML='홈 화면 앱은 사파리와 <b>저장 공간이 따로</b>예요.<br>' +
+      '여기서 한 번만 더 넣으면, 그동안의 기록이 서버에서 내려옵니다.';
+  }
   go('s-gate');
   setTimeout(()=>{ const el=document.getElementById('gate-pw'); if(el)el.focus() }, 150);
 }
@@ -2600,16 +2607,29 @@ async function refreshIfNeeded(){
   const t=syncToken(); if(!t) return false;
   if(t.expires_at && t.expires_at-60 > Math.floor(Date.now()/1000)) return true;
   const cfg=loadSyncCfg();
+  let res;
   try{
-    const res=await fetch(cfg.url+'/auth/v1/token?grant_type=refresh_token',{
+    res=await fetch(cfg.url+'/auth/v1/token?grant_type=refresh_token',{
       method:'POST', headers:{'apikey':cfg.key,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:t.refresh_token})});
-    if(!res.ok) throw new Error('만료');
+  }catch(e){
+    // 인터넷이 없거나 불안정한 것뿐이다. 이때 로그인을 지우면
+    // 다음에 열 때 비밀번호를 다시 묻게 된다. 그대로 둔다.
+    return false;
+  }
+  // 서버가 분명히 거절했을 때만 지운다.
+  if(res.status===400 || res.status===401 || res.status===403){
+    setSyncToken(null);
+    return false;
+  }
+  if(!res.ok) return false;
+  try{
     const j=await res.json();
-    setSyncToken({access_token:j.access_token, refresh_token:j.refresh_token,
+    if(!j.access_token) return false;
+    setSyncToken({access_token:j.access_token, refresh_token:j.refresh_token || t.refresh_token,
                   expires_at: Math.floor(Date.now()/1000)+(j.expires_in||3600)});
     return true;
-  }catch(e){ setSyncToken(null); return false }
+  }catch(e){ return false }
 }
 async function whoAmI(){
   if(!syncOn()) return null;
