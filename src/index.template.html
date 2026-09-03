@@ -245,6 +245,13 @@ img.face{border:2px solid var(--line)}
 .scard .sd .hl{color:var(--practice);font-weight:600}
 .scard .stap{font-size:12px;color:var(--ink-3);margin-top:8px;min-height:0}
 .scard.hide .sw{visibility:hidden}
+.scard .stap{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.sbadge{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--ink-3)}
+.sbadge.m{background:var(--good-soft);color:var(--good)}
+.sbadge.p{background:var(--stage-soft);color:var(--stage)}
+.sbadge.l{background:var(--practice-soft);color:var(--practice)}
+.zone.zgarden{border-left:7px solid var(--good)}
+.zone.zgarden .tag{background:var(--good-soft);color:var(--good)}
 .zone.quiz{border-left:7px solid var(--blue,#3A6FB0)}
 .zone.quiz .tag{background:var(--retry-soft);color:var(--retry)}
 .seg.wrap{flex-wrap:wrap}
@@ -646,7 +653,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
   <div class="home-grid">
     <div class="zones">
-      <button class="card zone quiz" onclick="openQuiz()">
+      <button class="card zone quiz" id="zone-quiz" onclick="openQuiz()">
         <span class="tag">이번 주</span>
         <h2>단어 퀴즈</h2>
         <p>뜻을 보고 스펠링을 맞춰요. 소리는 나오지 않아요.</p>
@@ -665,6 +672,14 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <p>진짜 대회처럼 소리 내어 스펠링을 말해요. 보상이 가장 커요.</p>
         <p style="font-size:14px;color:var(--ink-3)">코인을 가장 많이 받을 수 있어요</p>
       </button>
+      <button class="card zone zgarden" onclick="go('s-garden')">
+        <span class="tag">모으기</span>
+        <h2>내 정원</h2>
+        <p>키운 친구들을 만나고, 코인으로 꽃과 나무를 사서 꾸며요.</p>
+        <p style="font-size:14px;color:var(--ink-3)">
+          도감 <b class="tnum" id="dexcount">0</b> / <span class="tnum" id="dexall">34</span>
+          · 정원에 <b class="tnum" id="gardencount">0</b>개</p>
+      </button>
     </div>
 
     <div class="side">
@@ -677,18 +692,14 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
           <button class="btn" id="sbpet-pick" onclick="pickSbPet()">친구 고르기</button>
         </div>
       </div>
-      <div class="card pet">
+      <div class="card pet" id="card-quizpet">
         <p class="eyebrow">주간 퀴즈 친구</p>
         <span id="pet"></span>
         <h3 id="pet-name" style="font-size:20px">알</h3>
         <p style="margin:0;font-size:14px;color:var(--ink-3)" id="pet-next"></p>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
           <button class="btn" id="pet-pick" onclick="openPetPick(null)">친구 고르기</button>
-          <button class="btn" onclick="go('s-garden')">🌱 내 정원 <b class="tnum" id="gardencount">0</b></button>
-          <button class="btn" onclick="go('s-shop')">🛒 상점</button>
         </div>
-        <p style="margin:4px 0 0;font-size:13px;color:var(--ink-3)">
-          도감 <b class="tnum" id="dexcount">0</b> / <span class="tnum" id="dexall">5</span></p>
       </div>
       <div class="card">
         <p class="eyebrow">단어 진행</p>
@@ -740,6 +751,16 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         </span>
         <span><h2>쓰기</h2><p>듣고 직접 입력하기</p></span>
       </button>
+      <button class="card pcard" onclick="go('s-sbstudy')">
+        <span class="ava">
+          <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+            <path d="M10 16h18a6 6 0 016 6v26a6 6 0 00-6-6H10z" fill="var(--practice)" opacity=".85"/>
+            <path d="M54 16H36a6 6 0 00-6 6v26a6 6 0 016-6h18z" fill="var(--tile)" stroke="var(--tile-edge)" stroke-width="2"/>
+            <path d="M38 26h12M38 33h12" stroke="var(--tile-edge)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span><h2>단어 보기</h2><p>단어와 예문을 함께 보며 외우기</p></span>
+      </button>
     </div>
     <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span class="eyebrow">단어 묶음</span>
@@ -747,6 +768,29 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="pickcount"></span>
     </div>
+  </div>
+</section>
+
+<!-- ============ SPELLING BEE STUDY ============ -->
+<section id="s-sbstudy" class="screen">
+  <header class="topbar">
+    <button class="btn ghost" onclick="go('s-pick')">← 뒤로</button>
+    <span class="spacer"></span>
+    <button class="btn" id="sbstudy-toggle" onclick="toggleSbStudy()">단어 가리기</button>
+  </header>
+  <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
+    <p class="eyebrow" id="sbstudy-head"></p>
+    <h1 style="font-size:30px">단어 보기</h1>
+    <p style="color:var(--ink-2);margin:4px 0 0">
+      단어와 예문을 함께 보며 외워요. 카드를 누르면 읽어줘요.
+    </p>
+    <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="eyebrow">단어 묶음</span>
+      <span class="seg wrap" id="ssecseg"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span style="font-size:14px;color:var(--ink-3)" id="scount"></span>
+    </div>
+    <div class="study" id="sbstudy"></div>
   </div>
 </section>
 
@@ -1626,6 +1670,7 @@ function go(id){
   if(id==='s-pickpet')renderPickPet();
   if(id==='s-quizhome')renderQuizHome();
   if(id==='s-study')renderStudy();
+  if(id==='s-sbstudy')renderSbStudy();
   if(id==='s-shop')renderShop();
   window.scrollTo(0,0);
 }
@@ -1842,6 +1887,11 @@ function renderHome(){
   document.getElementById('pet-pick').style.display = words.length ? '' : 'none';
   document.getElementById('dexcount').textContent=dexList().length;
   document.getElementById('dexall').textContent=ANIMALS.length;
+  // 부모가 이번 주 단어를 넣기 전에는 아이 화면에서 퀴즈를 감춘다.
+  // 빈 카드를 눌러 봐야 할 게 없고, 알만 놓인 친구 카드도 헷갈린다.
+  const hasQuiz=QW().length>0;
+  document.getElementById('zone-quiz').hidden=!hasQuiz;
+  document.getElementById('card-quizpet').hidden=!hasQuiz;
   qLoad();
   const qws=QW(), qp=weekProg(curWeek);
   const qdone=qws.filter(r=>(qp[r[0]]||{}).n>0).length;
@@ -2444,6 +2494,35 @@ function renderStudy(){
     '</div>').join('');
 }
 function toggleStudy(){ studyHide=!studyHide; renderStudy() }
+
+/* ---------- 대회 단어 보기 ----------
+   퍼즐과 시험은 단어를 감춰 놓고 묻는다. 외우려면 온전한 단어와 예문을
+   같이 보는 자리가 따로 있어야 한다. 여기가 그 자리다. */
+let sbHide=false;
+const W_BADGE={master:['마스터','m'], pass:['통과','p'], learning:['연습중','l']};
+const hlWord=t=>t.replace(/[{]([^}]+)[}]/g, (m,w)=>'<b class="hl">'+w+'</b>');
+function toggleSbStudy(){ sbHide=!sbHide; renderSbStudy() }
+function renderSbStudy(){
+  document.getElementById('ssecseg').innerHTML=segHTML('renderSbStudy');
+  document.getElementById('scount').textContent=poolLabel();
+  document.getElementById('sbstudy-head').textContent=PROFILES[pid].name+' · '+listOf(pid).name;
+  document.getElementById('sbstudy-toggle').textContent = sbHide ? '단어 보이기' : '단어 가리기';
+  const box=document.getElementById('sbstudy');
+  const words=poolWords();
+  box.innerHTML = words.length ? words.map(w=>{
+    const b=W_BADGE[(S.w[w[0]]||{}).st];
+    return '<div class="scard'+(sbHide?' hide':'')+'" data-w="'+w[1]+'">'+
+      '<div class="sw en">'+w[1]+'</div>'+
+      '<div class="sd">'+(sbHide?masked(w[2]):hlWord(w[2]))+'</div>'+
+      '<div class="stap"><span class="sbadge '+(b?b[1]:'')+'">'+(b?b[0]:'아직')+'</span>'+
+        '<span>눌러서 듣기</span></div>'+
+    '</div>';
+  }).join('') : '<p class="empty-note">이 묶음에는 단어가 없어요.</p>';
+  // 따옴표가 섞인 onclick 문자열을 만들지 않는다. 예전에 그렇게 하다 몇 번 깨졌다.
+  box.querySelectorAll('.scard').forEach(el=>{
+    el.onclick=()=>{ if(sbHide) el.classList.toggle('hide'); sayEn(el.dataset.w) };
+  });
+}
 
 /* ---------- 퍼즐 퀴즈 ---------- */
 function startQuiz(){
