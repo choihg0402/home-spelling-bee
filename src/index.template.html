@@ -190,6 +190,9 @@ img.face{border:2px solid var(--line)}
 .feedback .ans.reveal{font-size:40px;color:var(--stage);letter-spacing:.14em;font-weight:600;
   animation:fade 3s linear forwards}
 @keyframes fade{0%,60%{opacity:1}100%{opacity:0}}
+.feedback .ans.big{font-size:36px;color:var(--stage);letter-spacing:.12em;font-weight:600}
+.feedback .mine{font-size:15px;color:var(--ink-3)}
+@media (max-width:560px){ .feedback .ans.big{font-size:28px} }
 
 .footer-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:auto;padding-top:6px}
 
@@ -893,8 +896,9 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 
     <div class="letters" id="letters"></div>
     <p class="mic-state" id="micstate">마이크를 누르고 알파벳을 말해줘</p>
+    <div class="feedback" id="tfb" hidden></div>
 
-    <div class="test-ctrl">
+    <div class="test-ctrl" id="test-ctrl">
       <button class="btn" id="micbtn" onclick="toggleMic()">🎤 말하기 시작</button>
       <button class="btn" id="padbtn" onclick="togglePad()">⌨ 글자 고치기</button>
       <button class="btn ghost" onclick="toggleTyping()" id="typebtn">타이핑으로 바꾸기</button>
@@ -917,7 +921,8 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     </div>
 
     <div class="footer-bar">
-      <button class="btn big stage" onclick="submitTest()">제출하기</button>
+      <button class="btn big stage" id="t-submit" onclick="submitTest()">제출하기</button>
+      <button class="btn big stage" id="t-next" hidden onclick="nextTestQ()">다음 단어</button>
     </div>
   </div>
 </section>
@@ -2149,6 +2154,17 @@ function startTest(){
     const pa=sa?(sa.st==='master'?2:sa.p>0?0:1):1, pb=sb?(sb.st==='master'?2:sb.p>0?0:1):1;
     return pa-pb});
   tq=pool.slice(0,testLen); ti=0; tres=[]; typing=false; sbGrown=[];
+  clearTimeout(showTestFb._t); tPaused=false;
+  const fb=document.getElementById('tfb'); fb.innerHTML=''; fb.hidden=true;
+  document.getElementById('test-ctrl').hidden=false;
+  document.getElementById('t-submit').hidden=false;
+  document.getElementById('t-next').hidden=true;
+  // 지난 시험을 타이핑으로 끝냈으면 입력칸이 열린 채 남는다. typing 은 false 인데
+  // 화면만 타이핑 상태라 단추 글씨까지 어긋난다. 시작할 때 맞춰 놓는다.
+  const tu=document.getElementById('typing-ui');
+  tu.hidden=false; tu.style.display='none';
+  document.getElementById('padbtn').style.display='';
+  document.getElementById('typebtn').textContent='타이핑으로 바꾸기';
   document.getElementById('q-all').textContent=tq.length;
   document.getElementById('pad').innerHTML=AZ.split('').map(c=>
     `<button onclick="addLetter('${c}')">${c}</button>`).join('');
@@ -2220,6 +2236,7 @@ function stopMic(){
   document.getElementById('micstate').textContent='마이크를 누르고 알파벳을 말해줘';
 }
 function submitTest(){
+  if(tPaused) return;
   const ans=typing?document.getElementById('testinput').value.trim().toLowerCase():letters.join('');
   if(!ans){toast('아직 아무것도 없어');return}
   const ok=ans===cur[1].toLowerCase();
@@ -2231,10 +2248,48 @@ function submitTest(){
     if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
             if(was<1 && sbRatio(ch)>=1) sbGrown.push(ch) } }
   tres.push({w:cur[1],ok,typed:typing,ans});
-  stopMic(); ti++;
+  stopMic();
+  showTestFb(ok, ans);
+}
+
+/* 한 단어를 내면 바로 맞았는지 알려주고 잠깐 멈춘다.
+   틀렸을 때는 정답을 보여주고 한 번 읽어준다. 그 자리에서 봐야 다음에 안 틀린다.
+   맞았을 때는 짧게, 틀렸을 때는 읽을 시간을 두고 넘어간다. */
+let tPaused=false;
+const esc=t=>String(t).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function showTestFb(ok, ans){
+  tPaused=true;
+  const last = ti===tq.length-1;
+  const fb=document.getElementById('tfb');
+  fb.innerHTML = ok
+    ? '<div class="msg good">맞았어!</div><div class="ans en">' + esc(cur[1]) + '</div>'
+    : '<div class="msg retry">아깝다!</div><div class="ans en big">' + esc(cur[1]) + '</div>' +
+      '<div class="mine">내가 쓴 것 ' + esc(ans) + '</div>';
+  fb.hidden=false;
+  document.getElementById('test-ctrl').hidden=true;
+  document.getElementById('typing-ui').hidden=true;
+  togglePad(false);
+  document.getElementById('t-submit').hidden=true;
+  const nx=document.getElementById('t-next');
+  nx.textContent = last ? '결과 보기' : '다음 단어';
+  nx.hidden=false;
+  if(!ok) setTimeout(()=>sayEn(cur[1]), 250);
+  clearTimeout(showTestFb._t);
+  showTestFb._t=setTimeout(nextTestQ, ok ? 1200 : 3200);
+}
+function nextTestQ(){
+  clearTimeout(showTestFb._t);
+  if(!tPaused) return;                 // 단추와 시간이 겹쳐도 한 번만 넘어간다
+  tPaused=false;
+  const fb=document.getElementById('tfb'); fb.innerHTML=''; fb.hidden=true;
+  document.getElementById('test-ctrl').hidden=false;
+  document.getElementById('typing-ui').hidden=false;
+  document.getElementById('t-submit').hidden=false;
+  document.getElementById('t-next').hidden=true;
+  ti++;
   if(ti<tq.length){loadQ()} else finishTest();
 }
-function quitTest(){stopMic();speechSynthesis.cancel();go('s-home')}
+function quitTest(){clearTimeout(showTestFb._t);tPaused=false;stopMic();speechSynthesis.cancel();go('s-home')}
 function finishTest(){
   let xp=0,coin=0; const okn=tres.filter(r=>r.ok).length;
   tres.forEach(r=>{if(r.ok){xp+=r.typed?15:30;coin+=r.typed?2:5}});
