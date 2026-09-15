@@ -2935,6 +2935,11 @@ function buy(id){
   const it=shopItem(id); if(!it)return;
   if(it.max && boughtCount(id)>=it.max){toast(it.n+'는 하나만 가질 수 있어');return}
   if(coins()<it.c){toast('코인이 모자라');return}
+  // 한 번 더 묻는다. 눌리는 대로 사지면 모아둔 코인이 순식간에 사라진다.
+  // 이름 뒤에 조사를 붙이면 '하준이 을(를)' 처럼 어색해진다. 줄을 나눠 피한다.
+  const NL=String.fromCharCode(10);
+  if(!confirm(it.n+' — '+it.c+' 코인'+NL+NL+
+              '사면 '+(coins()-it.c)+' 코인이 남아요. 살까요?')) return;
   spendCoin(it.c); S.buys.push([id,Date.now(),S.dev]); save();
   renderShop(); toast(`${it.n} 샀어! 정원에 놓아보자`);
 }
