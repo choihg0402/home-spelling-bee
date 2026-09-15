@@ -29,9 +29,8 @@ def _is_bg(px, x, y):
     return a > 0 and min(r, g, b) >= 210 and (max(r, g, b) - min(r, g, b)) <= 18
 
 
-def _strong(c):
-    r, g, b, a = c
-    return a > 0 and (max(r, g, b) - min(r, g, b)) >= 55
+def _drawn(c):
+    return c[3] > 0        # 그림이 있는 칸
 
 
 def clean(path, out, box=BOX):
@@ -62,6 +61,12 @@ def clean(path, out, box=BOX):
                 q.append((nx, ny))
 
     # 2. 좁은 틈 되살리기 (삼색기 흰 줄 같은 것)
+    #    폭을 그림 크기에 맞춘다. 고정값으로 두면 큰 원본에서 줄이 너무 두꺼워
+    #    되살리지 못한다. 색이 진한 칸만 이웃으로 치면 안 된다.
+    #    페라리 삼색기는 띠마다 검은 테두리가 있어 그 조건에 걸리지 않는다.
+    #    위아래가 가까이서 그림으로 막혀 있으면 그림 안쪽으로 본다.
+    #    바깥은 한쪽이 뚫려 있어 그대로 남는다.
+    gap_max = max(8, round(min(w, h) * 0.05))
     filled = 0
     for x in range(w):
         y = 0
@@ -70,8 +75,8 @@ def clean(path, out, box=BOX):
                 y0 = y
                 while y < h and px[x, y][3] == 0:
                     y += 1
-                if (y - y0) <= 8 and y0 > 0 and y < h \
-                        and _strong(px[x, y0 - 1]) and _strong(px[x, y]):
+                if (y - y0) <= gap_max and y0 > 0 and y < h \
+                        and _drawn(px[x, y0 - 1]) and _drawn(px[x, y]):
                     for yy in range(y0, y):
                         px[x, yy] = (255, 255, 255, 255)
                         filled += 1
