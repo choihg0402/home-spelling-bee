@@ -1198,6 +1198,18 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     </div>
 
     <div class="card" style="margin-top:14px">
+      <p class="eyebrow">코인</p>
+      <div class="stat-row" style="margin:0">
+        <span class="stat"><b class="tnum" id="p-earn">0</b><span>번 코인</span></span>
+        <span class="stat"><b class="tnum" id="p-spent">0</b><span>쓴 코인</span></span>
+        <span class="stat"><b class="tnum" id="p-left">0</b><span>남은 코인</span></span>
+      </div>
+      <p class="sub" id="p-coin-note"></p>
+      <p class="eyebrow" style="margin-top:16px">산 것 (최근부터)</p>
+      <div class="res-list" id="p-buys"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
       <p class="eyebrow">최근 7일</p>
       <div class="week" id="p-week"></div>
       <div class="legend" style="margin-top:12px">
@@ -3590,6 +3602,36 @@ function renderParent(){
     ? '아직 통과한 단어가 없어요'
     : (t>v ? '타이핑이 더 많아요. 소음이 있는 곳은 아닌지 봐주세요.'
            : '말하기로 잘 통과하고 있어요.');
+
+  // ---- 코인이 어디로 갔는지 ----
+  //    코인이 줄었다는 말이 나오면 여기서 바로 확인할 수 있어야 한다.
+  //    산 것마다 시각과 어느 기기에서 샀는지가 남아 있다.
+  const earn=sumField('earn'), spent=sumField('spend');
+  document.getElementById('p-earn').textContent=earn;
+  document.getElementById('p-spent').textContent=spent;
+  document.getElementById('p-left').textContent=earn-spent;
+  const peers=Object.keys(S.peers||{}).length;
+  document.getElementById('p-coin-note').textContent =
+    '이 기기 ' + S.own.earn + ' 벌고 ' + S.own.spend + ' 씀' +
+    (peers ? ' · 다른 기기 ' + peers + '대에서 ' +
+             Object.values(S.peers).reduce((a,x)=>a+(x.earn||0),0) + ' 벌고 ' +
+             Object.values(S.peers).reduce((a,x)=>a+(x.spend||0),0) + ' 씀' : '');
+  const buys=(S.buys||[]).slice().sort((a,b)=>(b[1]||0)-(a[1]||0)).slice(0,40);
+  document.getElementById('p-buys').innerHTML = buys.length
+    ? buys.map(b=>{
+        const it=shopItem(b[0]);
+        const t=b[1] ? new Date(b[1]) : null;
+        const when = t ? (t.getMonth()+1)+'월 '+t.getDate()+'일 '+
+                         String(t.getHours()).padStart(2,'0')+':'+
+                         String(t.getMinutes()).padStart(2,'0')
+                       : '오래 전';
+        const here = b[2]===S.dev ? '이 기기' : '다른 기기';
+        return '<div class="res"><span class="w" style="font-size:16px">'+
+               ((it&&it.n)||b[0])+'</span><span class="via">'+here+'</span>'+
+               '<span class="mark">'+when+'</span>'+
+               '<span class="mark x">-'+((it&&it.c)||0)+'</span></div>';
+      }).join('')
+    : '<p class="empty-note">아직 산 것이 없어요.</p>';
 
   // ---- 최근 7일 ----
   const days7=[...Array(7)].map((_,i)=>{
