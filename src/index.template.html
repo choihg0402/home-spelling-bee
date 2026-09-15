@@ -248,6 +248,7 @@ img.face{border:2px solid var(--line)}
 .scard .sd .hl{color:var(--practice);font-weight:600}
 .scard .stap{font-size:12px;color:var(--ink-3);margin-top:8px;min-height:0}
 .scard.hide .sw{visibility:hidden}
+.scard .snum{font-size:12px;color:var(--ink-3);letter-spacing:.04em;margin-bottom:2px}
 .scard .stap{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .sbadge{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--ink-3)}
 .sbadge.m{background:var(--good-soft);color:var(--good)}
@@ -337,10 +338,13 @@ img.face{border:2px solid var(--line)}
   box-shadow:var(--shadow);transition:transform .08s}
 .item:active{transform:translateY(2px)}
 .item .e{font-size:32px;line-height:1.1}
-.item .n{font-size:13px;color:var(--ink-2)}
+.item .n{font-size:13px;color:var(--ink-2);text-align:center;line-height:1.3;word-break:keep-all}
 .item .c{font-size:13px;color:var(--stage);font-family:"Jua",sans-serif}
 .item .own{font-size:12px;color:var(--ink-3)}
 .item[disabled]{opacity:.45}
+/* 다 가진 것은 '살 돈이 모자라'가 아니라 '이미 가졌다'로 보여야 한다. */
+.item.maxed{opacity:1;border-color:var(--good);background:var(--good-soft)}
+.item.maxed .own{color:var(--good)}
 .empty-note{color:var(--ink-3);font-size:15px;padding:14px 0}
 .pets{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:16px}
 .petcell{background:var(--paper);border:2px solid var(--line);border-radius:var(--r-m);
@@ -997,7 +1001,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   <div style="width:100%;max-width:900px;margin:0 auto;overflow:auto">
     <h1 style="font-size:30px">상점</h1>
     <p style="color:var(--ink-2);margin:4px 0 18px">
-      코인은 시험장에서 가장 많이 받을 수 있어요. 동물은 사는 게 아니라 <b>키워서</b> 만나요.
+      코인은 시험장에서 가장 많이 받을 수 있어요. 도감에 모으는 친구는 사는 게 아니라 <b>키워서</b> 만나요.
     </p>
     <div class="shop" id="shop"></div>
   </div>
@@ -1438,7 +1442,7 @@ function blank(){return {
   buys:[],                     // 산 것 [아이템, 시각, 기기]
   garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
-  sbDone:{}, sbPick:{},        // 대회 묶음: 통과한 단어 / 묶음마다 고른 친구
+  sbDone:{}, sbPick:{}, earned:[],  // 대회 묶음: 통과한 단어 / 고른 친구 / 다 키운 친구
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -1504,6 +1508,11 @@ function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.in
    지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
 const SB_FROM='2026-W36';
 const SB_CUTS=[.2, .6, 1];              // 누적 비율
+/* 학교 진도에 맞춰 어떤 주를 손으로 바꿔야 할 때가 있다.
+   목록의 번호 그대로 [시작, 끝]. 비율 계산보다 이쪽이 이긴다. */
+const SB_OVERRIDE={
+  yujin: { '2026-W38': [1, 150] }
+};
 function planWeeks(){
   const all=myWords(), n=all.length, out=[];
   let from=0, k=SB_FROM;
@@ -1512,6 +1521,9 @@ function planWeeks(){
     if(to>from){ out.push({k:k, words:all.slice(from,to), last:false}); from=to; k=shiftWeek(k,1) }
   });
   out.push({k:k, words:all.slice(), last:true});
+  const ov=SB_OVERRIDE[pid]||{};
+  out.forEach(w=>{ const r=ov[w.k];
+    if(r) w.words=all.filter(x=>x[0]>=r[0] && x[0]<=r[1]) });
   return out;
 }
 /* 오늘이 속한 주의 묶음. 계획보다 이르면 첫 주, 지났으면 마지막 점검 묶음. */
@@ -1545,6 +1557,21 @@ function chapterByCid(cid){
   return pw ? chaptersOf(pw).find(c=>c.cid===cid) : null;
 }
 function sbMark(cid){ S.sbDone=S.sbDone||{}; return S.sbDone[cid]||(S.sbDone[cid]={}) }
+/* 다 키운 친구는 그 순간에 따로 적어 둔다.
+   묶음 구성이 바뀌면 지금 묶음으로 다시 세는 방식은 이미 키운 친구를 놓친다. */
+function sbEarn(a){ if(!a)return; S.earned=S.earned||[]; if(!S.earned.includes(a))S.earned.push(a) }
+/* 적어 두기 전에 키운 친구를 되찾는다. 묶음은 10단어라 통과 기록이 10개면 다 키운 것이다. */
+function sbEarnCatchUp(){
+  if(!S) return;
+  S.earned=S.earned||[]; let hit=false;
+  Object.keys(S.sbPick||{}).forEach(cid=>{
+    if(Object.keys((S.sbDone||{})[cid]||{}).length >= SB_CHAP){
+      const a=S.sbPick[cid];
+      if(a && !S.earned.includes(a)){ S.earned.push(a); hit=true }
+    }
+  });
+  if(hit) save();
+}
 function sbGot(ch){ const d=(S.sbDone||{})[ch.cid]||{}; return ch.words.filter(w=>d[w[0]]).length }
 function sbRatio(ch){ return ch.words.length ? sbGot(ch)/ch.words.length : 0 }
 function sbPet(cid){ return ((S&&S.sbPick)||{})[cid]||null }
@@ -1804,6 +1831,7 @@ function dexList(){
     const ch=chapterByCid(cid), a=sbPet(cid);
     if(ch && a && sbRatio(ch)>=1 && !out.includes(a)) out.push(a);
   });
+  ((S&&S.earned)||[]).forEach(a=>{ if(!out.includes(a) && animal(a)) out.push(a) });
   ((S&&S.dexLegacy)||[]).forEach(a=>{ if(!out.includes(a) && animal(a)) out.push(a) });
   return out;
 }
@@ -1843,7 +1871,11 @@ const SHOP=[
   {id:'rain',  e:'🌈', n:'무지개',      c:30},
   {id:'fount', e:'⛲', n:'분수',        c:38},
   {id:'house', e:'🏡', n:'작은 집',      c:45},
-  {id:'crown', e:'👑', n:'왕관',        c:60}
+  {id:'crown', e:'👑', n:'왕관',        c:60},
+  // 특별한 것. max 를 두면 그만큼만 가질 수 있다.
+  {id:'horse', e:'🐎', n:'페라리 엠블럼',   c:250},
+  {id:'bull',  e:'🐂', n:'람보르기니 엠블럼', c:280},
+  {id:'hajun', e:'🐻‍❄️', n:'북극곰 하준이',  c:500, max:1}
 ];
 const shopItem=id=>SHOP.find(x=>x.id===id);
 function addCoin(n){ S.own.earn+=n }
@@ -1852,6 +1884,7 @@ function spendCoin(n){ S.own.spend+=n }
 /* ---------- home ---------- */
 function renderHome(){
   const P=PROFILES[pid];
+  sbEarnCatchUp();
   document.getElementById('who').textContent=P.name;
   document.getElementById('coin').textContent=coins();
   document.getElementById('listchip').textContent=listOf(pid).name;
@@ -2246,7 +2279,7 @@ function submitTest(){
     // 이번 주 묶음에 든 단어면 그 친구가 한 칸 자란다
     const ch=chaptersOf(planNow()).find(c=>c.words.some(w=>w[0]===cur[0]));
     if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
-            if(was<1 && sbRatio(ch)>=1) sbGrown.push(ch) } }
+            if(was<1 && sbRatio(ch)>=1){ sbGrown.push(ch); sbEarn(sbPet(ch.cid)) } } }
   tres.push({w:cur[1],ok,typed:typing,ans});
   stopMic();
   showTestFb(ok, ans);
@@ -2567,6 +2600,7 @@ function renderSbStudy(){
   box.innerHTML = words.length ? words.map(w=>{
     const b=W_BADGE[(S.w[w[0]]||{}).st];
     return '<div class="scard'+(sbHide?' hide':'')+'" data-w="'+w[1]+'">'+
+      '<div class="snum">'+w[0]+'번</div>'+
       '<div class="sw en">'+w[1]+'</div>'+
       '<div class="sd">'+(sbHide?masked(w[2]):hlWord(w[2]))+'</div>'+
       '<div class="stap"><span class="sbadge '+(b?b[1]:'')+'">'+(b?b[0]:'아직')+'</span>'+
@@ -2779,17 +2813,23 @@ function unplace2(i){
   if(!S.garden[i])return;
   S.garden.splice(i,1); save(); renderGarden();
 }
+/* 정원에 놓아둔 것도 가진 것이다. invCount 는 놓아둔 것을 빼므로
+   개수 제한에는 쓸 수 없다. 산 횟수로 센다. */
+const boughtCount=id=>S.buys.filter(b=>b[0]===id).length;
 function renderShop(){
   document.getElementById('s-coin').textContent=coins();
   document.getElementById('shop').innerHTML=SHOP.map(it=>{
-    const own=invCount(it.id), can=coins()>=it.c;
-    return `<button class="item" ${can?'':'disabled'} onclick="buy('${it.id}')">
+    const own=invCount(it.id), full=it.max && boughtCount(it.id)>=it.max;
+    const can=coins()>=it.c && !full;
+    const note = full ? '이미 가졌어요' : own ? '가진 것 '+own+'개' : '&nbsp;';
+    return `<button class="item${full?' maxed':''}" ${can?'':'disabled'} onclick="buy('${it.id}')">
       <span class="e">${it.e}</span><span class="n">${it.n}</span>
       <span class="c">${it.c} 코인</span>
-      <span class="own">${own?'가진 것 '+own+'개':'&nbsp;'}</span></button>`}).join('');
+      <span class="own">${note}</span></button>`}).join('');
 }
 function buy(id){
   const it=shopItem(id); if(!it)return;
+  if(it.max && boughtCount(id)>=it.max){toast(it.n+'는 하나만 가질 수 있어');return}
   if(coins()<it.c){toast('코인이 모자라');return}
   spendCoin(it.c); S.buys.push([id,Date.now(),S.dev]); save();
   renderShop(); toast(`${it.n} 샀어! 정원에 놓아보자`);
@@ -3202,6 +3242,8 @@ function mergeProfile(local, inc){
     out.sbDone[c]=Object.assign({}, ws, out.sbDone[c]||{});
   });
   out.sbPick=Object.assign({}, inc.sbPick||{}, local.sbPick||{});
+  out.earned=(local.earned||[]).slice();
+  (inc.earned||[]).forEach(a=>{ if(!out.earned.includes(a))out.earned.push(a) });
   // 예전 방식으로 모은 도감은 합집합
   out.dexLegacy=(local.dexLegacy||[]).slice();
   (inc.dexLegacy||[]).forEach(k=>{ if(!out.dexLegacy.includes(k))out.dexLegacy.push(k) });
