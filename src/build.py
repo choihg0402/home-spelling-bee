@@ -208,8 +208,18 @@ else:
     print('  아이템 그림 없음 (이모지로 나옵니다)')
 
 core = ['./', './index.html', './manifest.webmanifest'] + font_files + icon_files + item_files
-version = 'sb-' + hashlib.sha1(
-    (doc + json.dumps(core)).encode('utf-8')).hexdigest()[:10]
+# 버전은 파일 이름만이 아니라 내용까지 넣어서 만든다.
+# 이름만 넣으면 그림이나 글꼴을 같은 이름으로 바꿔 올렸을 때 버전이 그대로라,
+# 이미 저장해 둔 기기가 옛 파일을 계속 꺼내 쓴다.
+h = hashlib.sha1()
+h.update(doc.encode('utf-8'))
+h.update(json.dumps(core).encode('utf-8'))
+for rel in core:
+    f = os.path.join('..', rel.lstrip('./'))
+    if os.path.isfile(f):
+        with open(f, 'rb') as fp:
+            h.update(fp.read())
+version = 'sb-' + h.hexdigest()[:10]
 sw = io.open('sw.template.js', encoding='utf-8').read()
 sw = sw.replace('__VERSION__', version).replace('__CORE__', json.dumps(core))
 io.open('../sw.js', 'w', encoding='utf-8').write(sw)
