@@ -365,6 +365,7 @@ img.face{border:2px solid var(--line)}
 .item .e{font-size:32px;line-height:1.1}
 .item .e svg, .garden .slot svg{width:1em;height:1em;display:block}
 .iimg{width:1em;height:1em;display:block;object-fit:contain}
+.iimg.plate{background:#fff;border-radius:.18em;padding:.06em;box-sizing:border-box}
 .item .n{font-size:13px;color:var(--ink-2);text-align:center;line-height:1.3;word-break:keep-all}
 .item .c{font-size:13px;color:var(--stage);font-family:"Jua",sans-serif}
 .item .own{font-size:12px;color:var(--ink-3)}
@@ -1913,7 +1914,8 @@ const BEAR='<svg viewBox="0 0 64 64" width="1em" height="1em" aria-hidden="true"
 /* 아이템 그림. 그림파일(img)이 있으면 그것, 그림꼴(svg)이 있으면 그것,
    둘 다 없으면 이모지로 그린다. */
 const itemFace = it => it.img
-  ? '<img class="iimg" src="' + it.img + '" alt="" data-e="' + it.e + '">'
+  ? '<img class="iimg' + (it.plate ? ' plate' : '') + '" src="' + it.img +
+    '" alt="" data-e="' + it.e + '">'
   : (it.svg || it.e);
 /* 그림파일이 아직 없거나 못 받아오면 이모지로 돌아간다.
    innerHTML 로 넣으면 손을 붙이기 전에 이미 실패해 있을 수 있어 그것도 본다. */
@@ -1951,6 +1953,11 @@ const SHOP=[
   {id:'horse',  e:'🐎', n:'페라리',     c:250, img:'items/ferrari.png'},
   {id:'bull',   e:'🐂', n:'람보르기니', c:280, img:'items/lamborghini.png'},
   {id:'porsche',e:'🏁', n:'포르쉐',     c:300, img:'items/porsche.png'},
+  // 흰색이 도안의 일부인 것은 흰 판 위에 올린다(plate). 안 그러면 어두운 화면에서
+  // 글자 속이 비어 보이거나, 흰 도안이 배경에 묻힌다.
+  {id:'kia',    e:'🐯', n:'기아 타이거즈', c:200, img:'items/kia_tigers.png',   plate:1},
+  {id:'lgtwins',e:'⚾', n:'LG 트윈스',    c:200, img:'items/lg_twins.png',     plate:1},
+  {id:'hanwha', e:'🦅', n:'한화 이글스',   c:200, img:'items/hanwha_eagles.svg', plate:1},
   {id:'hajun', e:'🐻‍❄️', n:'북극곰 하준이',  c:500, max:1, svg:BEAR}
 ];
 const shopItem=id=>SHOP.find(x=>x.id===id);

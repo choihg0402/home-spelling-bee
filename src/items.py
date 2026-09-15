@@ -23,6 +23,11 @@ OUT = '../items'
 BOX = 256
 EXT = ('.png', '.jpg', '.jpeg', '.webp')
 
+# 흰색이 도안의 일부인 그림. 배경을 지우면 글자 속과 바탕이 함께 뚫려
+# 어두운 화면에서 도안이 숭숭 비어 보인다.
+# 이런 것은 흰 바탕을 그대로 두고, 앱에서 흰 판 위에 올려 보여준다(plate).
+KEEP_BG = {'kia_tigers', 'lg_twins'}
+
 
 def _is_bg(px, x, y):
     r, g, b, a = px[x, y]
@@ -31,6 +36,31 @@ def _is_bg(px, x, y):
 
 def _drawn(c):
     return c[3] > 0        # 그림이 있는 칸
+
+
+def trim_only(path, out, box=BOX):
+    """배경을 지우지 않고 여백만 잘라낸다."""
+    im = Image.open(path).convert('RGBA')
+    w, h = im.size
+    px = im.load()
+    x0, y0, x1, y1 = w, h, 0, 0
+    for y in range(h):
+        for x in range(w):
+            if not _is_bg(px, x, y):
+                if x < x0: x0 = x
+                if y < y0: y0 = y
+                if x > x1: x1 = x
+                if y > y1: y1 = y
+    if x0 > x1:
+        x0, y0, x1, y1 = 0, 0, w - 1, h - 1
+    pad = max(2, round(min(x1 - x0, y1 - y0) * 0.04))
+    im = im.crop((max(0, x0 - pad), max(0, y0 - pad),
+                  min(w, x1 + 1 + pad), min(h, y1 + 1 + pad)))
+    flat = Image.new('RGBA', im.size, (255, 255, 255, 255))
+    flat.alpha_composite(im)
+    flat.thumbnail((box, box), Image.LANCZOS)
+    flat.save(out)
+    return flat.size, 0, 0, 1
 
 
 def clean(path, out, box=BOX):
@@ -132,6 +162,7 @@ if __name__ == '__main__':
     for f in files:
         name = os.path.splitext(os.path.basename(f))[0]
         out = os.path.join(OUT, name + '.png')
-        size, filled, dropped, comps = clean(f, out)
-        print(f'  {name:14} {size[0]}x{size[1]}  '
-              f'되살린 칸 {filled}, 버린 칸 {dropped}, 조각 {comps}개  -> {out}')
+        fn = trim_only if name in KEEP_BG else clean
+        size, filled, dropped, comps = fn(f, out)
+        how = '흰 바탕 유지' if name in KEEP_BG else               f'되살린 칸 {filled}, 버린 칸 {dropped}, 조각 {comps}개'
+        print(f'  {name:14} {size[0]}x{size[1]}  {how}  -> {out}')
