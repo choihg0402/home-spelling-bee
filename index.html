@@ -1913,8 +1913,18 @@ const BEAR='<svg viewBox="0 0 64 64" width="1em" height="1em" aria-hidden="true"
 /* 아이템 그림. 그림파일(img)이 있으면 그것, 그림꼴(svg)이 있으면 그것,
    둘 다 없으면 이모지로 그린다. */
 const itemFace = it => it.img
-  ? '<img class="iimg" src="' + it.img + '" alt="" loading="lazy">'
+  ? '<img class="iimg" src="' + it.img + '" alt="" data-e="' + it.e + '">'
   : (it.svg || it.e);
+/* 그림파일이 아직 없거나 못 받아오면 이모지로 돌아간다.
+   innerHTML 로 넣으면 손을 붙이기 전에 이미 실패해 있을 수 있어 그것도 본다. */
+function imgFallback(root){
+  (root||document).querySelectorAll('img.iimg').forEach(im=>{
+    const swap=()=>{ const t=document.createElement('span');
+                     t.textContent=im.dataset.e||'❔'; im.replaceWith(t) };
+    im.onerror=swap;
+    if(im.complete && im.naturalWidth===0) swap();
+  });
+}
 const SHOP=[
   // 꽃과 나무
   {id:'tulip', e:'🌷', n:'튤립',        c:5},
@@ -1937,8 +1947,10 @@ const SHOP=[
   {id:'house', e:'🏡', n:'작은 집',      c:45},
   {id:'crown', e:'👑', n:'왕관',        c:60},
   // 특별한 것. max 를 두면 그만큼만 가질 수 있다.
-  {id:'horse', e:'🐎', n:'페라리 엠블럼',   c:250},
-  {id:'bull',  e:'🐂', n:'람보르기니 엠블럼', c:280},
+  // 엠블럼 그림은 items/ 에 둔다. 파일이 없으면 이모지로 대신 나온다.
+  {id:'horse',  e:'🐎', n:'페라리',     c:250, img:'items/ferrari.png'},
+  {id:'bull',   e:'🐂', n:'람보르기니', c:280, img:'items/lamborghini.png'},
+  {id:'porsche',e:'🏁', n:'포르쉐',     c:300, img:'items/porsche.png'},
   {id:'hajun', e:'🐻‍❄️', n:'북극곰 하준이',  c:500, max:1, svg:BEAR}
 ];
 const shopItem=id=>SHOP.find(x=>x.id===id);
@@ -2861,6 +2873,7 @@ function renderGarden(){
         return `<button class="item" onclick="place2('${id}')">
           <span class="e">${itemFace(it)}</span><span class="n">${it.n}</span><span class="own">×${n}</span></button>`}).join('')
     : '<p class="empty-note">아직 아이템이 없어요. 상점에서 코인으로 사보자!</p>';
+  imgFallback(g); imgFallback(tray);
 
   document.getElementById('dexall').textContent=ANIMALS.length;
   document.getElementById('dex').innerHTML=ANIMALS.map(a=>{
@@ -2890,6 +2903,7 @@ function renderShop(){
       <span class="e">${itemFace(it)}</span><span class="n">${it.n}</span>
       <span class="c">${it.c} 코인</span>
       <span class="own">${note}</span></button>`}).join('');
+  imgFallback(document.getElementById('shop'));
 }
 function buy(id){
   const it=shopItem(id); if(!it)return;

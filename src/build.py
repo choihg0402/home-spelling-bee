@@ -197,7 +197,17 @@ doc = SHELL.replace('__FONTS__', font_css).replace('{BODY}', body)
 io.open(OUT, 'w', encoding='utf-8').write(doc)
 
 # --- 서비스 워커: 화면을 기기에 저장해 두어 인터넷 없이도 열리게 한다 ---
-core = ['./', './index.html', './manifest.webmanifest'] + font_files + icon_files
+# 상점 아이템 그림도 기기에 저장해 둔다. 없으면 이모지로 나오므로 없어도 된다.
+import glob, os
+item_files = sorted('./items/' + os.path.basename(f)
+                    for f in glob.glob('../items/*')
+                    if os.path.splitext(f)[1].lower() in ('.png', '.svg', '.webp', '.jpg'))
+if item_files:
+    print(f'  아이템 그림 {len(item_files)}개')
+else:
+    print('  아이템 그림 없음 (이모지로 나옵니다)')
+
+core = ['./', './index.html', './manifest.webmanifest'] + font_files + icon_files + item_files
 version = 'sb-' + hashlib.sha1(
     (doc + json.dumps(core)).encode('utf-8')).hexdigest()[:10]
 sw = io.open('sw.template.js', encoding='utf-8').read()
