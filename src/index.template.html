@@ -260,7 +260,7 @@ img.face{border:2px solid var(--line)}
 .zone.quiz .tag{background:var(--retry-soft);color:var(--retry)}
 .seg.wrap{flex-wrap:wrap}
 .qe-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.qe-pick select{padding:9px 12px;border-radius:var(--r-m);border:1px solid var(--line);
+.qe-pick select, .qe-pick input{padding:9px 12px;border-radius:var(--r-m);border:1px solid var(--line);
   background:var(--paper);color:var(--ink);font:inherit;font-size:15px;min-height:var(--tap)}
 .dex-given{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .dex-given .sub{width:100%;margin:0}
@@ -1205,7 +1205,13 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <span class="stat"><b class="tnum" id="p-left">0</b><span>남은 코인</span></span>
       </div>
       <p class="sub" id="p-coin-note"></p>
-      <p class="eyebrow" style="margin-top:16px">산 것 (최근부터)</p>
+      <div class="qe-pick">
+        <span class="eyebrow">코인 맞추기</span>
+        <input id="p-setcoin" type="number" inputmode="numeric" min="0" step="1" style="width:130px">
+        <button class="btn" onclick="setCoins()">맞추기</button>
+      </div>
+      <p class="sub">기기끼리 먼저 맞춘 뒤에 조정하세요. 코인은 기기들의 합이라, 안 맞춘 기록이 남아 있으면 다시 달라집니다.</p>
+      <p class="eyebrow" style="margin-top:16px">코인 내역 (최근부터)</p>
       <div class="res-list" id="p-buys"></div>
     </div>
 
@@ -1458,6 +1464,7 @@ function blank(){return {
   garden:[],                   // 정원 배치 (겉모습이라 기기별로 둔다)
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
   sbDone:{}, sbPick:{}, earned:[],  // 대회 묶음: 통과한 단어 / 고른 친구 / 다 키운 친구
+  coinFix:[],                  // 부모가 코인을 맞춘 기록 [바뀐 양, 시각, 기기]
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -3261,6 +3268,10 @@ function mergeProfile(local, inc){
   const seen=new Set((local.buys||[]).map(b=>b.join('|')));
   out.buys=(local.buys||[]).slice();
   (inc.buys||[]).forEach(b=>{ const k=b.join('|'); if(!seen.has(k)){seen.add(k); out.buys.push(b)} });
+  // 부모가 맞춘 기록도 합집합 (양+시각+기기로 같은 것을 걸러낸다)
+  const fseen=new Set((local.coinFix||[]).map(f=>f.join('|')));
+  out.coinFix=(local.coinFix||[]).slice();
+  (inc.coinFix||[]).forEach(f=>{ const k=f.join('|'); if(!fseen.has(k)){fseen.add(k); out.coinFix.push(f)} });
   // 날짜별 기록도 항목별로 큰 쪽
   out.hist=Object.assign({}, local.hist||{});
   Object.entries(inc.hist||{}).forEach(([d,v])=>{
@@ -3541,6 +3552,24 @@ function setVoice(uri){
   testVoice();
 }
 function testVoice(){ sayEn('hesitate') }
+/* 부모가 코인을 맞춘다. 벌고 쓴 장부에 더하는 방식이라
+   기기끼리 합칠 때도 어긋나지 않는다. 남의 기기 몫은 그대로 두고
+   이 기기 몫만 움직이므로, 몇 번 합쳐도 같은 값이 나온다. */
+function setCoins(){
+  const el=document.getElementById('p-setcoin');
+  const want=parseInt(el.value, 10);
+  if(!isFinite(want) || want<0){ toast('숫자를 넣어주세요'); return }
+  const now=coins(), d=want-now;
+  if(!d){ toast('이미 '+want+' 코인이에요'); el.value=''; return }
+  if(!confirm(PROFILES[pid].name+' 코인을 '+now+' → '+want+' 로 맞출까요?')) return;
+  if(d>0) S.own.earn+=d; else S.own.spend+=-d;
+  S.coinFix=S.coinFix||[]; S.coinFix.push([d, Date.now(), S.dev]);
+  save();
+  el.value='';
+  renderParent();
+  toast(PROFILES[pid].name+' 코인을 '+want+' 로 맞췄어요');
+}
+
 function renderParent(){
   renderLockState();
   renderSync();
@@ -3616,22 +3645,25 @@ function renderParent(){
     (peers ? ' · 다른 기기 ' + peers + '대에서 ' +
              Object.values(S.peers).reduce((a,x)=>a+(x.earn||0),0) + ' 벌고 ' +
              Object.values(S.peers).reduce((a,x)=>a+(x.spend||0),0) + ' 씀' : '');
-  const buys=(S.buys||[]).slice().sort((a,b)=>(b[1]||0)-(a[1]||0)).slice(0,40);
-  document.getElementById('p-buys').innerHTML = buys.length
-    ? buys.map(b=>{
-        const it=shopItem(b[0]);
-        const t=b[1] ? new Date(b[1]) : null;
-        const when = t ? (t.getMonth()+1)+'월 '+t.getDate()+'일 '+
-                         String(t.getHours()).padStart(2,'0')+':'+
-                         String(t.getMinutes()).padStart(2,'0')
+  const coinRows=[];
+  (S.buys||[]).forEach(b=>{ const it=shopItem(b[0]);
+    coinRows.push({t:b[1]||0, dev:b[2], name:(it&&it.n)||b[0], amt:-((it&&it.c)||0)}) });
+  (S.coinFix||[]).forEach(f=>coinRows.push({t:f[1]||0, dev:f[2], name:'부모가 맞춤', amt:f[0]}));
+  coinRows.sort((a,b)=>b.t-a.t);
+  document.getElementById('p-buys').innerHTML = coinRows.length
+    ? coinRows.slice(0,40).map(r=>{
+        const d=r.t ? new Date(r.t) : null;
+        const when = d ? (d.getMonth()+1)+'월 '+d.getDate()+'일 '+
+                         String(d.getHours()).padStart(2,'0')+':'+
+                         String(d.getMinutes()).padStart(2,'0')
                        : '오래 전';
-        const here = b[2]===S.dev ? '이 기기' : '다른 기기';
-        return '<div class="res"><span class="w" style="font-size:16px">'+
-               ((it&&it.n)||b[0])+'</span><span class="via">'+here+'</span>'+
+        return '<div class="res"><span class="w" style="font-size:16px">'+r.name+'</span>'+
+               '<span class="via">'+(r.dev===S.dev?'이 기기':'다른 기기')+'</span>'+
                '<span class="mark">'+when+'</span>'+
-               '<span class="mark x">-'+((it&&it.c)||0)+'</span></div>';
+               '<span class="mark '+(r.amt<0?'x':'o')+'">'+(r.amt>0?'+':'')+r.amt+'</span></div>';
       }).join('')
-    : '<p class="empty-note">아직 산 것이 없어요.</p>';
+    : '<p class="empty-note">아직 오간 코인이 없어요.</p>';
+  document.getElementById('p-setcoin').placeholder=earn-spent;
 
   // ---- 최근 7일 ----
   const days7=[...Array(7)].map((_,i)=>{
