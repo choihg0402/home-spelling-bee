@@ -867,10 +867,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="tsecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="tpickcount"></span>
-    </div>
-    <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="eyebrow">몇 개 볼까</span>
-      <span class="seg" id="lenseg"></span>
+      <p style="width:100%;margin:2px 0 0;font-size:15px;color:var(--ink-2)" id="t-plan"></p>
     </div>
     <div class="note" id="micnote" style="margin-top:14px"></div>
     <div class="footer-bar" style="justify-content:flex-start;margin-top:20px">
@@ -1440,7 +1437,7 @@ function listTag(id){
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
 const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='day', testLen=5;
+let pid=null, S=null, sec='day';
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -2245,6 +2242,7 @@ document.getElementById('wordinput').addEventListener('keydown',e=>{if(e.key==='
 
 /* ---------- test ---------- */
 let tq=[],ti=0,tres=[],letters=[],selIdx=-1,typing=false,rec=null,listening=false;
+let tFrom=0;   // 이번 시험이 묶음의 몇 번째부터 시작했는지
 const SPOKEN={a:'a',ay:'a',eh:'a',bee:'b',be:'b',b:'b',see:'c',sea:'c',cee:'c',c:'c',dee:'d',d:'d',
  e:'e',ee:'e',eff:'f',ef:'f',f:'f',gee:'g',jee:'g',g:'g',aitch:'h',h:'h',haitch:'h',eye:'i',i:'i',ai:'i',
  jay:'j',j:'j',kay:'k',k:'k',el:'l',ell:'l',l:'l',em:'m',m:'m',en:'n',n:'n',oh:'o',o:'o',owe:'o',
@@ -2253,11 +2251,25 @@ const SPOKEN={a:'a',ay:'a',eh:'a',bee:'b',be:'b',b:'b',see:'c',sea:'c',cee:'c',c
  why:'y',y:'y',wye:'y',zee:'z',zed:'z',z:'z'};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 
+/* 이번 시험에 나올 단어. 미리 알려주는 값과 실제로 내는 값을 따로 구하면
+   언젠가 어긋난다. 한 곳에서 구해 둘 다 쓴다. */
+function testSlice(){
+  const pool=poolWords();
+  if(!pool.length) return {from:0, words:[]};
+  const c=cursor();
+  const from=(c.t||0) >= pool.length ? 0 : (c.t||0);
+  return {from:from,
+          words:pool.slice(from, from + Math.min(pool.length-from, PER_DAY[pid]||30))};
+}
 function renderSetup(){
   document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
   document.getElementById('tpickcount').textContent=poolLabel()+' 중에서';
-  document.getElementById('lenseg').innerHTML=[3,5,10].map(n=>
-    `<button class="${testLen===n?'on':''}" onclick="testLen=${n};renderSetup()">${n}개</button>`).join('');
+  const sl=testSlice(), pool=poolWords();
+  document.getElementById('t-plan').innerHTML = !sl.words.length
+    ? '단어가 없어요.'
+    : '이번에 <b>' + rangeText(sl.words) + ' ' + sl.words.length + '개</b>를 봐요.' +
+      (sl.from ? ' (오늘 ' + sl.from + '개 했어요)' :
+       pool.length>sl.words.length ? '' : ' 오늘 몫 전부예요.');
   const n=document.getElementById('micnote');
   if(!navigator.onLine){
     n.innerHTML='<b>지금은 인터넷이 없어요.</b> 말하기 인식은 아이폰이 소리를 밖으로 보내 알아듣기 때문에 ' +
@@ -2271,10 +2283,11 @@ function renderSetup(){
 function startTest(){
   const pool=poolWords();
   if(!pool.length){ toast('단어가 없어요'); return }
-  // 시험도 번호 순서대로. 멈춘 자리부터 이어간다.
-  const c=cursor(), from=(c.t||0)%pool.length;
-  tq=[]; for(let i=0;i<Math.min(testLen,pool.length);i++) tq.push(pool[(from+i)%pool.length]);
-  c.t=from+tq.length;
+  // 몇 개 볼지 고르지 않는다. 오늘 하루치를 멈춘 자리부터 이어서 본다.
+  // 한 바퀴 다 보면 처음으로 돌아간다.
+  // 하루치보다 많은 묶음(전체 등)을 골랐어도 한 번에 하루치까지만 낸다.
+  const sl=testSlice();
+  tFrom=sl.from; tq=sl.words.slice();
   ti=0; tres=[]; typing=false; sbGrown=[];
   clearTimeout(showTestFb._t); tPaused=false;
   const fb=document.getElementById('tfb'); fb.innerHTML=''; fb.hidden=true;
@@ -2371,6 +2384,11 @@ function submitTest(){
     if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
             if(was<1 && sbRatio(ch)>=1){ sbGrown.push(ch); sbEarn(sbPet(ch.cid)) } } }
   tres.push({w:cur[1],ok,typed:typing,ans});
+  // 낸 만큼만 자리를 옮긴다. 시작할 때 통째로 옮기면 도중에 그만뒀을 때
+  // 안 본 단어를 건너뛴다. 저장도 여기서 한다. 안 그러면 그만두는 순간
+  // 이번에 맞힌 것이 통째로 날아간다.
+  cursor().t = tFrom + tres.length;
+  save();
   stopMic();
   showTestFb(ok, ans);
 }
