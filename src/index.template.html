@@ -810,6 +810,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <button class="btn ghost" onclick="quitPlay()">← 그만하기</button>
     <span class="spacer"></span>
     <span class="chip"><b id="play-mode">퍼즐</b></span>
+    <span class="chip"><b class="tnum" id="play-num">-</b>번</span>
     <span class="chip"><b class="tnum" id="play-count">0</b>개 완료</span>
   </header>
 
@@ -883,6 +884,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
   <header class="topbar">
     <button class="btn ghost" onclick="quitTest()">← 그만하기</button>
     <span class="spacer"></span>
+    <span class="chip"><b class="tnum" id="t-num">-</b>번</span>
     <span class="qcount"><span class="tnum" id="q-now">1</span> / <span class="tnum" id="q-all">5</span></span>
   </header>
 
@@ -1438,7 +1440,7 @@ function listTag(id){
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
 const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='chap', testLen=5;
+let pid=null, S=null, sec='day', testLen=5;
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -1528,36 +1530,47 @@ function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.in
    부모가 매주 넣는 단어 퀴즈와는 상관없다. 이건 대회 단어 쪽이다.
    시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
    지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
-const SB_FROM='2026-W36';
-const SB_CUTS=[.2, .6, 1];              // 누적 비율
-/* 학교 진도에 맞춰 어떤 주를 손으로 바꿔야 할 때가 있다.
-   목록의 번호 그대로 [시작, 끝]. 비율 계산보다 이쪽이 이긴다. */
-const SB_OVERRIDE={
-  yujin: { '2026-W38': [1, 150] }
-};
-function planWeeks(){
-  const all=myWords(), n=all.length, out=[];
-  let from=0, k=SB_FROM;
-  SB_CUTS.forEach(c=>{
-    const to=Math.round(n*c);
-    if(to>from){ out.push({k:k, words:all.slice(from,to), last:false}); from=to; k=shiftWeek(k,1) }
-  });
-  out.push({k:k, words:all.slice(), last:true});
-  const ov=SB_OVERRIDE[pid]||{};
-  out.forEach(w=>{ const r=ov[w.k];
-    if(r) w.words=all.filter(x=>x[0]>=r[0] && x[0]<=r[1]) });
-  return out;
+/* ---------- 하루치 계획 ----------
+   대회가 가까워 주 단위를 하루 단위로 바꿨다.
+   9월 21일부터 유진이는 하루 40개, 유혁이는 30개씩 번호 순서대로 본다.
+   목록 끝까지 가면 처음으로 돌아가 다시 돈다. */
+const DAY_FROM='2026-09-21';
+const PER_DAY={yujin:40, yuhyeok:30};
+/* 오늘 날짜. today() 는 UTC 라 한국에서는 새벽에 어제 날짜가 나온다.
+   하루치 단어는 자정에 바뀌어야 하므로 이 기기 시간으로 따로 구한다. */
+function localDay(d){
+  d=d||new Date();
+  const z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
 }
-/* 오늘이 속한 주의 묶음. 계획보다 이르면 첫 주, 지났으면 마지막 점검 묶음. */
-function planNow(){
-  const t=weekKey(), ws=planWeeks();
-  if(!ws.length) return {k:t, words:[], last:false};
-  return ws.find(w=>w.k===t) || (t<SB_FROM ? ws[0] : ws[ws.length-1]);
+function planFor(key){
+  const all=myWords(), n=all.length;
+  const per=Math.min(PER_DAY[pid]||30, n||1);
+  if(!n) return {k:key, words:[], day:1};
+  const a=new Date(DAY_FROM+'T00:00:00'), d=new Date(key+'T00:00:00');
+  const i=Math.max(0, Math.round((d-a)/864e5));
+  const start=(i*per)%n, words=[];
+  for(let j=0;j<per;j++) words.push(all[(start+j)%n]);
+  return {k:key, words:words, day:i+1};
+}
+function planNow(){ return planFor(localDay()) }
+/* 번호를 이어지는 구간으로 묶어 적는다. 한 바퀴 돌아 181~200, 1~20 처럼
+   끊길 수 있어서, 처음과 끝만 찍으면 181~20번 같은 이상한 말이 된다. */
+function rangeText(words){
+  if(!words.length) return '';
+  const out=[]; let a=words[0][0], prev=a;
+  for(let i=1;i<words.length;i++){
+    const v=words[i][0];
+    if(v!==prev+1){ out.push(a===prev?''+a:a+'~'+prev); a=v }
+    prev=v;
+  }
+  out.push(a===prev?''+a:a+'~'+prev);
+  return out.join(', ')+'번';
 }
 function planLabel(){
-  const p=planNow(), i=planWeeks().findIndex(w=>w.k===p.k);
-  return p.last ? '최종 점검 · 전체 '+p.words.length+'개'
-                : (i+1)+'주차 · '+p.words.length+'개';
+  const p=planNow();
+  if(!p.words.length) return '단어가 없어요';
+  return p.day+'일차 · '+p.words.length+'개 · '+rangeText(p.words);
 }
 
 /* ---------- 대회 친구 ----------
@@ -1574,9 +1587,11 @@ function chaptersOf(pw){
   return out;
 }
 function chapterByCid(cid){
-  const wk=String(cid).split('#')[0];
-  const pw=planWeeks().find(w=>w.k===wk);
-  return pw ? chaptersOf(pw).find(c=>c.cid===cid) : null;
+  const k=String(cid).split('#')[0];
+  // 예전에는 앞머리가 주차(2026-W38)였다. 그때 묶음은 되살리지 않는다.
+  // 그때 다 키운 친구는 earned 에 따로 적혀 있어 도감에서 사라지지 않는다.
+  if(k.length!==10 || k[4]!=='-' || k[7]!=='-') return null;
+  return chaptersOf(planFor(k)).find(c=>c.cid===cid) || null;
 }
 function sbMark(cid){ S.sbDone=S.sbDone||{}; return S.sbDone[cid]||(S.sbDone[cid]={}) }
 /* 다 키운 친구는 그 순간에 따로 적어 둔다.
@@ -1611,19 +1626,15 @@ function sbLabel(ch){
    주 전체(40~80개)에서 뽑으면 네댓 마리가 조금씩만 자라서
    시험을 아무리 봐도 아무도 다 크지 않는다. */
 function poolWords(){
-  if(sec==='chap'){ const c=sbCur(); return c ? c.words : planNow().words }
-  if(sec==='week') return planNow().words;
+  if(sec==='day') return planNow().words;
   const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec);
 }
 function poolLabel(){
-  if(sec==='chap'){ const c=sbCur(); return c ? sbLabel(c)+' · '+c.words.length+'개' : planLabel() }
-  if(sec==='week') return planLabel();
-  return poolWords().length+'개';
+  return sec==='day' ? planLabel() : poolWords().length+'개';
 }
-const SEGS=[['chap','이번 묶음'],['week','이번 주'],['all','전체'],
-            ['B','Basic'],['C','Challenging']];
+const SEGS=[['day','오늘'],['all','전체'],['B','Basic'],['C','Challenging']];
 function segHTML(fn){
-  return SEGS.filter(x=>['chap','week','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
+  return SEGS.filter(x=>['day','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
     .map(x=>`<button class="${sec===x[0]?'on':''}" onclick="sec='${x[0]}';${fn}()">${x[1]}</button>`)
     .join('');
 }
@@ -1769,7 +1780,7 @@ async function gateIn(){
 }
 
 function pickProfile(id){
-  pid=id; S=load(id); sec='chap';
+  pid=id; S=load(id); sec='day';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=listTag(id);
@@ -2095,18 +2106,28 @@ function startPractice(m){mode=m;done=0;go('s-play');
   nextPractice()}
 function quitPlay(){clearInterval(revealThenHide._t);speechSynthesis.cancel();go('s-home')}
 
-function weightedPick(){
-  const pool=poolWords();
-  const scored=pool.map(w=>{const s=S.w[w[0]];
-    let pr=s?(s.st==='master'?1:s.st==='pass'?3:8):10; return {w,pr}});
-  const tot=scored.reduce((a,b)=>a+b.pr,0); let r=Math.random()*tot;
-  for(const s of scored){r-=s.pr;if(r<=0)return s.w}
-  return pool[0];
+/* 번호 순서대로 낸다. 무작위로 섞으면 어디까지 했는지 아이가 알 수 없고,
+   부모도 오늘 몇 번까지 봤는지 짚어줄 수 없다.
+   오늘 안에서는 멈춘 자리부터 이어간다. 날이 바뀌거나 묶음을 바꾸면 처음부터.
+   자리는 이 기기에만 둔다. 기기마다 진도가 다른 게 자연스럽다. */
+function cursor(){
+  const d=localDay();
+  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec) S.cursor={d:d, sec:sec, p:0, t:0};
+  return S.cursor;
+}
+function nextInPool(which){
+  const pool=poolWords(); if(!pool.length) return null;
+  const c=cursor();
+  const i=(c[which]||0)%pool.length;
+  c[which]=i+1; save();
+  return pool[i];
 }
 function nextPractice(skip){
   clearInterval(revealThenHide._t);
   tries=0;
-  cur=weightedPick();
+  cur=nextInPool('p');
+  if(!cur){ toast('단어가 없어요'); go('s-pick'); return }
+  document.getElementById('play-num').textContent=cur[0];
   document.getElementById('fb').innerHTML='';
   document.getElementById('hintline').innerHTML='';
   document.getElementById('checkbtn').disabled=false;
@@ -2248,12 +2269,13 @@ function renderSetup(){
     : '<b>이 브라우저는 음성 인식을 지원하지 않아요.</b> 타이핑으로 테스트할 수 있고, 보상은 절반으로 들어갑니다. 아이패드 Safari에서 다시 시도해 보세요.';
 }
 function startTest(){
-  const pool=poolWords().slice();
-  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
-  pool.sort((a,b)=>{const sa=S.w[a[0]],sb=S.w[b[0]];
-    const pa=sa?(sa.st==='master'?2:sa.p>0?0:1):1, pb=sb?(sb.st==='master'?2:sb.p>0?0:1):1;
-    return pa-pb});
-  tq=pool.slice(0,testLen); ti=0; tres=[]; typing=false; sbGrown=[];
+  const pool=poolWords();
+  if(!pool.length){ toast('단어가 없어요'); return }
+  // 시험도 번호 순서대로. 멈춘 자리부터 이어간다.
+  const c=cursor(), from=(c.t||0)%pool.length;
+  tq=[]; for(let i=0;i<Math.min(testLen,pool.length);i++) tq.push(pool[(from+i)%pool.length]);
+  c.t=from+tq.length;
+  ti=0; tres=[]; typing=false; sbGrown=[];
   clearTimeout(showTestFb._t); tPaused=false;
   const fb=document.getElementById('tfb'); fb.innerHTML=''; fb.hidden=true;
   document.getElementById('test-ctrl').hidden=false;
@@ -2274,6 +2296,7 @@ function loadQ(){
   cur=tq[ti]; letters=[]; selIdx=-1;
   togglePad(false);
   document.getElementById('q-now').textContent=ti+1;
+  document.getElementById('t-num').textContent=cur[0];
   document.getElementById('testinput').value='';
   document.getElementById('defbtn').disabled=true;
   drawLetters(); setTimeout(()=>sayWord(),300);
