@@ -2129,7 +2129,9 @@ function renderProfNote(){
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
 function renderPick(){
   document.getElementById('secseg').innerHTML=segHTML('renderPick');
-  document.getElementById('pickcount').textContent=poolLabel();
+  const pt=cursor().p, plist=roundWords(pt);
+  document.getElementById('pickcount').textContent =
+    poolLabel() + (pt.round && plist.length ? ' · 틀린 단어 '+plist.length+'개 다시' : '');
 }
 function startPractice(m){mode=m;done=0;go('s-play');
   document.getElementById('play-mode').textContent=m==='puzzle'?'퍼즐':'쓰기';
@@ -2142,17 +2144,42 @@ function quitPlay(){clearInterval(revealThenHide._t);speechSynthesis.cancel();go
    부모도 오늘 몇 번까지 봤는지 짚어줄 수 없다.
    오늘 안에서는 멈춘 자리부터 이어간다. 날이 바뀌거나 묶음을 바꾸면 처음부터.
    자리는 이 기기에만 둔다. 기기마다 진도가 다른 게 자연스럽다. */
+function track(){ return {at:0, round:0, list:null, wrong:[]} }
 function cursor(){
   const d=localDay();
-  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec) S.cursor={d:d, sec:sec, p:0, t:0};
+  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec) S.cursor={d:d, sec:sec};
+  // 예전에는 자리를 숫자 하나로만 두었다. 새 모양으로 옮긴다.
+  ['p','t'].forEach(k=>{ if(!S.cursor[k] || typeof S.cursor[k]!=='object'){
+    const at=+S.cursor[k]||0; S.cursor[k]=track(); S.cursor[k].at=at; } });
   return S.cursor;
 }
-function nextInPool(which){
-  const pool=poolWords(); if(!pool.length) return null;
-  const c=cursor();
-  const i=(c[which]||0)%pool.length;
-  c[which]=i+1; save();
-  return pool[i];
+/* 이번 바퀴에 낼 단어.
+   list 가 비어 있으면 하루치 전부, 아니면 지난 바퀴에 틀린 것만.
+   어느 쪽이든 번호 순서대로 나온다. */
+function roundWords(t){
+  const pool=poolWords();
+  if(!t.list || !t.list.length) return pool;
+  const set=new Set(t.list);
+  return pool.filter(w=>set.has(w[0]));
+}
+/* 한 바퀴를 마쳤다. 틀린 게 있으면 그것만 모아 다음 바퀴로,
+   다 맞혔으면 처음부터 새 바퀴. */
+function trackNext(t){
+  if(t.wrong && t.wrong.length){ t.list=t.wrong.slice(); t.round=(t.round||0)+1 }
+  else { t.list=null; t.round=0 }
+  t.wrong=[]; t.at=0;
+}
+function trackMark(t, num, ok){
+  t.wrong=t.wrong||[];
+  if(!ok && !t.wrong.includes(num)) t.wrong.push(num);
+}
+function nextInPool(k){
+  const t=cursor()[k];
+  let list=roundWords(t);
+  if(!list.length) return null;
+  if(t.at>=list.length){ trackNext(t); list=roundWords(t); if(!list.length) return null }
+  const w=list[t.at]; t.at++; save();
+  return w;
 }
 function nextPractice(skip){
   clearInterval(revealThenHide._t);
@@ -2225,6 +2252,7 @@ function checkPractice(){
   }else{
     if(s.st==='new')s.st='learning';
     s.miss=(s.miss||0)+1;
+    trackMark(cursor().p, cur[0], false);   // 이번 바퀴 끝에 다시 나온다
     tries++;
     document.querySelectorAll('#slots .tile').forEach(t=>{t.classList.add('no');setTimeout(()=>t.classList.remove('no'),400)});
     if(tries===1){
@@ -2289,12 +2317,14 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 /* 이번 시험에 나올 단어. 미리 알려주는 값과 실제로 내는 값을 따로 구하면
    언젠가 어긋난다. 한 곳에서 구해 둘 다 쓴다. */
 function testSlice(){
-  const pool=poolWords();
-  if(!pool.length) return {from:0, words:[]};
-  const c=cursor();
-  const from=(c.t||0) >= pool.length ? 0 : (c.t||0);
-  return {from:from,
-          words:pool.slice(from, from + Math.min(pool.length-from, PER_DAY[pid]||30))};
+  if(!poolWords().length) return {from:0, words:[], round:0, total:0};
+  const t=cursor().t;
+  let list=roundWords(t);
+  if(t.at>=list.length){ trackNext(t); list=roundWords(t); save() }
+  if(!list.length) return {from:0, words:[], round:0, total:0};
+  const from=t.at;
+  return {from:from, round:t.round||0, total:list.length,
+          words:list.slice(from, from + Math.min(list.length-from, PER_DAY[pid]||30))};
 }
 function renderSetup(){
   document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
@@ -2302,9 +2332,10 @@ function renderSetup(){
   const sl=testSlice(), pool=poolWords();
   document.getElementById('t-plan').innerHTML = !sl.words.length
     ? '단어가 없어요.'
-    : '이번에 <b>' + rangeText(sl.words) + ' ' + sl.words.length + '개</b>를 봐요.' +
-      (sl.from ? ' (오늘 ' + sl.from + '개 했어요)' :
-       pool.length>sl.words.length ? '' : ' 오늘 몫 전부예요.');
+    : (sl.round ? '<b>틀린 단어 다시 보기</b> — ' : '') +
+      '이번에 <b>' + rangeText(sl.words) + ' ' + sl.words.length + '개</b>를 봐요.' +
+      (sl.from ? ' (' + sl.total + '개 중 ' + sl.from + '개 했어요)' :
+       sl.round ? '' : pool.length>sl.words.length ? '' : ' 오늘 몫 전부예요.');
   const n=document.getElementById('micnote');
   if(!navigator.onLine){
     n.innerHTML='<b>지금은 인터넷이 없어요.</b> 말하기 인식은 아이폰이 소리를 밖으로 보내 알아듣기 때문에 ' +
@@ -2422,7 +2453,8 @@ function submitTest(){
   // 낸 만큼만 자리를 옮긴다. 시작할 때 통째로 옮기면 도중에 그만뒀을 때
   // 안 본 단어를 건너뛴다. 저장도 여기서 한다. 안 그러면 그만두는 순간
   // 이번에 맞힌 것이 통째로 날아간다.
-  cursor().t = tFrom + tres.length;
+  trackMark(cursor().t, cur[0], ok);
+  cursor().t.at = tFrom + tres.length;
   save();
   stopMic();
   showTestFb(ok, ans);
