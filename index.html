@@ -330,6 +330,9 @@ img.face{border:2px solid var(--line)}
 .sub{font-size:13px;color:var(--ink-3);margin:6px 0 0}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
 @media (max-width:760px){.two-col{grid-template-columns:1fr}}
+.wknav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.wknav-l{flex:1;min-width:140px;text-align:center;display:flex;flex-direction:column}
+.wknav-l small{font-size:13px;color:var(--ink-3)}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px;align-items:end}
 .wcol{display:flex;flex-direction:column;align-items:center;gap:5px}
 .wbars{display:flex;align-items:flex-end;gap:3px;height:96px}
@@ -630,7 +633,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 <!-- ============ PROFILE ============ -->
 <section id="s-profile" class="screen">
   <div style="margin:auto;width:100%;max-width:640px">
-    <p class="eyebrow">2026 Spring · G2–G3 Spelling Bee List</p>
+    <p class="eyebrow">2026 Fall · Spelling Bee</p>
     <h1 style="font-size:40px;margin:6px 0 2px">우리집 스펠링비</h1>
     <p style="color:var(--ink-2);margin:0">누구야? 이름을 눌러줘.</p>
     <div class="profiles">
@@ -682,7 +685,6 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <span class="spacer"></span>
     <span class="chip offline-chip" id="netchip" hidden>✈️ 인터넷 없음</span>
     <span class="chip" id="listchip"></span>
-    <span class="chip">대회까지 <b class="tnum" id="dday">D-30</b></span>
     <button class="btn ghost" onclick="openParent()">부모</button>
   </header>
 
@@ -802,6 +804,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="secseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="pickcount"></span>
+      <div id="pnav" style="width:100%"></div>
     </div>
   </div>
 </section>
@@ -824,6 +827,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="ssecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="scount"></span>
+      <div id="snav" style="width:100%"></div>
     </div>
     <div class="study" id="sbstudy"></div>
   </div>
@@ -892,6 +896,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="tsecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="tpickcount"></span>
+      <div id="tnav" style="width:100%"></div>
       <p style="width:100%;margin:2px 0 0;font-size:15px;color:var(--ink-2)" id="t-plan"></p>
     </div>
     <div class="note" id="micnote" style="margin-top:14px"></div>
@@ -1199,8 +1204,8 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <p class="sub" id="p-qnote"></p>
       </div>
       <div class="card">
-        <p class="eyebrow">대회까지</p>
-        <div class="big-num"><span class="tnum" id="p-dday">0</span><small>일</small></div>
+        <p class="eyebrow">주간 3단어</p>
+        <div class="big-num"><span class="tnum" id="p-wdone">0</span><small id="p-wall">/3 외움</small></div>
         <p class="sub" id="p-pace"></p>
       </div>
       <div class="card">
@@ -1403,7 +1408,7 @@ const SB = {
   email: 'family@spellingbee.home'    // 가족 계정. 실제로 메일을 받지 않는다
 };
 
-const LISTS={"g1":{"name":"2026 Fall G1","words":[[1,"tag","We don't play {tag} at school.","B"],[2,"send","Please {send} the letter today.","B"],[3,"deck","We sat on the wooden {deck}.","B"],[4,"stuck","The ball got {stuck} in the tree.","B"],[5,"snug","The baby felt warm and {snug} in the blanket.","B"],[6,"fish","I saw a {fish} swim by.","B"],[7,"hold","Please {hold} my hand.","B"],[8,"stay","{Stay} here until I return.","B"],[9,"scrub","I {scrub} my hands clean.","B"],[10,"draw","I like to {draw} animals.","B"],[11,"brown","The dog has {brown} fur.","B"],[12,"cozy","The bed felt {cozy} on a cold night.","B"],[13,"tint","The window has a blue {tint}.","B"],[14,"milk","I drink {milk} with breakfast.","B"],[15,"yawn","I {yawn} when I’m sleepy.","B"],[16,"tank","The fish {tank} is clean.","B"],[17,"want","I {want} to read a book.","B"],[18,"crowd","A {crowd} watched the parade.","B"],[19,"pond","Ducks swam in the {pond}.","B"],[20,"skirt","She wore a blue {skirt}.","B"],[21,"sharks","{Sharks} live in the ocean.","B"],[22,"quilt","Grandma made a warm {quilt}.","B"],[23,"twigs","Birds used {twigs} for a nest.","B"],[24,"taffy","I chewed sticky {taffy}.","B"],[25,"comfy","This chair is very {comfy}.","B"],[26,"tight","The lid is {tight}.","B"],[27,"candy","She shared her {candy}.","B"],[28,"ruby","The {ruby} sparkled red.","B"],[29,"close","Please {close} the door.","B"],[30,"tackle","He made a great {tackle} in football.","B"],[31,"wire","The bird sat on a {wire}.","B"],[32,"skater","The {skater} glided on ice.","B"],[33,"giant","The {giant} stood tall.","B"],[34,"chance","I had a {chance} to win.","B"],[35,"tender","The meat was {tender}.","B"],[36,"melon","We sliced the {melon}.","B"],[37,"farmer","The {farmer} fed the cows.","B"],[38,"parent","My {parent} came to school.","B"],[39,"tail","The dog wagged its {tail}.","B"],[40,"slime","The kids made green {slime}.","B"],[41,"teeth","Brush your {teeth} daily.","B"],[42,"bait","The worm was used as {bait}.","B"],[43,"lure","The shiny {lure} caught a fish.","B"],[44,"forest","There are many trees in the {forest}.","B"],[45,"hollow","The tree trunk was {hollow}.","B"],[46,"spinning","The top kept {spinning}.","B"],[47,"sizzling","Bacon was {sizzling} in the pan.","B"],[48,"hoist","They {hoist} the flag high.","B"],[49,"remind","Please {remind} me to take a hat outside.","B"],[50,"mango","I ate a sweet {mango}.","B"],[51,"coral","{Coral} grows in the sea.","B"],[52,"jangle","The keys {jangle} loudly.","B"],[53,"ajar","The door was left {ajar}.","B"],[54,"basil","Mom added {basil} to the soup.","B"],[55,"ahoy","“{Ahoy}!” the sailor shouted.","B"],[56,"signal","The light gave a {signal}.","B"],[57,"before","Wash your hands {before} dinner.","B"],[58,"circus","We went to the {circus}.","B"],[59,"writing","My {writing} is neat.","B"],[60,"kitchen","Dinner is in the {kitchen}.","B"],[61,"sugar","Add {sugar} to the tea.","B"],[62,"sweet","The cake tastes {sweet}.","B"],[63,"wheels","The bike has two {wheels}.","B"],[64,"fruit","I ate fresh {fruit}.","B"],[65,"roam","The deer {roam} freely.","B"],[66,"goats","The {goats} ate grass on the hill.","B"],[67,"ahead","Walk {ahead} of me.","B"],[68,"unicorn","The {unicorn} had a shiny horn.","B"],[69,"heater","The {heater} kept us warm.","B"],[70,"pirates","{Pirates} sailed the seas.","B"],[71,"wooden","The table is {wooden}.","B"],[72,"leaning","The ladder was {leaning} on the wall.","B"],[73,"window","Open the {window} please.","B"],[74,"elephant","The {elephant} is very big.","B"],[75,"surprise","The party was a {surprise}.","B"],[76,"weather","The {weather} is sunny today.","B"],[77,"eaten","The cookies were {eaten} quickly.","B"],[78,"asleep","The baby is {asleep}.","B"],[79,"curious","The cat was {curious}.","B"],[80,"dinosaur","The {dinosaur} roared loudly.","B"],[81,"vacuum","Dad used the {vacuum}.","B"],[82,"avocado","I ate {avocado} toast.","B"],[83,"February","{February} is a short month.","B"],[84,"pencil","I sharpen my {pencil}.","B"],[85,"mind","I changed my {mind}.","B"],[86,"silver","The ring is {silver}.","B"],[87,"scrunch","I {scrunch} the paper into a ball.","C"],[88,"stretch","I {stretch} before running.","C"],[89,"bucket","Fill the {bucket} with water.","C"],[90,"baskets","Apples filled the {baskets}.","C"],[91,"paste","Please {paste} the picture onto the paper.","C"],[92,"insects","{Insects} live in the garden.","C"],[93,"hockey","I play {hockey} with friends.","C"],[94,"search","We {search} for clues.","C"],[95,"blossoms","Pink {blossoms} filled the tree.","C"],[96,"answer","I know the {answer}.","C"],[97,"dollop","Add a {dollop} of cream.","C"],[98,"shuffle","{Shuffle} the cards.","C"],[99,"minnows","{Minnows} swam near the shore.","C"],[100,"breakfast","I eat {breakfast} every morning.","C"],[101,"chocolate","I love {chocolate} cake.","C"],[102,"message","She sent a {message} home.","C"],[103,"mermaid","The {mermaid} swam in the sea.","C"],[104,"garbage","Take out the {garbage}.","C"],[105,"recipe","The {recipe} shows how to cook.","C"],[106,"courtyard","Children played in the {courtyard}.","C"],[107,"streetlights","{Streetlights} lit the road.","C"],[108,"forepaw","The dog lifted its {forepaw}.","C"],[109,"valentine","I made a {valentine} card.","C"],[110,"shouting","We heard {shouting} outside.","C"],[111,"shortcut","We took a {shortcut} home.","C"],[112,"cluster","A {cluster} of stars shone.","C"],[113,"baffling","The puzzle was {baffling}.","C"],[114,"focus","Please {focus} on your work.","C"],[115,"distress","The loud noise caused {distress}.","C"],[116,"lessons","I have swimming {lessons} on Mondays.","C"],[117,"moment","Wait a {moment} please.","C"],[118,"triple","He scored {triple} points.","C"],[119,"awkward","The silence felt {awkward}.","C"],[120,"seep","Water began to {seep} out.","C"],[121,"faint","I heard a {faint} sound.","C"],[122,"woozy","I felt {woozy} after spinning.","C"],[123,"limbs","The tree’s {limbs} were strong.","C"],[124,"faraway","We saw a {faraway} mountain.","C"],[125,"understand","I {understand} the lesson.","C"],[126,"acrobat","The {acrobat} flipped in the air.","C"],[127,"hedgehog","The {hedgehog} curled into a ball.","C"],[128,"bombarded","The castle was {bombarded} with snowballs.","C"],[129,"disability","The ramp helps people with a {disability}.","C"],[130,"incredible","The view was {incredible}.","C"],[131,"leather","The belt is made of {leather}.","C"],[132,"countess","The {countess} lived in a castle.","C"],[133,"nervous","I felt {nervous} before the test.","C"],[134,"peppercorn","The soup had one {peppercorn}.","C"],[135,"cartwheel","She did a {cartwheel} on the grass.","C"],[136,"raise","Please {raise} your hand.","C"],[137,"zooming","Cars were {zooming} past.","C"],[138,"attacked","The lion {attacked} the impala.","C"],[139,"turnout","The parade had a big {turnout}.","C"],[140,"brilliant","She had a {brilliant} idea.","C"],[141,"gorgeous","The sunset was {gorgeous}.","C"],[142,"monsoon","The {monsoon} brought heavy rain.","C"],[143,"dangerous","Fire can be {dangerous}.","C"],[144,"formation","The birds flew in {formation}.","C"],[145,"especially","I like fruit, {especially} apples.","C"],[146,"journey","Our {journey} was long.","C"],[147,"swampy","The ground felt {swampy}.","C"],[148,"shimmer","The lake began to {shimmer}.","C"],[149,"studded","The sky was {studded} with stars.","C"],[150,"satin","The dress was made of {satin}.","C"]]},"g23":{"name":"2026 Fall G2–G3","words":[[1,"hesitate","She began to {hesitate} before giving her answer.","B"],[2,"scorcher","The hot sun felt like a {scorcher}.","B"],[3,"scavenger","A {scavenger} bird searched for leftover food.","B"],[4,"fragments","The plate broke into small {fragments}.","B"],[5,"deflated","The ball was {deflated} and could not bounce.","B"],[6,"unleash","The teacher told us to {unleash} our energy during recess.","B"],[7,"ration","We had to {ration} our water on the hike.","B"],[8,"cosmetics","She keeps her {cosmetics} in a small bag.","B"],[9,"frustration","This hard puzzle caused {frustration}.","B"],[10,"unruly","The class became {unruly} during the noisy activity.","B"],[11,"mascot","The school {mascot} waved to the crowd.","B"],[12,"aroma","The kitchen was filled with a delicious {aroma}.","B"],[13,"mustache","The man had a thick {mustache}.","B"],[14,"perfume","She wore {perfume} to the event.","B"],[15,"sinister","The movie had a {sinister} mood.","B"],[16,"tuxedo","He wore a {tuxedo} to the ceremony.","B"],[17,"discoveries","The students made new {discoveries} during science class.","B"],[18,"language","We use {language} to communicate with others.","B"],[19,"buffalo","A {buffalo} stood quietly in the field.","B"],[20,"gallop","The horse began to {gallop}.","B"],[21,"fabulous","The performance was {fabulous}.","B"],[22,"mysterious","The house looked {mysterious} at night.","B"],[23,"sardines","We ate {sardines} for lunch.","B"],[24,"rickety","The old chair was {rickety}.","B"],[25,"lilt","Her voice had a gentle {lilt}.","B"],[26,"beige","The walls were painted {beige}.","B"],[27,"grimace","She gave a {grimace} of pain.","B"],[28,"gaunt","The {gaunt} dog looked very thin.","B"],[29,"enormous","The building was {enormous}.","B"],[30,"geranium","A red {geranium} grew in the garden.","B"],[31,"shepherds","The {shepherds} watched over the sheep.","B"],[32,"volleyball","We played {volleyball} after school.","B"],[33,"jigsaw","The puzzle was a {jigsaw}.","B"],[34,"sandwich","I ate a {sandwich} for lunch.","B"],[35,"chicken","The {chicken} crossed the yard.","B"],[36,"clockwise","Turn the wheel {clockwise}.","B"],[37,"February","{February} is a short month.","B"],[38,"whistle","He blew a {whistle} loudly.","B"],[39,"journey","The {journey} took many hours.","B"],[40,"scribble","She began to {scribble} on the paper.","B"],[41,"hummingbird","A {hummingbird} flew by the window.","B"],[42,"pitcher","The {pitcher} threw the ball.","B"],[43,"nachos","We shared {nachos} at the table.","B"],[44,"pharmacy","The {pharmacy} filled the prescription.","B"],[45,"frail","The kitten looked {frail}.","B"],[46,"fireplace","The fire burned in the {fireplace}.","B"],[47,"whiskers","The cat cleaned its {whiskers}.","B"],[48,"leather","The bag was made of {leather}.","B"],[49,"squirrel","A {squirrel} ran up the tree.","B"],[50,"bungalow","They stayed in a small {bungalow}.","B"],[51,"character","She played a strong {character} in the play.","B"],[52,"lightning","{Lightning} flashed in the sky.","B"],[53,"receive","Please {receive} this letter.","B"],[54,"beaver","A {beaver} built a dam.","B"],[55,"vinegar","The salad had {vinegar} on it.","B"],[56,"drowsy","He felt {drowsy} after lunch.","B"],[57,"karate","She practiced {karate}.","B"],[58,"academy","The school is a learning {academy}.","B"],[59,"happiest","Today was her {happiest} day.","B"],[60,"pasta","We ate {pasta} for dinner.","B"],[61,"opera","The {opera} lasted three hours.","B"],[62,"strict","The teacher was very {strict}.","B"],[63,"dairy","We bought fresh {dairy} products.","B"],[64,"tuna","He ordered a {tuna} sandwich.","B"],[65,"safari","They went on a {safari}.","B"],[66,"apricot","She ate a ripe {apricot}.","B"],[67,"diligent","She was {diligent} with her homework.","B"],[68,"keyboard","He typed on the {keyboard}.","B"],[69,"generous","She was {generous} with her time.","B"],[70,"favorite","Chocolate is her {favorite} treat.","B"],[71,"giraffe","A {giraffe} has a long neck.","B"],[72,"sunglasses","He wore {sunglasses} outside.","B"],[73,"yacht","The {yacht} sailed away.","B"],[74,"barley","The field grew {barley}.","B"],[75,"chipmunk","A {chipmunk} gathered food.","B"],[76,"ceiling","The {ceiling} was high.","B"],[77,"castle","The {castle} stood on the hill.","B"],[78,"piano","She played the {piano}.","B"],[79,"raspberry","We picked fresh {raspberry}.","B"],[80,"finale","The show ended with a {finale}.","B"],[81,"macaroni","She ate {macaroni}.","B"],[82,"tornado","A {tornado} touched the ground.","B"],[83,"vanilla","The cake was flavored with {vanilla}.","B"],[84,"pecan","She ate a {pecan}.","B"],[85,"temperature","The {temperature} dropped overnight.","B"],[86,"obedient","She was {obedient} and listened carefully in class.","B"],[87,"Wednesday","{Wednesday} comes after Tuesday.","B"],[88,"promise","She made a {promise}.","B"],[89,"weigh","Please {weigh} the package.","B"],[90,"success","The team celebrated their {success}.","B"],[91,"nutrition","Good {nutrition} helps you grow.","B"],[92,"hamster","The {hamster} ran on its wheel.","B"],[93,"bagel","He toasted a {bagel}.","B"],[94,"pretzels","We shared {pretzels} together.","B"],[95,"bouquet","She received a {bouquet} of flowers.","B"],[96,"blizzard","A {blizzard} covered the town.","B"],[97,"iguana","An {iguana} rested on the rock.","B"],[98,"coyote","A {coyote} howled at night.","B"],[99,"chocolate","She ate a {chocolate} bar.","B"],[100,"toucan","A {toucan} sat on the branch.","B"],[101,"sketch","She made a quick {sketch}.","B"],[102,"microwave","The food heated in the {microwave}.","B"],[103,"accident","There was a small {accident}.","B"],[104,"goldfish","The {goldfish} swam in the bowl.","B"],[105,"anchor","The ship dropped an {anchor}.","B"],[106,"valuable","The painting was {valuable}.","B"],[107,"tourist","The {tourist} took photos.","B"],[108,"stairway","He climbed the {stairway}.","B"],[109,"relatives","She visited her {relatives}.","B"],[110,"seasons","There are four {seasons} in one year.","B"],[111,"restaurant","We ate at a {restaurant}.","B"],[112,"holiday","School is closed on a {holiday}.","B"],[113,"scream","She let out a {scream}.","B"],[114,"cough","He had a bad {cough}.","B"],[115,"barbecue","They cooked food on the {barbecue}.","B"],[116,"science","{Science} is my favorite subject.","B"],[117,"fountain","Water flowed from the {fountain}.","B"],[118,"tomorrow","We will go to the park {tomorrow}.","B"],[119,"igloo","An {igloo} is made of ice.","B"],[120,"nephew","Her {nephew} came to visit.","B"],[121,"earthworm","An {earthworm} lives in the soil.","B"],[122,"capture","They planned to {capture} the moment.","B"],[123,"postcard","She sent a {postcard} to her friend.","B"],[124,"drizzle","Light rain began to {drizzle}.","B"],[125,"reduce","Please {reduce} the noise.","B"],[126,"Canada","{Canada} is north of the United States.","B"],[127,"stretching","He was {stretching} before running.","B"],[128,"scamper","The rabbit began to {scamper} away.","B"],[129,"waffle","She ate a {waffle}.","B"],[130,"chimney","Smoke rose from the {chimney}.","B"],[131,"bargain","He found a good {bargain}.","B"],[132,"syrup","Pancakes taste good with {syrup}.","B"],[133,"sphere","The ball is a {sphere}.","B"],[134,"headache","She had a {headache}.","B"],[135,"artifacts","The museum displayed ancient {artifacts}.","C"],[136,"sequins","Her dress sparkled with {sequins}.","C"],[137,"jewelry","She wore silver {jewelry}.","C"],[138,"prairie","The farm was on the {prairie}.","C"],[139,"mosquitoes","{Mosquitoes} buzzed near the water.","C"],[140,"saxophone","The {saxophone} played a smooth tune.","C"],[141,"gondola","The boat moved through a {gondola}.","C"],[142,"mozzarella","The pizza had {mozzarella} cheese.","C"],[143,"khaki","He wore {khaki} pants.","C"],[144,"nautical","The {nautical} flag showed symbols used on ships.","C"],[145,"zucchini","We cooked {zucchini}.","C"],[146,"auditorium","The speech was held in the {auditorium}.","C"],[147,"windshield","The car had a cracked {windshield}.","C"],[148,"wristwatch","She checked the time on her {wristwatch}.","C"],[149,"rummaged","She {rummaged} through her bag to find her keys.","C"],[150,"porridge","We ate warm {porridge} for breakfast.","C"],[151,"crawdad","A {crawdad} moved slowly in the stream.","C"],[152,"prognosis","The doctor gave a {prognosis}.","C"],[153,"fluently","She spoke {fluently} in class.","C"],[154,"anguish","She cried in {anguish}.","C"],[155,"conical","The hat had a {conical} shape.","C"],[156,"pediatric","A {pediatric} doctor treats children.","C"],[157,"democracy","People vote to choose leaders in a {democracy}.","C"],[158,"ancestral","They honored their {ancestral} home.","C"],[159,"parable","The teacher told a {parable}.","C"],[160,"crocodile","A {crocodile} rested by the river.","C"],[161,"subtrahend","We solved the {subtrahend} problem.","C"],[162,"oyster","She ate a fresh {oyster}.","C"],[163,"thieves","The {thieves} escaped at night.","C"],[164,"reverent","He spoke in a {reverent} tone.","C"],[165,"scheme","The plan followed a clear {scheme}.","C"],[166,"moisture","The soil kept its {moisture}.","C"],[167,"penmanship","Neat writing shows good {penmanship}.","C"],[168,"zoology","{Zoology} studies animals.","C"],[169,"camouflage","The jacket used {camouflage} colors.","C"],[170,"except","Everyone came {except} him.","C"],[171,"cosmos","The stars filled the {cosmos}.","C"],[172,"catastrophe","The storm caused a {catastrophe}.","C"],[173,"earnest","She made an {earnest} promise.","C"],[174,"courteous","He gave a {courteous} reply.","C"],[175,"orange","She peeled an {orange}.","C"],[176,"gnat","A {gnat} flew by her face.","C"],[177,"allegiance","The flag showed {allegiance} to the country.","C"],[178,"antonym","Hot is the {antonym} of cold.","C"],[179,"tithe","The church asked for a {tithe}.","C"],[180,"adjective","An {adjective} describes a noun.","C"],[181,"threaten","The storm may {threaten} the coast.","C"],[182,"scramble","He tried to {scramble} up the hill.","C"],[183,"flattery","The compliment sounded like {flattery}.","C"],[184,"dishonor","He brought {dishonor} to himself when he lied.","C"],[185,"thorough","Be {thorough} when you check your work.","C"],[186,"arithmetic","We solved {arithmetic} problems in class.","C"],[187,"denominator","The {denominator} is the bottom number in fraction.","C"],[188,"vertebrate","A dog is a {vertebrate}.","C"],[189,"product","The factory makes a {product}.","C"],[190,"gnaw","The mouse began to {gnaw} the wood.","C"],[191,"splurge","He chose to {splurge} on the gift.","C"],[192,"whispered","She {whispered} a secret.","C"],[193,"draining","Water was {draining} from the sink.","C"],[194,"independence","The country gained {independence}.","C"],[195,"medieval","The book was set in {medieval} times.","C"],[196,"heritage","The house showed its {heritage}.","C"],[197,"opossum","An {opossum} climbed the fence.","C"],[198,"genuine","Her smile was {genuine}.","C"],[199,"ophthalmology","{Ophthalmology} treats eye health.","C"],[200,"hypocrisy","His words showed {hypocrisy}.","C"]]}};
+const LISTS={"g23":{"name":"2026 Fall G2–G3","words":[[1,"hesitate","She began to {hesitate} before giving her answer.","B"],[2,"scorcher","The hot sun felt like a {scorcher}.","B"],[3,"scavenger","A {scavenger} bird searched for leftover food.","B"],[4,"fragments","The plate broke into small {fragments}.","B"],[5,"deflated","The ball was {deflated} and could not bounce.","B"],[6,"unleash","The teacher told us to {unleash} our energy during recess.","B"],[7,"ration","We had to {ration} our water on the hike.","B"],[8,"cosmetics","She keeps her {cosmetics} in a small bag.","B"],[9,"frustration","This hard puzzle caused {frustration}.","B"],[10,"unruly","The class became {unruly} during the noisy activity.","B"],[11,"mascot","The school {mascot} waved to the crowd.","B"],[12,"aroma","The kitchen was filled with a delicious {aroma}.","B"],[13,"mustache","The man had a thick {mustache}.","B"],[14,"perfume","She wore {perfume} to the event.","B"],[15,"sinister","The movie had a {sinister} mood.","B"],[16,"tuxedo","He wore a {tuxedo} to the ceremony.","B"],[17,"discoveries","The students made new {discoveries} during science class.","B"],[18,"language","We use {language} to communicate with others.","B"],[19,"buffalo","A {buffalo} stood quietly in the field.","B"],[20,"gallop","The horse began to {gallop}.","B"],[21,"fabulous","The performance was {fabulous}.","B"],[22,"mysterious","The house looked {mysterious} at night.","B"],[23,"sardines","We ate {sardines} for lunch.","B"],[24,"rickety","The old chair was {rickety}.","B"],[25,"lilt","Her voice had a gentle {lilt}.","B"],[26,"beige","The walls were painted {beige}.","B"],[27,"grimace","She gave a {grimace} of pain.","B"],[28,"gaunt","The {gaunt} dog looked very thin.","B"],[29,"enormous","The building was {enormous}.","B"],[30,"geranium","A red {geranium} grew in the garden.","B"],[31,"shepherds","The {shepherds} watched over the sheep.","B"],[32,"volleyball","We played {volleyball} after school.","B"],[33,"jigsaw","The puzzle was a {jigsaw}.","B"],[34,"sandwich","I ate a {sandwich} for lunch.","B"],[35,"chicken","The {chicken} crossed the yard.","B"],[36,"clockwise","Turn the wheel {clockwise}.","B"],[37,"February","{February} is a short month.","B"],[38,"whistle","He blew a {whistle} loudly.","B"],[39,"journey","The {journey} took many hours.","B"],[40,"scribble","She began to {scribble} on the paper.","B"],[41,"hummingbird","A {hummingbird} flew by the window.","B"],[42,"pitcher","The {pitcher} threw the ball.","B"],[43,"nachos","We shared {nachos} at the table.","B"],[44,"pharmacy","The {pharmacy} filled the prescription.","B"],[45,"frail","The kitten looked {frail}.","B"],[46,"fireplace","The fire burned in the {fireplace}.","B"],[47,"whiskers","The cat cleaned its {whiskers}.","B"],[48,"leather","The bag was made of {leather}.","B"],[49,"squirrel","A {squirrel} ran up the tree.","B"],[50,"bungalow","They stayed in a small {bungalow}.","B"],[51,"character","She played a strong {character} in the play.","B"],[52,"lightning","{Lightning} flashed in the sky.","B"],[53,"receive","Please {receive} this letter.","B"],[54,"beaver","A {beaver} built a dam.","B"],[55,"vinegar","The salad had {vinegar} on it.","B"],[56,"drowsy","He felt {drowsy} after lunch.","B"],[57,"karate","She practiced {karate}.","B"],[58,"academy","The school is a learning {academy}.","B"],[59,"happiest","Today was her {happiest} day.","B"],[60,"pasta","We ate {pasta} for dinner.","B"],[61,"opera","The {opera} lasted three hours.","B"],[62,"strict","The teacher was very {strict}.","B"],[63,"dairy","We bought fresh {dairy} products.","B"],[64,"tuna","He ordered a {tuna} sandwich.","B"],[65,"safari","They went on a {safari}.","B"],[66,"apricot","She ate a ripe {apricot}.","B"],[67,"diligent","She was {diligent} with her homework.","B"],[68,"keyboard","He typed on the {keyboard}.","B"],[69,"generous","She was {generous} with her time.","B"],[70,"favorite","Chocolate is her {favorite} treat.","B"],[71,"giraffe","A {giraffe} has a long neck.","B"],[72,"sunglasses","He wore {sunglasses} outside.","B"],[73,"yacht","The {yacht} sailed away.","B"],[74,"barley","The field grew {barley}.","B"],[75,"chipmunk","A {chipmunk} gathered food.","B"],[76,"ceiling","The {ceiling} was high.","B"],[77,"castle","The {castle} stood on the hill.","B"],[78,"piano","She played the {piano}.","B"],[79,"raspberry","We picked fresh {raspberry}.","B"],[80,"finale","The show ended with a {finale}.","B"],[81,"macaroni","She ate {macaroni}.","B"],[82,"tornado","A {tornado} touched the ground.","B"],[83,"vanilla","The cake was flavored with {vanilla}.","B"],[84,"pecan","She ate a {pecan}.","B"],[85,"temperature","The {temperature} dropped overnight.","B"],[86,"obedient","She was {obedient} and listened carefully in class.","B"],[87,"Wednesday","{Wednesday} comes after Tuesday.","B"],[88,"promise","She made a {promise}.","B"],[89,"weigh","Please {weigh} the package.","B"],[90,"success","The team celebrated their {success}.","B"],[91,"nutrition","Good {nutrition} helps you grow.","B"],[92,"hamster","The {hamster} ran on its wheel.","B"],[93,"bagel","He toasted a {bagel}.","B"],[94,"pretzels","We shared {pretzels} together.","B"],[95,"bouquet","She received a {bouquet} of flowers.","B"],[96,"blizzard","A {blizzard} covered the town.","B"],[97,"iguana","An {iguana} rested on the rock.","B"],[98,"coyote","A {coyote} howled at night.","B"],[99,"chocolate","She ate a {chocolate} bar.","B"],[100,"toucan","A {toucan} sat on the branch.","B"],[101,"sketch","She made a quick {sketch}.","B"],[102,"microwave","The food heated in the {microwave}.","B"],[103,"accident","There was a small {accident}.","B"],[104,"goldfish","The {goldfish} swam in the bowl.","B"],[105,"anchor","The ship dropped an {anchor}.","B"],[106,"valuable","The painting was {valuable}.","B"],[107,"tourist","The {tourist} took photos.","B"],[108,"stairway","He climbed the {stairway}.","B"],[109,"relatives","She visited her {relatives}.","B"],[110,"seasons","There are four {seasons} in one year.","B"],[111,"restaurant","We ate at a {restaurant}.","B"],[112,"holiday","School is closed on a {holiday}.","B"],[113,"scream","She let out a {scream}.","B"],[114,"cough","He had a bad {cough}.","B"],[115,"barbecue","They cooked food on the {barbecue}.","B"],[116,"science","{Science} is my favorite subject.","B"],[117,"fountain","Water flowed from the {fountain}.","B"],[118,"tomorrow","We will go to the park {tomorrow}.","B"],[119,"igloo","An {igloo} is made of ice.","B"],[120,"nephew","Her {nephew} came to visit.","B"],[121,"earthworm","An {earthworm} lives in the soil.","B"],[122,"capture","They planned to {capture} the moment.","B"],[123,"postcard","She sent a {postcard} to her friend.","B"],[124,"drizzle","Light rain began to {drizzle}.","B"],[125,"reduce","Please {reduce} the noise.","B"],[126,"Canada","{Canada} is north of the United States.","B"],[127,"stretching","He was {stretching} before running.","B"],[128,"scamper","The rabbit began to {scamper} away.","B"],[129,"waffle","She ate a {waffle}.","B"],[130,"chimney","Smoke rose from the {chimney}.","B"],[131,"bargain","He found a good {bargain}.","B"],[132,"syrup","Pancakes taste good with {syrup}.","B"],[133,"sphere","The ball is a {sphere}.","B"],[134,"headache","She had a {headache}.","B"],[135,"artifacts","The museum displayed ancient {artifacts}.","C"],[136,"sequins","Her dress sparkled with {sequins}.","C"],[137,"jewelry","She wore silver {jewelry}.","C"],[138,"prairie","The farm was on the {prairie}.","C"],[139,"mosquitoes","{Mosquitoes} buzzed near the water.","C"],[140,"saxophone","The {saxophone} played a smooth tune.","C"],[141,"gondola","The boat moved through a {gondola}.","C"],[142,"mozzarella","The pizza had {mozzarella} cheese.","C"],[143,"khaki","He wore {khaki} pants.","C"],[144,"nautical","The {nautical} flag showed symbols used on ships.","C"],[145,"zucchini","We cooked {zucchini}.","C"],[146,"auditorium","The speech was held in the {auditorium}.","C"],[147,"windshield","The car had a cracked {windshield}.","C"],[148,"wristwatch","She checked the time on her {wristwatch}.","C"],[149,"rummaged","She {rummaged} through her bag to find her keys.","C"],[150,"porridge","We ate warm {porridge} for breakfast.","C"],[151,"crawdad","A {crawdad} moved slowly in the stream.","C"],[152,"prognosis","The doctor gave a {prognosis}.","C"],[153,"fluently","She spoke {fluently} in class.","C"],[154,"anguish","She cried in {anguish}.","C"],[155,"conical","The hat had a {conical} shape.","C"],[156,"pediatric","A {pediatric} doctor treats children.","C"],[157,"democracy","People vote to choose leaders in a {democracy}.","C"],[158,"ancestral","They honored their {ancestral} home.","C"],[159,"parable","The teacher told a {parable}.","C"],[160,"crocodile","A {crocodile} rested by the river.","C"],[161,"subtrahend","We solved the {subtrahend} problem.","C"],[162,"oyster","She ate a fresh {oyster}.","C"],[163,"thieves","The {thieves} escaped at night.","C"],[164,"reverent","He spoke in a {reverent} tone.","C"],[165,"scheme","The plan followed a clear {scheme}.","C"],[166,"moisture","The soil kept its {moisture}.","C"],[167,"penmanship","Neat writing shows good {penmanship}.","C"],[168,"zoology","{Zoology} studies animals.","C"],[169,"camouflage","The jacket used {camouflage} colors.","C"],[170,"except","Everyone came {except} him.","C"],[171,"cosmos","The stars filled the {cosmos}.","C"],[172,"catastrophe","The storm caused a {catastrophe}.","C"],[173,"earnest","She made an {earnest} promise.","C"],[174,"courteous","He gave a {courteous} reply.","C"],[175,"orange","She peeled an {orange}.","C"],[176,"gnat","A {gnat} flew by her face.","C"],[177,"allegiance","The flag showed {allegiance} to the country.","C"],[178,"antonym","Hot is the {antonym} of cold.","C"],[179,"tithe","The church asked for a {tithe}.","C"],[180,"adjective","An {adjective} describes a noun.","C"],[181,"threaten","The storm may {threaten} the coast.","C"],[182,"scramble","He tried to {scramble} up the hill.","C"],[183,"flattery","The compliment sounded like {flattery}.","C"],[184,"dishonor","He brought {dishonor} to himself when he lied.","C"],[185,"thorough","Be {thorough} when you check your work.","C"],[186,"arithmetic","We solved {arithmetic} problems in class.","C"],[187,"denominator","The {denominator} is the bottom number in fraction.","C"],[188,"vertebrate","A dog is a {vertebrate}.","C"],[189,"product","The factory makes a {product}.","C"],[190,"gnaw","The mouse began to {gnaw} the wood.","C"],[191,"splurge","He chose to {splurge} on the gift.","C"],[192,"whispered","She {whispered} a secret.","C"],[193,"draining","Water was {draining} from the sink.","C"],[194,"independence","The country gained {independence}.","C"],[195,"medieval","The book was set in {medieval} times.","C"],[196,"heritage","The house showed its {heritage}.","C"],[197,"opossum","An {opossum} climbed the fence.","C"],[198,"genuine","Her smile was {genuine}.","C"],[199,"ophthalmology","{Ophthalmology} treats eye health.","C"],[200,"hypocrisy","His words showed {hypocrisy}.","C"]]},"g45":{"name":"2026 Fall G4–G5","words":[[1,"arena","The game is in the sports {arena}.","B"],[2,"balmy","It is a {balmy} spring day.","B"],[3,"lilac","The {lilac} flowers smell sweet.","B"],[4,"peony","The {peony} has soft pink petals.","B"],[5,"polka","She danced the {polka}.","B"],[6,"tenor","His singing voice is {tenor}.","B"],[7,"agenda","The meeting has an {agenda}.","B"],[8,"alcove","She sat in a quiet {alcove}.","B"],[9,"avenue","They walked down the {avenue}.","B"],[10,"ballot","I filled out a {ballot}.","B"],[11,"canary","The yellow {canary} sang.","B"],[12,"cashew","I ate a crunchy {cashew}.","B"],[13,"chorus","The class sang in {chorus}.","B"],[14,"cursor","Move the {cursor} on the screen.","B"],[15,"decade","A {decade} is ten years.","B"],[16,"diesel","The bus runs on {diesel}.","B"],[17,"faucet","Turn off the {faucet}.","B"],[18,"fickle","He is {fickle} and changes his mind often.","B"],[19,"grieve","We {grieve} when someone we love dies.","B"],[20,"heifer","A {heifer} is a young cow.","B"],[21,"jaguar","A {jaguar} lives in the jungle.","B"],[22,"lawyer","The {lawyer} speaks for people in court.","B"],[23,"mosaic","She made a {mosaic} with small tiles.","B"],[24,"muscle","Exercise builds {muscle}.","B"],[25,"museum","The {museum} teaches us about history.","B"],[26,"muslin","The dress is made of {muslin}.","B"],[27,"oxygen","We breathe {oxygen}.","B"],[28,"pundit","The sports {pundit} predicted the winner.","B"],[29,"sequin","Her dress has shiny {sequins}.","B"],[30,"skiing","He enjoys {skiing}.","B"],[31,"sleigh","Santa rides a {sleigh}.","B"],[32,"starry","We sat under a {starry} night.","B"],[33,"tongue","Taste is on the {tongue}.","B"],[34,"vacuum","Please {vacuum} the floor.","B"],[35,"wholly","I am {wholly} ready for the spelling bee.","B"],[36,"admiral","The {admiral} commands the ships.","B"],[37,"ancient","The temple is {ancient}.","B"],[38,"aquatic","A dolphin is an {aquatic} animal.","B"],[39,"athlete","The {athlete} runs fast.","B"],[40,"awkward","The dance felt {awkward}.","B"],[41,"burglar","The {burglar} ran away.","B"],[42,"calorie","An apple has few {calories}.","B"],[43,"cashier","The {cashier} gave change.","B"],[44,"century","A {century} is one hundred years.","B"],[45,"collage","She made a {collage}.","B"],[46,"combine","A {combine} harvests crops.","B"],[47,"crucial","It is {crucial} to study.","B"],[48,"cyclone","A {cyclone} hit the coast.","B"],[49,"cymbals","The drummer hit the {cymbals}.","B"],[50,"fatigue","He felt {fatigue} after running.","B"],[51,"finesse","She solved the puzzle with {finesse}.","B"],[52,"foreign","English is a {foreign} language to him.","B"],[53,"gingham","She wore a {gingham} shirt.","B"],[54,"glacier","A {glacier} moves slowly.","B"],[55,"gourmet","We ate a {gourmet} meal.","B"],[56,"hydrant","Firefighters used the {hydrant} to stop the fire.","B"],[57,"leisure","I read books in my {leisure} time.","B"],[58,"leopard","A {leopard} runs very fast.","B"],[59,"license","He has a driver’s {license}.","B"],[60,"mammoth","A {mammoth} lived during the Ice Age.","B"],[61,"measure","Please {measure} the table.","B"],[62,"monsoon","Heavy rain comes in {monsoon} season.","B"],[63,"mystery","The old house was full of {mystery}.","B"],[64,"nominee","She is a {nominee} for president.","B"],[65,"orchard","Children picked apples in the {orchard}.","B"],[66,"ostrich","An {ostrich} cannot fly.","B"],[67,"paprika","The chef used {paprika} in the sauce.","B"],[68,"plateau","The hikers reached a high {plateau}.","B"],[69,"plumber","The {plumber} fixed the sink.","B"],[70,"poultry","The farm raises {poultry}.","B"],[71,"pyramid","We saw a {pyramid} in Egypt.","B"],[72,"quarrel","The two boys had a {quarrel} over a toy.","B"],[73,"quartet","A {quartet} played music.","B"],[74,"royalty","The king is {royalty}.","B"],[75,"snorkel","He used a {snorkel} to swim.","B"],[76,"soprano","She sings {soprano}.","B"],[77,"squeaky","The door is {squeaky}.","B"],[78,"symptom","A cough is a {symptom}.","B"],[79,"tragedy","The fire was a {tragedy} for the town.","B"],[80,"typical","A {typical} school day starts at 9 a.m.","B"],[81,"welfare","The shelter cares for animal {welfare}.","B"],[82,"zealous","She is {zealous} about learning new words.","B"],[83,"canoeing","They went {canoeing} on the lake.","B"],[84,"cockatoo","The {cockatoo} is a white bird.","B"],[85,"colossal","The statue is {colossal}.","B"],[86,"daffodil","A {daffodil} is a yellow flower.","B"],[87,"designer","She is a fashion {designer}.","B"],[88,"diplomat","The {diplomat} visited another country.","B"],[89,"dissolve","Sugar will {dissolve} in hot water.","B"],[90,"ensemble","The band played as an {ensemble}.","B"],[91,"exercise","{Exercise} keeps our body healthy.","B"],[92,"feathery","The bird has {feathery} wings.","B"],[93,"frequent","I make {frequent} trips to the store.","B"],[94,"gigantic","The elephant is {gigantic}.","B"],[95,"gorgeous","The sunset is {gorgeous}.","B"],[96,"governor","The {governor} gave a speech.","B"],[97,"magnolia","The {magnolia} tree is tall.","B"],[98,"majestic","The mountain looks {majestic}.","B"],[99,"manicure","Her hands looked neat after the {manicure}.","B"],[100,"musician","He is a talented {musician}.","B"],[101,"neighbor","My {neighbor} is very kind.","B"],[102,"parallel","The lines are {parallel}.","B"],[103,"reliable","The {reliable} bus arrives every morning.","B"],[104,"souvenir","The shop sells {souvenirs} for tourists.","B"],[105,"splendor","The palace is full of {splendor}.","B"],[106,"surveyor","The {surveyor} measured the land.","B"],[107,"appetite","I have a big {appetite}.","B"],[108,"applause","The show ended with {applause}.","B"],[109,"blustery","It is a {blustery} day with strong wind.","B"],[110,"circular","The plate is {circular}.","B"],[111,"frontier","Pioneers crossed the {frontier}.","B"],[112,"furlough","The soldier went home on {furlough}.","B"],[113,"humility","{Humility} means being kind and not proud.","B"],[114,"integers","{Integers} include positive and negative whole numbers.","B"],[115,"judgment","His {judgment} helped the team make a smart decision.","B"],[116,"mosquito","A {mosquito} buzzed around my ear.","B"],[117,"scissors","He cut the ribbon with {scissors}.","B"],[118,"shrapnel","{Shrapnel} flew into the air after the explosion.","B"],[119,"syllable","Banana has three {syllables}.","B"],[120,"symphony","We heard a beautiful {symphony}.","B"],[121,"hoax","The monster story was a {hoax}.","C"],[122,"chary","Be {chary} of strangers.","C"],[123,"gauge","Use a {gauge} to check the air in the tire.","C"],[124,"rhyme","Cat and hat {rhyme}.","C"],[125,"salve","The nurse put {salve} on the cut.","C"],[126,"arctic","The {arctic} is very cold.","C"],[127,"asthma","She uses an inhaler for {asthma}.","C"],[128,"arsenal","The army stored weapons in the {arsenal}.","C"],[129,"aspirin","He took an {aspirin}.","C"],[130,"awfully","It is {awfully} hot today.","C"],[131,"dearth","There is a {dearth} of rain.","C"],[132,"debris","{Debris} covered the road.","C"],[133,"deceit","Lying is an act of {deceit}.","C"],[134,"echoes","His voice {echoes} in the cave.","C"],[135,"elixir","The {elixir} healed the hero.","C"],[136,"rhythm","The song has a strong {rhythm}.","C"],[137,"simile","“As busy as a bee” is a {simile}.","C"],[138,"apostle","The {apostle} followed his teacher.","C"],[139,"appoint","They will {appoint} a leader.","C"],[140,"amendment","The school made an {amendment} to the rule.","C"],[141,"amusement","The park is full of {amusement}.","C"],[142,"archangel","The story mentions an {archangel}.","C"],[143,"ascension","The climber’s {ascension} took many hours.","C"],[144,"astronaut","The {astronaut} traveled to space.","C"],[145,"atonement","He made {atonement} for his mistake.","C"],[146,"autograph","The fan wanted an {autograph}.","C"],[147,"badminton","We played {badminton}.","C"],[148,"candidate","She is a {candidate} for class president.","C"],[149,"committee","The {committee} planned the event.","C"],[150,"conceited","He is {conceited} and talks about himself.","C"],[151,"concourse","We met in the airport {concourse}.","C"],[152,"corrosive","Acid is {corrosive}.","C"],[153,"croissant","She bought a {croissant} at the bakery.","C"],[154,"croquette","She ate a potato {croquette}.","C"],[155,"dandelion","A {dandelion} grows in fields.","C"],[156,"diagnoses","The doctor made two {diagnoses}.","C"],[157,"emotional","The movie was {emotional}.","C"],[158,"excessive","Eating candy in {excessive} amounts is unhealthy.","C"],[159,"fascinate","Dinosaurs {fascinate} children.","C"],[160,"forgotten","The {forgotten} keys were in the bag.","C"],[161,"gymnasium","We play basketball in the {gymnasium}.","C"],[162,"haversack","The traveler wore a {haversack} on his back.","C"],[163,"identical","The twins look {identical}.","C"],[164,"imaginary","She drew an {imaginary} animal.","C"],[165,"impartial","A judge must be {impartial}.","C"],[166,"increment","Each step is a small {increment} forward.","C"],[167,"interrupt","He tried to {interrupt} the conversation.","C"],[168,"invisible","The air is {invisible}.","C"],[169,"irregular","The shape of the rock is {irregular}.","C"],[170,"knowledge","Reading builds {knowledge}.","C"],[171,"legendary","The {legendary} hero saved the village.","C"],[172,"librarian","The {librarian} helped me find a book about animals.","C"],[173,"maelstrom","The boat was caught in a {maelstrom}.","C"],[174,"mesmerize","The magic show will {mesmerize} you.","C"],[175,"mistletoe","We hung {mistletoe} at Christmas.","C"],[176,"necessary","Water is {necessary} for life.","C"],[177,"ninetieth","Today is his {ninetieth} birthday.","C"],[178,"obedience","The dog showed {obedience} by sitting when told.","C"],[179,"peninsula","Korea is a {peninsula}.","C"],[180,"pepperoni","The pizza has {pepperoni}.","C"],[181,"personnel","Only authorized {personnel} may enter the room.","C"],[182,"physician","The {physician} saw the patient.","C"],[183,"pneumonia","He stayed home with {pneumonia}.","C"],[184,"poisonous","That snake is {poisonous}.","C"],[185,"predicate","The {predicate} tells about the subject.","C"],[186,"privilege","Going on the school trip is a {privilege}.","C"],[187,"professor","The {professor} teaches science at the university.","C"],[188,"prosecute","The lawyer will {prosecute} the case.","C"],[189,"rehearsal","The choir met in the music room for {rehearsal}.","C"],[190,"religious","He follows {religious} traditions.","C"],[191,"satellite","A {satellite} orbits Earth.","C"],[192,"scientist","The {scientist} mixed liquids carefully.","C"],[193,"signature","Please write your {signature}.","C"],[194,"spaghetti","We had {spaghetti} for dinner.","C"],[195,"tantalize","The smell of food can {tantalize} us.","C"],[196,"technique","She learned a new {technique}.","C"],[197,"threshold","He stepped over the {threshold} of his house.","C"],[198,"unanimous","The vote was {unanimous}.","C"],[199,"vegetable","Carrots are a {vegetable}.","C"],[200,"ventilate","Open the window to {ventilate} the room.","C"],[201,"volcanoes","{Volcanoes} can erupt.","C"],[202,"volunteer","I will {volunteer} to help.","C"],[203,"worrisome","His cough is {worrisome}.","C"],[204,"amphibious","A frog is {amphibious}.","C"],[205,"apostrophe","The teacher explained how to use an {apostrophe}.","C"],[206,"appreciate","I {appreciate} your help.","C"],[207,"believable","Her story was {believable}.","C"],[208,"binoculars","I used {binoculars} to see birds.","C"],[209,"chandelier","A {chandelier} hangs from the ceiling.","C"],[210,"chronology","The book shows the {chronology} of events.","C"],[211,"clementine","I peeled a {clementine}.","C"],[212,"confidence","She spoke with {confidence}.","C"],[213,"controlled","The class was well {controlled}.","C"],[214,"definition","Look up the {definition} in the dictionary.","C"],[215,"despondent","He felt {despondent} after losing.","C"],[216,"discipline","{Discipline} means following rules.","C"],[217,"earthquake","The {earthquake} shook the city.","C"],[218,"emphasized","The teacher {emphasized} kindness.","C"],[219,"equivalent","Ten cents is {equivalent} to one dime.","C"],[220,"excitement","The game filled us with {excitement}.","C"],[221,"fertilizer","Farmers use {fertilizer}.","C"],[222,"helicopter","A {helicopter} flew overhead.","C"],[223,"hemisphere","Earth has a northern {hemisphere}.","C"],[224,"inaugurate","They will {inaugurate} the new president tomorrow.","C"],[225,"infinitely","The universe is {infinitely} big.","C"],[226,"interstate","We drove on the {interstate} to another city.","C"],[227,"laboratory","The scientist worked late in the {laboratory}.","C"],[228,"lieutenant","The {lieutenant} gave orders.","C"],[229,"loveliness","The painting captured the {loveliness} of nature.","C"],[230,"manuscript","The old {manuscript} was kept in a library.","C"],[231,"mayonnaise","I added {mayonnaise} to the sandwich.","C"],[232,"miraculous","The recovery was {miraculous}.","C"],[233,"missionary","The {missionary} helped the village.","C"],[234,"monotonous","The robot talked in a {monotonous} tone.","C"],[235,"noticeable","His new haircut is {noticeable}.","C"],[236,"optimistic","He is {optimistic} about the future.","C"],[237,"outrageous","His price was {outrageous}.","C"],[238,"parliament","The {parliament} passed a law.","C"],[239,"phenomenon","A rainbow is a natural {phenomenon}.","C"],[240,"playwright","Shakespeare was a {playwright}.","C"],[241,"relinquish","The king decided to {relinquish} his crown.","C"],[242,"rendezvous","The spies planned a secret {rendezvous} at midnight.","C"],[243,"repetition","{Repetition} helps students remember new words.","C"],[244,"rhinoceros","A {rhinoceros} has a horn.","C"],[245,"technician","The {technician} fixed the computer.","C"],[246,"throughout","It rained {throughout} the day.","C"],[247,"accommodate","The hotel can {accommodate} guests.","C"],[248,"colonel","The {colonel} led the soldiers.","C"],[249,"epaulet","The uniform had a gold {epaulet}.","C"],[250,"embargo","No ships could enter because of an {embargo}.","C"]]}};
 
 /* ---------- 오프라인 ----------
    화면을 기기에 저장해 두면 인터넷 없이도 열린다.
@@ -1457,8 +1462,8 @@ addEventListener('offline', paintNet);
 
 /* ---------- data model ---------- */
 const PROFILES={
-  yujin:  {name:'유진', grade:'3학년', list:'g23',    sections:['B','C']},
-  yuhyeok:{name:'유혁', grade:'1학년', list:'g1'   , sections:['B','C']}
+  yujin:  {name:'유진', grade:'4학년', list:'g45',    sections:['B','C']},
+  yuhyeok:{name:'유혁', grade:'2학년', list:'g23'   , sections:['B','C']}
 };
 const listOf = id => LISTS[PROFILES[id].list];
 // 목록이 바뀌었는지 보는 표. 이름만 보면 같은 g23이라도 학기가 바뀌어
@@ -1471,8 +1476,7 @@ function listTag(id){
   return PROFILES[id].list+':'+L.words.length+':'+(h>>>0).toString(36);
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
-const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='day';
+let pid=null, S=null, sec='week';
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -1499,6 +1503,7 @@ function blank(){return {
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
   sbDone:{}, sbPick:{}, earned:[],  // 대회 묶음: 통과한 단어 / 고른 친구 / 다 키운 친구
   coinFix:[],                  // 부모가 코인을 맞춘 기록 [바뀐 양, 시각, 기기]
+  stage:null,                  // 주간 3단어: {g:이번 주 묶음, wk:주차, v:보고 있는 묶음}
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -1562,32 +1567,47 @@ function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.in
    부모가 매주 넣는 단어 퀴즈와는 상관없다. 이건 대회 단어 쪽이다.
    시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
    지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
-/* ---------- 하루치 계획 ----------
-   대회가 가까워 주 단위를 하루 단위로 바꿨다.
-   9월 21일부터 유진이는 하루 40개, 유혁이는 30개씩 번호 순서대로 본다.
-   목록 끝까지 가면 처음으로 돌아가 다시 돈다. */
-const DAY_FROM='2026-09-21';
-const PER_DAY={yujin:40, yuhyeok:30};
+/* ---------- 주간 3단어 ----------
+   한 주에 3개씩 번호 순서대로 외운다. 날짜로 밀지 않는다.
+   주가 바뀔 때 그 주 3개를 다 외웠으면(시험에서 한 번 이상 맞힘) 다음 3개로,
+   못 외웠으면 다음 주에도 같은 3개가 나온다.
+   아이는 ← → 로 지난 주·다음 주 단어를 직접 볼 수 있다. 이건 보는 자리(v)만 옮기고
+   '이번 주'(g)는 그대로 둔다. 새 주가 되면 보는 자리는 이번 주로 돌아온다. */
+const PER_WEEK=3;
 /* 오늘 날짜. today() 는 UTC 라 한국에서는 새벽에 어제 날짜가 나온다.
-   하루치 단어는 자정에 바뀌어야 하므로 이 기기 시간으로 따로 구한다. */
+   멈춘 자리는 자정에 처음으로 돌아가야 하므로 이 기기 시간으로 따로 구한다. */
 function localDay(d){
   d=d||new Date();
   const z=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
 }
-function planFor(key){
-  const all=myWords(), n=all.length;
-  const per=Math.min(PER_DAY[pid]||30, n||1);
-  if(!n) return {k:key, words:[], day:1};
-  const a=new Date(DAY_FROM+'T00:00:00'), d=new Date(key+'T00:00:00');
-  const i=Math.max(0, Math.round((d-a)/864e5));
-  const start=(i*per)%n, words=[];
-  for(let j=0;j<per;j++) words.push(all[(start+j)%n]);
-  return {k:key, words:words, day:i+1};
+function groupCount(){ return Math.max(1, Math.ceil(myWords().length/PER_WEEK)) }
+function groupWords(g){ return myWords().slice(g*PER_WEEK, g*PER_WEEK+PER_WEEK) }
+function wordLearned(n){ const s=S.w[n]; return !!s && (s.st==='pass'||s.st==='master') }
+function groupLearned(g){ const w=groupWords(g); return w.length>0 && w.every(x=>wordLearned(x[0])) }
+function weekStage(){
+  if(!S.stage || typeof S.stage!=='object') S.stage={g:0, wk:null, v:0};
+  const st=S.stage, wk=weekKey(), last=groupCount()-1;
+  if(st.wk!==wk){
+    // 여러 주를 쉬었어도 다 외운 묶음은 모두 지나가고, 못 외운 곳에서 멈춘다.
+    if(st.wk) while(st.g<last && groupLearned(st.g)) st.g++;
+    st.wk=wk; st.v=st.g; save();
+  }
+  if(st.g>last) st.g=last;
+  if(typeof st.v!=='number' || st.v<0 || st.v>last) st.v=st.g;
+  return st;
 }
-function planNow(){ return planFor(localDay()) }
-/* 번호를 이어지는 구간으로 묶어 적는다. 한 바퀴 돌아 181~200, 1~20 처럼
-   끊길 수 있어서, 처음과 끝만 찍으면 181~20번 같은 이상한 말이 된다. */
+function curG(){ return weekStage().v }
+function moveG(n){
+  const st=weekStage(), last=groupCount()-1;
+  st.v = n===0 ? st.g : Math.max(0, Math.min(last, st.v+n));
+  save();
+}
+function groupTag(g){
+  const b=weekStage().g;
+  return g===b ? '이번 주' : g===b-1 ? '지난 주' : g===b+1 ? '다음 주' : (g+1)+'주차';
+}
+/* 번호를 이어지는 구간으로 묶어 적는다. */
 function rangeText(words){
   if(!words.length) return '';
   const out=[]; let a=words[0][0], prev=a;
@@ -1600,9 +1620,21 @@ function rangeText(words){
   return out.join(', ')+'번';
 }
 function planLabel(){
-  const p=planNow();
-  if(!p.words.length) return '단어가 없어요';
-  return p.day+'일차 · '+p.words.length+'개 · '+rangeText(p.words);
+  const g=curG(), w=groupWords(g);
+  if(!w.length) return '단어가 없어요';
+  return groupTag(g)+' · '+rangeText(w);
+}
+/* 지난 주 / 다음 주 단추. fn 은 다시 그릴 화면 함수 이름. */
+function weekNavHTML(fn){
+  if(sec!=='week') return '';
+  const st=weekStage(), g=st.v, last=groupCount()-1;
+  const done=groupWords(g).filter(w=>wordLearned(w[0])).length;
+  return '<div class="wknav">'+
+    '<button class="btn" '+(g<=0?'disabled':'')+' onclick="moveG(-1);'+fn+'()">← 지난 주</button>'+
+    '<span class="wknav-l"><b>'+planLabel()+'</b><small>'+done+'/'+groupWords(g).length+' 외웠어</small></span>'+
+    '<button class="btn" '+(g>=last?'disabled':'')+' onclick="moveG(1);'+fn+'()">다음 주 →</button>'+
+    (g!==st.g ? '<button class="btn ghost" onclick="moveG(0);'+fn+'()">이번 주로</button>' : '')+
+  '</div>';
 }
 
 /* ---------- 대회 친구 ----------
@@ -1610,20 +1642,20 @@ function planLabel(){
    시험에서 통과한 단어만 센다. 연습으로는 자라지 않는다.
    묶음은 주차에 매여 있다. 그래야 마지막 점검 주에 앞서 통과해 둔 단어로
    친구들이 시작부터 다 커 있지 않고, 다시 한 번 통과해야 자란다. */
-const SB_CHAP=10;
-function chaptersOf(pw){
-  const out=[];
-  for(let i=0;i<pw.words.length;i+=SB_CHAP)
-    out.push({cid:pw.k+'#'+(i/SB_CHAP), n:i/SB_CHAP+1, week:pw.k,
-              words:pw.words.slice(i,i+SB_CHAP)});
-  return out;
+const SB_CHAP=PER_WEEK;
+/* 묶음 = 한 주 3단어. 묶음마다 친구 한 마리. cid 는 'g0', 'g1' ... */
+function chapterOf(g){
+  const w=groupWords(g);
+  return w.length ? {cid:'g'+g, n:g+1, words:w} : null;
 }
 function chapterByCid(cid){
-  const k=String(cid).split('#')[0];
-  // 예전에는 앞머리가 주차(2026-W38)였다. 그때 묶음은 되살리지 않는다.
-  // 그때 다 키운 친구는 earned 에 따로 적혀 있어 도감에서 사라지지 않는다.
-  if(k.length!==10 || k[4]!=='-' || k[7]!=='-') return null;
-  return chaptersOf(planFor(k)).find(c=>c.cid===cid) || null;
+  // 예전 날짜·주차 묶음은 되살리지 않는다. 그때 다 키운 친구는 earned 에 남아 있다.
+  const m=/^g(\d+)$/.exec(String(cid));
+  return m ? chapterOf(+m[1]) : null;
+}
+function chapterOfWord(n){
+  const i=myWords().findIndex(w=>w[0]===n);
+  return i<0 ? null : chapterOf(Math.floor(i/PER_WEEK));
 }
 function sbMark(cid){ S.sbDone=S.sbDone||{}; return S.sbDone[cid]||(S.sbDone[cid]={}) }
 /* 다 키운 친구는 그 순간에 따로 적어 둔다.
@@ -1644,29 +1676,20 @@ function sbEarnCatchUp(){
 function sbGot(ch){ const d=(S.sbDone||{})[ch.cid]||{}; return ch.words.filter(w=>d[w[0]]).length }
 function sbRatio(ch){ return ch.words.length ? sbGot(ch)/ch.words.length : 0 }
 function sbPet(cid){ return ((S&&S.sbPick)||{})[cid]||null }
-/* 지금 키우는 묶음 = 이번 주에서 아직 안 끝났거나 친구를 안 고른 첫 묶음.
-   친구를 안 고른 채 다 채운 묶음도 잡아준다. 안 그러면 그 친구가 사라진다. */
-function sbCur(){
-  const chs=chaptersOf(planNow());
-  return chs.find(c=>sbRatio(c)<1 || !sbPet(c.cid)) || chs[chs.length-1] || null;
-}
-function sbLabel(ch){
-  return planLabel().split(' · ')[0]+' · 묶음 '+ch.n+'/'+chaptersOf(planNow()).length;
-}
+/* 지금 키우는 묶음 = 보고 있는 주의 3단어. */
+function sbCur(){ return chapterOf(curG()) }
+function sbLabel(ch){ return groupTag(ch.n-1)+' · '+rangeText(ch.words) }
 
-/* 기본은 '이번 묶음'. 지금 키우는 친구의 10단어만 나온다.
-   주 전체(40~80개)에서 뽑으면 네댓 마리가 조금씩만 자라서
-   시험을 아무리 봐도 아무도 다 크지 않는다. */
 function poolWords(){
-  if(sec==='day') return planNow().words;
+  if(sec==='week') return groupWords(curG());
   const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec);
 }
 function poolLabel(){
-  return sec==='day' ? planLabel() : poolWords().length+'개';
+  return sec==='week' ? planLabel() : poolWords().length+'개';
 }
-const SEGS=[['day','오늘'],['all','전체'],['B','Basic'],['C','Challenging']];
+const SEGS=[['week','주간 3단어'],['all','전체'],['B','Basic'],['C','Challenging']];
 function segHTML(fn){
-  return SEGS.filter(x=>['day','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
+  return SEGS.filter(x=>['week','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
     .map(x=>`<button class="${sec===x[0]?'on':''}" onclick="sec='${x[0]}';${fn}()">${x[1]}</button>`)
     .join('');
 }
@@ -1812,11 +1835,12 @@ async function gateIn(){
 }
 
 function pickProfile(id){
-  pid=id; S=load(id); sec='day';
+  pid=id; S=load(id); sec='week';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=listTag(id);
-  if(S.list!==want){ S.w={}; S.list=want; save(); }
+  // 새 목록이면 주간 3단어도 1번부터, 묶음 친구 기록도 새로. 다 키운 친구(earned)와 코인은 남는다.
+  if(S.list!==want){ S.w={}; S.stage=null; S.sbDone={}; S.sbPick={}; S.cursor=null; S.list=want; save(); }
   go('s-home');
 }
 
@@ -1998,13 +2022,11 @@ function renderHome(){
   document.getElementById('who').textContent=P.name;
   document.getElementById('coin').textContent=coins();
   document.getElementById('listchip').textContent=listOf(pid).name;
-  const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
-  document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),coin:0};
   document.getElementById('capxp').textContent=S.day.coin;
-  const chs=chaptersOf(planNow()), grown=chs.filter(c=>sbRatio(c)>=1).length;
+  const gw=groupWords(curG()), gl=gw.filter(w=>wordLearned(w[0])).length;
   document.getElementById('home-plan').textContent =
-    planLabel()+' · 친구 '+grown+'/'+chs.length+'마리';
+    planLabel()+' · '+gl+'/'+gw.length+' 외웠어';
   const ch=sbCur(), sa=ch?animal(sbPet(ch.cid)):null, sr=ch?sbRatio(ch):0;
   document.getElementById('sbpet').innerHTML=petHTML(ch?sbPet(ch.cid):null, sr);
   document.getElementById('sbpet-name').textContent =
@@ -2012,7 +2034,7 @@ function renderHome(){
         : sa.n+' · '+STAGE_NAME[stageOfRatio(sr)];
   document.getElementById('sbpet-next').textContent =
     !ch ? '' : !sa ? sbLabel(ch)+' · 친구를 고르면 시작해요'
-    : sr>=1 ? (grown===chs.length ? '이번 주 친구를 다 키웠어요!' : '다 컸어요! 다음 묶음으로 넘어가요')
+    : sr>=1 ? '다 컸어요! 다음 주 단어로 넘어가요'
     : sbLabel(ch)+' · 시험에서 '+(ch.words.length-sbGot(ch))+'개 더 통과하면 다 커요';
   document.getElementById('sbpet-pick').textContent = sa ? '친구 바꾸기' : '친구 고르기';
   document.getElementById('sbpet-pick').style.display = ch ? '' : 'none';
@@ -2129,6 +2151,7 @@ function renderProfNote(){
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
 function renderPick(){
   document.getElementById('secseg').innerHTML=segHTML('renderPick');
+  document.getElementById('pnav').innerHTML=weekNavHTML('renderPick');
   const pt=cursor().p, plist=roundWords(pt);
   document.getElementById('pickcount').textContent =
     poolLabel() + (pt.round && plist.length ? ' · 틀린 단어 '+plist.length+'개 다시' : '');
@@ -2146,8 +2169,8 @@ function quitPlay(){clearInterval(revealThenHide._t);speechSynthesis.cancel();go
    자리는 이 기기에만 둔다. 기기마다 진도가 다른 게 자연스럽다. */
 function track(){ return {at:0, round:0, list:null, wrong:[]} }
 function cursor(){
-  const d=localDay();
-  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec) S.cursor={d:d, sec:sec};
+  const d=localDay(), g=curG();
+  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec || S.cursor.g!==g) S.cursor={d:d, sec:sec, g:g};
   // 예전에는 자리를 숫자 하나로만 두었다. 새 모양으로 옮긴다.
   ['p','t'].forEach(k=>{ if(!S.cursor[k] || typeof S.cursor[k]!=='object'){
     const at=+S.cursor[k]||0; S.cursor[k]=track(); S.cursor[k].at=at; } });
@@ -2324,10 +2347,11 @@ function testSlice(){
   if(!list.length) return {from:0, words:[], round:0, total:0};
   const from=t.at;
   return {from:from, round:t.round||0, total:list.length,
-          words:list.slice(from, from + Math.min(list.length-from, PER_DAY[pid]||30))};
+          words:list.slice(from, from + Math.min(list.length-from, PER_WEEK))};
 }
 function renderSetup(){
   document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
+  document.getElementById('tnav').innerHTML=weekNavHTML('renderSetup');
   document.getElementById('tpickcount').textContent=poolLabel()+' 중에서';
   const sl=testSlice(), pool=poolWords();
   document.getElementById('t-plan').innerHTML = !sl.words.length
@@ -2335,7 +2359,7 @@ function renderSetup(){
     : (sl.round ? '<b>틀린 단어 다시 보기</b> — ' : '') +
       '이번에 <b>' + rangeText(sl.words) + ' ' + sl.words.length + '개</b>를 봐요.' +
       (sl.from ? ' (' + sl.total + '개 중 ' + sl.from + '개 했어요)' :
-       sl.round ? '' : pool.length>sl.words.length ? '' : ' 오늘 몫 전부예요.');
+       sl.round ? '' : pool.length>sl.words.length ? '' : ' 이 주 단어 전부예요.');
   const n=document.getElementById('micnote');
   if(!navigator.onLine){
     n.innerHTML='<b>지금은 인터넷이 없어요.</b> 말하기 인식은 아이폰이 소리를 밖으로 보내 알아듣기 때문에 ' +
@@ -2446,7 +2470,7 @@ function submitTest(){
   if(!ok)s.miss=(s.miss||0)+1;
   if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass';
     // 이번 주 묶음에 든 단어면 그 친구가 한 칸 자란다
-    const ch=chaptersOf(planNow()).find(c=>c.words.some(w=>w[0]===cur[0]));
+    const ch=chapterOfWord(cur[0]);
     if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
             if(was<1 && sbRatio(ch)>=1){ sbGrown.push(ch); sbEarn(sbPet(ch.cid)) } } }
   tres.push({w:cur[1],ok,typed:typing,ans});
@@ -2767,6 +2791,7 @@ const hlWord=t=>t.replace(/[{]([^}]+)[}]/g, (m,w)=>'<b class="hl">'+w+'</b>');
 function toggleSbStudy(){ sbHide=!sbHide; renderSbStudy() }
 function renderSbStudy(){
   document.getElementById('ssecseg').innerHTML=segHTML('renderSbStudy');
+  document.getElementById('snav').innerHTML=weekNavHTML('renderSbStudy');
   document.getElementById('scount').textContent=poolLabel();
   document.getElementById('sbstudy-head').textContent=PROFILES[pid].name+' · '+listOf(pid).name;
   document.getElementById('sbstudy-toggle').textContent = sbHide ? '단어 보이기' : '단어 가리기';
@@ -3694,7 +3719,6 @@ function renderParent(){
   renderKidTabs();
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
 
-  // ---- 대회까지 남은 일수와 필요한 진도 ----
   // 이번 주 퀴즈
   qLoad();
   const wk=curWeek, qwords=weekWords(wk), qprog=weekProg(wk);
@@ -3707,8 +3731,10 @@ function renderParent(){
     : weekDone(wk) ? (qa ? qa.n+' 다 키웠어요 · '+weekLabel(wk) : '다 맞혔어요 · '+weekLabel(wk))
     : (qa ? qa.n+' 키우는 중 · '+weekLabel(wk) : '친구를 아직 안 골랐어요');
 
-  const days=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
-  document.getElementById('p-dday').textContent=days;
+  // 주간 3단어는 아이가 넘겨 보던 자리와 상관없이 '이번 주'를 보여준다.
+  const wg=weekStage().g, gw=groupWords(wg);
+  document.getElementById('p-wdone').textContent=gw.filter(w=>wordLearned(w[0])).length;
+  document.getElementById('p-wall').textContent='/'+gw.length+' 외움';
 
   const st=k=>mine.filter(w=>(S.w[w[0]]||{}).st===k).length;
   const master=st('master'), pass=st('pass'), learn=st('learning');
@@ -3721,10 +3747,9 @@ function renderParent(){
   document.getElementById('p-dist').textContent=
     `통과 ${pass} · 연습중 ${learn} · 미시작 ${untouched}`;
 
-  const left=tot-master;
-  document.getElementById('p-pace').textContent = days<=0
-    ? '대회 날짜가 지났거나 오늘입니다'
-    : (left<=0 ? '모두 마스터했어요' : `남은 ${left}단어 → 하루 ${Math.ceil(left/days)}개씩`);
+  document.getElementById('p-pace').textContent = gw.length
+    ? (wg+1)+'주차 · '+rangeText(gw)+' · '+gw.map(w=>w[1]).join(', ')
+    : '단어가 없어요';
 
   // ---- 연습과 시험의 균형 ----
   const practiced=mine.reduce((a,w)=>a+((S.w[w[0]]||{}).p||0),0);

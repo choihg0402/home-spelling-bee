@@ -305,6 +305,9 @@ img.face{border:2px solid var(--line)}
 .sub{font-size:13px;color:var(--ink-3);margin:6px 0 0}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
 @media (max-width:760px){.two-col{grid-template-columns:1fr}}
+.wknav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.wknav-l{flex:1;min-width:140px;text-align:center;display:flex;flex-direction:column}
+.wknav-l small{font-size:13px;color:var(--ink-3)}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px;align-items:end}
 .wcol{display:flex;flex-direction:column;align-items:center;gap:5px}
 .wbars{display:flex;align-items:flex-end;gap:3px;height:96px}
@@ -605,7 +608,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
 <!-- ============ PROFILE ============ -->
 <section id="s-profile" class="screen">
   <div style="margin:auto;width:100%;max-width:640px">
-    <p class="eyebrow">2026 Spring · G2–G3 Spelling Bee List</p>
+    <p class="eyebrow">2026 Fall · Spelling Bee</p>
     <h1 style="font-size:40px;margin:6px 0 2px">우리집 스펠링비</h1>
     <p style="color:var(--ink-2);margin:0">누구야? 이름을 눌러줘.</p>
     <div class="profiles">
@@ -657,7 +660,6 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
     <span class="spacer"></span>
     <span class="chip offline-chip" id="netchip" hidden>✈️ 인터넷 없음</span>
     <span class="chip" id="listchip"></span>
-    <span class="chip">대회까지 <b class="tnum" id="dday">D-30</b></span>
     <button class="btn ghost" onclick="openParent()">부모</button>
   </header>
 
@@ -777,6 +779,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="secseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="pickcount"></span>
+      <div id="pnav" style="width:100%"></div>
     </div>
   </div>
 </section>
@@ -799,6 +802,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="ssecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="scount"></span>
+      <div id="snav" style="width:100%"></div>
     </div>
     <div class="study" id="sbstudy"></div>
   </div>
@@ -867,6 +871,7 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
       <span class="seg wrap" id="tsecseg"></span>
       <span class="spacer" style="flex:1"></span>
       <span style="font-size:14px;color:var(--ink-3)" id="tpickcount"></span>
+      <div id="tnav" style="width:100%"></div>
       <p style="width:100%;margin:2px 0 0;font-size:15px;color:var(--ink-2)" id="t-plan"></p>
     </div>
     <div class="note" id="micnote" style="margin-top:14px"></div>
@@ -1174,8 +1179,8 @@ table.sec th{color:var(--ink-3);font-weight:400;font-size:13px;letter-spacing:.0
         <p class="sub" id="p-qnote"></p>
       </div>
       <div class="card">
-        <p class="eyebrow">대회까지</p>
-        <div class="big-num"><span class="tnum" id="p-dday">0</span><small>일</small></div>
+        <p class="eyebrow">주간 3단어</p>
+        <div class="big-num"><span class="tnum" id="p-wdone">0</span><small id="p-wall">/3 외움</small></div>
         <p class="sub" id="p-pace"></p>
       </div>
       <div class="card">
@@ -1422,8 +1427,8 @@ addEventListener('offline', paintNet);
 
 /* ---------- data model ---------- */
 const PROFILES={
-  yujin:  {name:'유진', grade:'3학년', list:'g23',    sections:['B','C']},
-  yuhyeok:{name:'유혁', grade:'1학년', list:'g1'   , sections:['B','C']}
+  yujin:  {name:'유진', grade:'4학년', list:'g45',    sections:['B','C']},
+  yuhyeok:{name:'유혁', grade:'2학년', list:'g23'   , sections:['B','C']}
 };
 const listOf = id => LISTS[PROFILES[id].list];
 // 목록이 바뀌었는지 보는 표. 이름만 보면 같은 g23이라도 학기가 바뀌어
@@ -1436,8 +1441,7 @@ function listTag(id){
   return PROFILES[id].list+':'+L.words.length+':'+(h>>>0).toString(36);
 }
 const CAP={coin:12};   // 연습으로 하루에 받을 수 있는 코인 상한
-const CONTEST=new Date('2026-09-28T00:00:00');
-let pid=null, S=null, sec='day';
+let pid=null, S=null, sec='week';
 
 const key=id=>'sb_'+id;
 /* ---------- 저장 구조 ----------
@@ -1464,6 +1468,7 @@ function blank(){return {
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
   sbDone:{}, sbPick:{}, earned:[],  // 대회 묶음: 통과한 단어 / 고른 친구 / 다 키운 친구
   coinFix:[],                  // 부모가 코인을 맞춘 기록 [바뀐 양, 시각, 기기]
+  stage:null,                  // 주간 3단어: {g:이번 주 묶음, wk:주차, v:보고 있는 묶음}
   streak:0, last:null, list:null
 }}
 function load(id){
@@ -1527,32 +1532,47 @@ function myWords(){ return listOf(pid).words.filter(w=>PROFILES[pid].sections.in
    부모가 매주 넣는 단어 퀴즈와는 상관없다. 이건 대회 단어 쪽이다.
    시작 주를 고정해 둔다. 오늘 기준으로 잡으면 주가 바뀔 때마다 계획이 밀려
    지난주에 익힌 앞쪽이 다시 이번 주로 올라온다. */
-/* ---------- 하루치 계획 ----------
-   대회가 가까워 주 단위를 하루 단위로 바꿨다.
-   9월 21일부터 유진이는 하루 40개, 유혁이는 30개씩 번호 순서대로 본다.
-   목록 끝까지 가면 처음으로 돌아가 다시 돈다. */
-const DAY_FROM='2026-09-21';
-const PER_DAY={yujin:40, yuhyeok:30};
+/* ---------- 주간 3단어 ----------
+   한 주에 3개씩 번호 순서대로 외운다. 날짜로 밀지 않는다.
+   주가 바뀔 때 그 주 3개를 다 외웠으면(시험에서 한 번 이상 맞힘) 다음 3개로,
+   못 외웠으면 다음 주에도 같은 3개가 나온다.
+   아이는 ← → 로 지난 주·다음 주 단어를 직접 볼 수 있다. 이건 보는 자리(v)만 옮기고
+   '이번 주'(g)는 그대로 둔다. 새 주가 되면 보는 자리는 이번 주로 돌아온다. */
+const PER_WEEK=3;
 /* 오늘 날짜. today() 는 UTC 라 한국에서는 새벽에 어제 날짜가 나온다.
-   하루치 단어는 자정에 바뀌어야 하므로 이 기기 시간으로 따로 구한다. */
+   멈춘 자리는 자정에 처음으로 돌아가야 하므로 이 기기 시간으로 따로 구한다. */
 function localDay(d){
   d=d||new Date();
   const z=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
 }
-function planFor(key){
-  const all=myWords(), n=all.length;
-  const per=Math.min(PER_DAY[pid]||30, n||1);
-  if(!n) return {k:key, words:[], day:1};
-  const a=new Date(DAY_FROM+'T00:00:00'), d=new Date(key+'T00:00:00');
-  const i=Math.max(0, Math.round((d-a)/864e5));
-  const start=(i*per)%n, words=[];
-  for(let j=0;j<per;j++) words.push(all[(start+j)%n]);
-  return {k:key, words:words, day:i+1};
+function groupCount(){ return Math.max(1, Math.ceil(myWords().length/PER_WEEK)) }
+function groupWords(g){ return myWords().slice(g*PER_WEEK, g*PER_WEEK+PER_WEEK) }
+function wordLearned(n){ const s=S.w[n]; return !!s && (s.st==='pass'||s.st==='master') }
+function groupLearned(g){ const w=groupWords(g); return w.length>0 && w.every(x=>wordLearned(x[0])) }
+function weekStage(){
+  if(!S.stage || typeof S.stage!=='object') S.stage={g:0, wk:null, v:0};
+  const st=S.stage, wk=weekKey(), last=groupCount()-1;
+  if(st.wk!==wk){
+    // 여러 주를 쉬었어도 다 외운 묶음은 모두 지나가고, 못 외운 곳에서 멈춘다.
+    if(st.wk) while(st.g<last && groupLearned(st.g)) st.g++;
+    st.wk=wk; st.v=st.g; save();
+  }
+  if(st.g>last) st.g=last;
+  if(typeof st.v!=='number' || st.v<0 || st.v>last) st.v=st.g;
+  return st;
 }
-function planNow(){ return planFor(localDay()) }
-/* 번호를 이어지는 구간으로 묶어 적는다. 한 바퀴 돌아 181~200, 1~20 처럼
-   끊길 수 있어서, 처음과 끝만 찍으면 181~20번 같은 이상한 말이 된다. */
+function curG(){ return weekStage().v }
+function moveG(n){
+  const st=weekStage(), last=groupCount()-1;
+  st.v = n===0 ? st.g : Math.max(0, Math.min(last, st.v+n));
+  save();
+}
+function groupTag(g){
+  const b=weekStage().g;
+  return g===b ? '이번 주' : g===b-1 ? '지난 주' : g===b+1 ? '다음 주' : (g+1)+'주차';
+}
+/* 번호를 이어지는 구간으로 묶어 적는다. */
 function rangeText(words){
   if(!words.length) return '';
   const out=[]; let a=words[0][0], prev=a;
@@ -1565,9 +1585,21 @@ function rangeText(words){
   return out.join(', ')+'번';
 }
 function planLabel(){
-  const p=planNow();
-  if(!p.words.length) return '단어가 없어요';
-  return p.day+'일차 · '+p.words.length+'개 · '+rangeText(p.words);
+  const g=curG(), w=groupWords(g);
+  if(!w.length) return '단어가 없어요';
+  return groupTag(g)+' · '+rangeText(w);
+}
+/* 지난 주 / 다음 주 단추. fn 은 다시 그릴 화면 함수 이름. */
+function weekNavHTML(fn){
+  if(sec!=='week') return '';
+  const st=weekStage(), g=st.v, last=groupCount()-1;
+  const done=groupWords(g).filter(w=>wordLearned(w[0])).length;
+  return '<div class="wknav">'+
+    '<button class="btn" '+(g<=0?'disabled':'')+' onclick="moveG(-1);'+fn+'()">← 지난 주</button>'+
+    '<span class="wknav-l"><b>'+planLabel()+'</b><small>'+done+'/'+groupWords(g).length+' 외웠어</small></span>'+
+    '<button class="btn" '+(g>=last?'disabled':'')+' onclick="moveG(1);'+fn+'()">다음 주 →</button>'+
+    (g!==st.g ? '<button class="btn ghost" onclick="moveG(0);'+fn+'()">이번 주로</button>' : '')+
+  '</div>';
 }
 
 /* ---------- 대회 친구 ----------
@@ -1575,20 +1607,20 @@ function planLabel(){
    시험에서 통과한 단어만 센다. 연습으로는 자라지 않는다.
    묶음은 주차에 매여 있다. 그래야 마지막 점검 주에 앞서 통과해 둔 단어로
    친구들이 시작부터 다 커 있지 않고, 다시 한 번 통과해야 자란다. */
-const SB_CHAP=10;
-function chaptersOf(pw){
-  const out=[];
-  for(let i=0;i<pw.words.length;i+=SB_CHAP)
-    out.push({cid:pw.k+'#'+(i/SB_CHAP), n:i/SB_CHAP+1, week:pw.k,
-              words:pw.words.slice(i,i+SB_CHAP)});
-  return out;
+const SB_CHAP=PER_WEEK;
+/* 묶음 = 한 주 3단어. 묶음마다 친구 한 마리. cid 는 'g0', 'g1' ... */
+function chapterOf(g){
+  const w=groupWords(g);
+  return w.length ? {cid:'g'+g, n:g+1, words:w} : null;
 }
 function chapterByCid(cid){
-  const k=String(cid).split('#')[0];
-  // 예전에는 앞머리가 주차(2026-W38)였다. 그때 묶음은 되살리지 않는다.
-  // 그때 다 키운 친구는 earned 에 따로 적혀 있어 도감에서 사라지지 않는다.
-  if(k.length!==10 || k[4]!=='-' || k[7]!=='-') return null;
-  return chaptersOf(planFor(k)).find(c=>c.cid===cid) || null;
+  // 예전 날짜·주차 묶음은 되살리지 않는다. 그때 다 키운 친구는 earned 에 남아 있다.
+  const m=/^g(\d+)$/.exec(String(cid));
+  return m ? chapterOf(+m[1]) : null;
+}
+function chapterOfWord(n){
+  const i=myWords().findIndex(w=>w[0]===n);
+  return i<0 ? null : chapterOf(Math.floor(i/PER_WEEK));
 }
 function sbMark(cid){ S.sbDone=S.sbDone||{}; return S.sbDone[cid]||(S.sbDone[cid]={}) }
 /* 다 키운 친구는 그 순간에 따로 적어 둔다.
@@ -1609,29 +1641,20 @@ function sbEarnCatchUp(){
 function sbGot(ch){ const d=(S.sbDone||{})[ch.cid]||{}; return ch.words.filter(w=>d[w[0]]).length }
 function sbRatio(ch){ return ch.words.length ? sbGot(ch)/ch.words.length : 0 }
 function sbPet(cid){ return ((S&&S.sbPick)||{})[cid]||null }
-/* 지금 키우는 묶음 = 이번 주에서 아직 안 끝났거나 친구를 안 고른 첫 묶음.
-   친구를 안 고른 채 다 채운 묶음도 잡아준다. 안 그러면 그 친구가 사라진다. */
-function sbCur(){
-  const chs=chaptersOf(planNow());
-  return chs.find(c=>sbRatio(c)<1 || !sbPet(c.cid)) || chs[chs.length-1] || null;
-}
-function sbLabel(ch){
-  return planLabel().split(' · ')[0]+' · 묶음 '+ch.n+'/'+chaptersOf(planNow()).length;
-}
+/* 지금 키우는 묶음 = 보고 있는 주의 3단어. */
+function sbCur(){ return chapterOf(curG()) }
+function sbLabel(ch){ return groupTag(ch.n-1)+' · '+rangeText(ch.words) }
 
-/* 기본은 '이번 묶음'. 지금 키우는 친구의 10단어만 나온다.
-   주 전체(40~80개)에서 뽑으면 네댓 마리가 조금씩만 자라서
-   시험을 아무리 봐도 아무도 다 크지 않는다. */
 function poolWords(){
-  if(sec==='day') return planNow().words;
+  if(sec==='week') return groupWords(curG());
   const m=myWords(); return sec==='all'?m:m.filter(w=>w[3]===sec);
 }
 function poolLabel(){
-  return sec==='day' ? planLabel() : poolWords().length+'개';
+  return sec==='week' ? planLabel() : poolWords().length+'개';
 }
-const SEGS=[['day','오늘'],['all','전체'],['B','Basic'],['C','Challenging']];
+const SEGS=[['week','주간 3단어'],['all','전체'],['B','Basic'],['C','Challenging']];
 function segHTML(fn){
-  return SEGS.filter(x=>['day','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
+  return SEGS.filter(x=>['week','all'].includes(x[0])||PROFILES[pid].sections.includes(x[0]))
     .map(x=>`<button class="${sec===x[0]?'on':''}" onclick="sec='${x[0]}';${fn}()">${x[1]}</button>`)
     .join('');
 }
@@ -1777,11 +1800,12 @@ async function gateIn(){
 }
 
 function pickProfile(id){
-  pid=id; S=load(id); sec='day';
+  pid=id; S=load(id); sec='week';
   // 배정된 단어 목록이 바뀌면 이전 목록 기준의 진행 기록은 의미가 없다.
   // 코인은 아이가 쌓은 것이니 남기고, 단어별 상태만 비운다.
   const want=listTag(id);
-  if(S.list!==want){ S.w={}; S.list=want; save(); }
+  // 새 목록이면 주간 3단어도 1번부터, 묶음 친구 기록도 새로. 다 키운 친구(earned)와 코인은 남는다.
+  if(S.list!==want){ S.w={}; S.stage=null; S.sbDone={}; S.sbPick={}; S.cursor=null; S.list=want; save(); }
   go('s-home');
 }
 
@@ -1963,13 +1987,11 @@ function renderHome(){
   document.getElementById('who').textContent=P.name;
   document.getElementById('coin').textContent=coins();
   document.getElementById('listchip').textContent=listOf(pid).name;
-  const d=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
-  document.getElementById('dday').textContent='D-'+d;
   if(S.day.d!==today())S.day={d:today(),coin:0};
   document.getElementById('capxp').textContent=S.day.coin;
-  const chs=chaptersOf(planNow()), grown=chs.filter(c=>sbRatio(c)>=1).length;
+  const gw=groupWords(curG()), gl=gw.filter(w=>wordLearned(w[0])).length;
   document.getElementById('home-plan').textContent =
-    planLabel()+' · 친구 '+grown+'/'+chs.length+'마리';
+    planLabel()+' · '+gl+'/'+gw.length+' 외웠어';
   const ch=sbCur(), sa=ch?animal(sbPet(ch.cid)):null, sr=ch?sbRatio(ch):0;
   document.getElementById('sbpet').innerHTML=petHTML(ch?sbPet(ch.cid):null, sr);
   document.getElementById('sbpet-name').textContent =
@@ -1977,7 +1999,7 @@ function renderHome(){
         : sa.n+' · '+STAGE_NAME[stageOfRatio(sr)];
   document.getElementById('sbpet-next').textContent =
     !ch ? '' : !sa ? sbLabel(ch)+' · 친구를 고르면 시작해요'
-    : sr>=1 ? (grown===chs.length ? '이번 주 친구를 다 키웠어요!' : '다 컸어요! 다음 묶음으로 넘어가요')
+    : sr>=1 ? '다 컸어요! 다음 주 단어로 넘어가요'
     : sbLabel(ch)+' · 시험에서 '+(ch.words.length-sbGot(ch))+'개 더 통과하면 다 커요';
   document.getElementById('sbpet-pick').textContent = sa ? '친구 바꾸기' : '친구 고르기';
   document.getElementById('sbpet-pick').style.display = ch ? '' : 'none';
@@ -2094,6 +2116,7 @@ function renderProfNote(){
 let cur=null, mode='puzzle', done=0, placed=[], tries=0;
 function renderPick(){
   document.getElementById('secseg').innerHTML=segHTML('renderPick');
+  document.getElementById('pnav').innerHTML=weekNavHTML('renderPick');
   const pt=cursor().p, plist=roundWords(pt);
   document.getElementById('pickcount').textContent =
     poolLabel() + (pt.round && plist.length ? ' · 틀린 단어 '+plist.length+'개 다시' : '');
@@ -2111,8 +2134,8 @@ function quitPlay(){clearInterval(revealThenHide._t);speechSynthesis.cancel();go
    자리는 이 기기에만 둔다. 기기마다 진도가 다른 게 자연스럽다. */
 function track(){ return {at:0, round:0, list:null, wrong:[]} }
 function cursor(){
-  const d=localDay();
-  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec) S.cursor={d:d, sec:sec};
+  const d=localDay(), g=curG();
+  if(!S.cursor || S.cursor.d!==d || S.cursor.sec!==sec || S.cursor.g!==g) S.cursor={d:d, sec:sec, g:g};
   // 예전에는 자리를 숫자 하나로만 두었다. 새 모양으로 옮긴다.
   ['p','t'].forEach(k=>{ if(!S.cursor[k] || typeof S.cursor[k]!=='object'){
     const at=+S.cursor[k]||0; S.cursor[k]=track(); S.cursor[k].at=at; } });
@@ -2289,10 +2312,11 @@ function testSlice(){
   if(!list.length) return {from:0, words:[], round:0, total:0};
   const from=t.at;
   return {from:from, round:t.round||0, total:list.length,
-          words:list.slice(from, from + Math.min(list.length-from, PER_DAY[pid]||30))};
+          words:list.slice(from, from + Math.min(list.length-from, PER_WEEK))};
 }
 function renderSetup(){
   document.getElementById('tsecseg').innerHTML=segHTML('renderSetup');
+  document.getElementById('tnav').innerHTML=weekNavHTML('renderSetup');
   document.getElementById('tpickcount').textContent=poolLabel()+' 중에서';
   const sl=testSlice(), pool=poolWords();
   document.getElementById('t-plan').innerHTML = !sl.words.length
@@ -2300,7 +2324,7 @@ function renderSetup(){
     : (sl.round ? '<b>틀린 단어 다시 보기</b> — ' : '') +
       '이번에 <b>' + rangeText(sl.words) + ' ' + sl.words.length + '개</b>를 봐요.' +
       (sl.from ? ' (' + sl.total + '개 중 ' + sl.from + '개 했어요)' :
-       sl.round ? '' : pool.length>sl.words.length ? '' : ' 오늘 몫 전부예요.');
+       sl.round ? '' : pool.length>sl.words.length ? '' : ' 이 주 단어 전부예요.');
   const n=document.getElementById('micnote');
   if(!navigator.onLine){
     n.innerHTML='<b>지금은 인터넷이 없어요.</b> 말하기 인식은 아이폰이 소리를 밖으로 보내 알아듣기 때문에 ' +
@@ -2411,7 +2435,7 @@ function submitTest(){
   if(!ok)s.miss=(s.miss||0)+1;
   if(ok){ s.pass++; if(!typing){s.voice++; s.st=s.voice>=2?'master':'pass'} else if(s.st!=='master')s.st='pass';
     // 이번 주 묶음에 든 단어면 그 친구가 한 칸 자란다
-    const ch=chaptersOf(planNow()).find(c=>c.words.some(w=>w[0]===cur[0]));
+    const ch=chapterOfWord(cur[0]);
     if(ch){ const was=sbRatio(ch); sbMark(ch.cid)[cur[0]]=1;
             if(was<1 && sbRatio(ch)>=1){ sbGrown.push(ch); sbEarn(sbPet(ch.cid)) } } }
   tres.push({w:cur[1],ok,typed:typing,ans});
@@ -2732,6 +2756,7 @@ const hlWord=t=>t.replace(/[{]([^}]+)[}]/g, (m,w)=>'<b class="hl">'+w+'</b>');
 function toggleSbStudy(){ sbHide=!sbHide; renderSbStudy() }
 function renderSbStudy(){
   document.getElementById('ssecseg').innerHTML=segHTML('renderSbStudy');
+  document.getElementById('snav').innerHTML=weekNavHTML('renderSbStudy');
   document.getElementById('scount').textContent=poolLabel();
   document.getElementById('sbstudy-head').textContent=PROFILES[pid].name+' · '+listOf(pid).name;
   document.getElementById('sbstudy-toggle').textContent = sbHide ? '단어 보이기' : '단어 가리기';
@@ -3659,7 +3684,6 @@ function renderParent(){
   renderKidTabs();
   const P=PROFILES[pid], mine=myWords(), tot=mine.length;
 
-  // ---- 대회까지 남은 일수와 필요한 진도 ----
   // 이번 주 퀴즈
   qLoad();
   const wk=curWeek, qwords=weekWords(wk), qprog=weekProg(wk);
@@ -3672,8 +3696,10 @@ function renderParent(){
     : weekDone(wk) ? (qa ? qa.n+' 다 키웠어요 · '+weekLabel(wk) : '다 맞혔어요 · '+weekLabel(wk))
     : (qa ? qa.n+' 키우는 중 · '+weekLabel(wk) : '친구를 아직 안 골랐어요');
 
-  const days=Math.max(0,Math.ceil((CONTEST-new Date())/864e5));
-  document.getElementById('p-dday').textContent=days;
+  // 주간 3단어는 아이가 넘겨 보던 자리와 상관없이 '이번 주'를 보여준다.
+  const wg=weekStage().g, gw=groupWords(wg);
+  document.getElementById('p-wdone').textContent=gw.filter(w=>wordLearned(w[0])).length;
+  document.getElementById('p-wall').textContent='/'+gw.length+' 외움';
 
   const st=k=>mine.filter(w=>(S.w[w[0]]||{}).st===k).length;
   const master=st('master'), pass=st('pass'), learn=st('learning');
@@ -3686,10 +3712,9 @@ function renderParent(){
   document.getElementById('p-dist').textContent=
     `통과 ${pass} · 연습중 ${learn} · 미시작 ${untouched}`;
 
-  const left=tot-master;
-  document.getElementById('p-pace').textContent = days<=0
-    ? '대회 날짜가 지났거나 오늘입니다'
-    : (left<=0 ? '모두 마스터했어요' : `남은 ${left}단어 → 하루 ${Math.ceil(left/days)}개씩`);
+  document.getElementById('p-pace').textContent = gw.length
+    ? (wg+1)+'주차 · '+rangeText(gw)+' · '+gw.map(w=>w[1]).join(', ')
+    : '단어가 없어요';
 
   // ---- 연습과 시험의 균형 ----
   const practiced=mine.reduce((a,w)=>a+((S.w[w[0]]||{}).p||0),0);

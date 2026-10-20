@@ -6,8 +6,8 @@ import fonts, icons
 # 이번 학기 목록은 한 파일에 학년별로 들어 있다.
 WORD_PDF = '../docs/samples/26_Fall_Spelling_Bee_Rules_Word_List.pdf'
 USE = [
-    ('g1',  'G1',    '2026 Fall G1'),        # 유혁
-    ('g23', 'G2-G3', '2026 Fall G2\u2013G3'),   # 유진
+    ('g23', 'G2-G3', '2026 Fall G2–G3'),   # 유혁
+    ('g45', 'G4-G5', '2026 Fall G4–G5'),   # 유진
 ]
 OUT = '../index.html'
 def parse_all(path):
@@ -127,8 +127,9 @@ for key, grade, label in USE:
     assert not leak, f'{grade}: 예문에 정답이 남는다 - {leak[:5]}'
     # 주간 퀴즈는 뜻 문장에서 단어와 똑같은 꼴을 찾아 빈칸을 만든다.
     # 변형된 꼴만 있으면 빈칸이 생기지 않아 답이 그대로 보인다.
+    # 복수형(sequin -> sequins)처럼 뒤만 붙은 꼴은 괜찮다. 예문은 굵은 부분을 통째로 가린다.
     odd = [w[1] for w in words
-           if re.search(r'\{(.+?)\}', w[2]).group(1).lower() != w[1].lower()]
+           if not re.search(r'\{(.+?)\}', w[2]).group(1).lower().startswith(w[1].lower())]
     assert not odd, f'{grade}: 예문 속 꼴이 달라 빈칸이 안 생긴다 - {odd[:5]}'
     out[key] = {'name': label, 'words': words}
     print(f'  {key:8} {len(words):>3}개  {collections.Counter(w[3] for w in words)}')
