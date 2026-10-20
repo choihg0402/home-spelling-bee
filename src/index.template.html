@@ -1468,6 +1468,7 @@ function blank(){return {
   w:{}, hist:{}, day:{d:null,coin:0}, pick:{}, pickAt:{},
   sbDone:{}, sbPick:{}, earned:[],  // 대회 묶음: 통과한 단어 / 고른 친구 / 다 키운 친구
   coinFix:[],                  // 부모가 코인을 맞춘 기록 [바뀐 양, 시각, 기기]
+  refunds:[],                  // 부모가 환불한 산 것 ['아이템|시각|기기', 환불 시각]
   stage:null,                  // 주간 3단어: {g:이번 주 묶음, wk:주차, v:보고 있는 묶음}
   streak:0, last:null, list:null
 }}
@@ -1501,19 +1502,35 @@ function load(id){
     delete out.own.xp;
     Object.values(out.peers||{}).forEach(p=>{ delete p.xp });
   }
+  trimGarden(out);   // 다른 기기에서 환불한 것이 정원에 남아 있지 않게
   return out;
 }
 
 /* --- 계산해서 쓰는 값들 --- */
 const sumField=f=>S.own[f]+Object.values(S.peers).reduce((a,p)=>a+(p[f]||0),0);
-const coins   =()=>sumField('earn')-sumField('spend');
+/* 환불은 산 기록을 지우지 않고 따로 적는다. 산 기록은 기기끼리 합집합으로 합쳐서,
+   한 기기에서 지워도 다른 기기에서 되살아난다. 환불 기록도 합집합이라 어느 기기에서 해도 남는다. */
+const bkey=b=>b.join('|');
+function refundSet(d){ return new Set(((d||S).refunds||[]).map(r=>r[0])) }
+function liveBuys(d){ d=d||S; const r=refundSet(d); return (d.buys||[]).filter(b=>!r.has(bkey(b))) }
+function refundTotal(){
+  const r=refundSet();
+  return (S.buys||[]).filter(b=>r.has(bkey(b))).reduce((a,b)=>a+((shopItem(b[0])||{c:0}).c),0);
+}
+/* 산 것보다 많이 놓여 있으면 줄인다. 환불하면 정원에서도 빠진다. */
+function trimGarden(d){
+  const bought={}; liveBuys(d).forEach(b=>bought[b[0]]=(bought[b[0]]||0)+1);
+  const used={};
+  d.garden=(d.garden||[]).filter(id=>{ used[id]=(used[id]||0)+1; return used[id]<=(bought[id]||0) });
+}
+const coins   =()=>sumField('earn')-sumField('spend')+refundTotal();
 function invCount(id){
-  const bought=S.buys.filter(b=>b[0]===id).length;
+  const bought=liveBuys().filter(b=>b[0]===id).length;
   const placed=S.garden.filter(g=>g===id).length;
   return bought-placed;
 }
 function inventory(){
-  const m={}; S.buys.forEach(b=>m[b[0]]=(m[b[0]]||0)+1);
+  const m={}; liveBuys().forEach(b=>m[b[0]]=(m[b[0]]||0)+1);
   S.garden.forEach(g=>{ if(m[g]){m[g]--; if(!m[g])delete m[g]} });
   return m;
 }
@@ -2986,7 +3003,7 @@ function unplace2(i){
 }
 /* 정원에 놓아둔 것도 가진 것이다. invCount 는 놓아둔 것을 빼므로
    개수 제한에는 쓸 수 없다. 산 횟수로 센다. */
-const boughtCount=id=>S.buys.filter(b=>b[0]===id).length;
+const boughtCount=id=>liveBuys().filter(b=>b[0]===id).length;
 function renderShop(){
   document.getElementById('s-coin').textContent=coins();
   document.getElementById('shop').innerHTML=SHOP.map(it=>{
@@ -3380,6 +3397,10 @@ function mergeProfile(local, inc){
   const fseen=new Set((local.coinFix||[]).map(f=>f.join('|')));
   out.coinFix=(local.coinFix||[]).slice();
   (inc.coinFix||[]).forEach(f=>{ const k=f.join('|'); if(!fseen.has(k)){fseen.add(k); out.coinFix.push(f)} });
+  // 환불 기록도 합집합
+  const rseen=new Set((local.refunds||[]).map(r=>r[0]));
+  out.refunds=(local.refunds||[]).slice();
+  (inc.refunds||[]).forEach(r=>{ if(!rseen.has(r[0])){rseen.add(r[0]); out.refunds.push(r)} });
   // 날짜별 기록도 항목별로 큰 쪽
   out.hist=Object.assign({}, local.hist||{});
   Object.entries(inc.hist||{}).forEach(([d,v])=>{
@@ -3434,10 +3455,8 @@ function mergeProfile(local, inc){
   out.list=local.list||inc.list;
   // 정원 배치는 겉모습이라 이 기기 것을 그대로 둔다.
   // 다만 산 것보다 많이 놓여 있으면 줄인다.
-  const bought={}; out.buys.forEach(b=>bought[b[0]]=(bought[b[0]]||0)+1);
-  const used={}; out.garden=(local.garden||[]).filter(id=>{
-    used[id]=(used[id]||0)+1; return used[id]<=(bought[id]||0);
-  });
+  out.garden=(local.garden||[]).slice();
+  trimGarden(out);
   return out;
 }
 
@@ -3678,6 +3697,19 @@ function setCoins(){
   toast(PROFILES[pid].name+' 코인을 '+want+' 로 맞췄어요');
 }
 
+/* 잘못 산 것을 되돌린다. 코인이 돌아오고 보관함과 정원에서 빠진다. */
+function refundBuy(k){
+  const b=(S.buys||[]).find(x=>bkey(x)===k); if(!b) return;
+  if(refundSet().has(k)){ toast('이미 환불했어요'); return }
+  const it=shopItem(b[0])||{n:b[0],c:0};
+  if(!confirm(PROFILES[pid].name+'의 '+it.n+'을(를) 환불할까요?'+String.fromCharCode(10)+it.c+' 코인이 돌아와요.')) return;
+  S.refunds=S.refunds||[]; S.refunds.push([k, Date.now()]);
+  trimGarden(S); save();
+  renderParent();
+  if(syncOn()) syncNow(true);
+  toast(it.n+' 환불했어요 · +'+it.c+' 코인');
+}
+
 function renderParent(){
   renderLockState();
   renderSync();
@@ -3743,7 +3775,7 @@ function renderParent(){
   // ---- 코인이 어디로 갔는지 ----
   //    코인이 줄었다는 말이 나오면 여기서 바로 확인할 수 있어야 한다.
   //    산 것마다 시각과 어느 기기에서 샀는지가 남아 있다.
-  const earn=sumField('earn'), spent=sumField('spend');
+  const earn=sumField('earn'), spent=sumField('spend')-refundTotal();
   document.getElementById('p-earn').textContent=earn;
   document.getElementById('p-spent').textContent=spent;
   document.getElementById('p-left').textContent=earn-spent;
@@ -3754,8 +3786,13 @@ function renderParent(){
              Object.values(S.peers).reduce((a,x)=>a+(x.earn||0),0) + ' 벌고 ' +
              Object.values(S.peers).reduce((a,x)=>a+(x.spend||0),0) + ' 씀' : '');
   const coinRows=[];
-  (S.buys||[]).forEach(b=>{ const it=shopItem(b[0]);
-    coinRows.push({t:b[1]||0, dev:b[2], name:(it&&it.n)||b[0], amt:-((it&&it.c)||0)}) });
+  const rset=refundSet();
+  (S.buys||[]).forEach(b=>{ const it=shopItem(b[0]), k=bkey(b), back=rset.has(k);
+    coinRows.push({t:b[1]||0, dev:b[2], name:(it&&it.n)||b[0], amt:-((it&&it.c)||0),
+                   key:back?null:k, gone:back}) });
+  (S.refunds||[]).forEach(r=>{ const b=(S.buys||[]).find(x=>bkey(x)===r[0]); if(!b)return;
+    const it=shopItem(b[0]);
+    coinRows.push({t:r[1]||0, dev:null, name:((it&&it.n)||b[0])+' 환불', amt:(it&&it.c)||0}) });
   (S.coinFix||[]).forEach(f=>coinRows.push({t:f[1]||0, dev:f[2], name:'부모가 맞춤', amt:f[0]}));
   coinRows.sort((a,b)=>b.t-a.t);
   document.getElementById('p-buys').innerHTML = coinRows.length
@@ -3765,12 +3802,14 @@ function renderParent(){
                          String(d.getHours()).padStart(2,'0')+':'+
                          String(d.getMinutes()).padStart(2,'0')
                        : '오래 전';
-        return '<div class="res"><span class="w" style="font-size:16px">'+r.name+'</span>'+
-               '<span class="via">'+(r.dev===S.dev?'이 기기':'다른 기기')+'</span>'+
+        return '<div class="res"><span class="w" style="font-size:16px'+(r.gone?';text-decoration:line-through;opacity:.55':'')+'">'+r.name+'</span>'+
+               (r.key ? '<button class="btn ghost" style="min-height:0;padding:4px 10px;font-size:13px" data-refund="'+r.key+'">환불</button>' : '')+
+               '<span class="via">'+(r.dev===null?'부모':r.dev===S.dev?'이 기기':'다른 기기')+'</span>'+
                '<span class="mark">'+when+'</span>'+
                '<span class="mark '+(r.amt<0?'x':'o')+'">'+(r.amt>0?'+':'')+r.amt+'</span></div>';
       }).join('')
     : '<p class="empty-note">아직 오간 코인이 없어요.</p>';
+  document.querySelectorAll('#p-buys [data-refund]').forEach(el=>{ el.onclick=()=>refundBuy(el.dataset.refund) });
   document.getElementById('p-setcoin').placeholder=earn-spent;
 
   // ---- 최근 7일 ----
